@@ -53,6 +53,15 @@ data class WorkoutEntry(
     val createdAt: Long = 0L,
 )
 
+/** The user's own weight, in kg. There is at most one per day. */
+@Serializable
+data class BodyWeightEntry(
+    @Serializable(with = LocalDateIsoSerializer::class)
+    val date: LocalDate,
+    val weight: Double,
+    val createdAt: Long = 0L,
+)
+
 @Serializable
 data class RestPreset(
     val id: String,
@@ -73,6 +82,8 @@ data class AppData(
     val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
     val exercises: List<Exercise> = emptyList(),
     val entries: List<WorkoutEntry> = emptyList(),
+    /** Sorted by date. */
+    val bodyWeights: List<BodyWeightEntry> = emptyList(),
     val restPresets: List<RestPreset> = emptyList(),
     val settings: Settings = Settings(),
 ) {

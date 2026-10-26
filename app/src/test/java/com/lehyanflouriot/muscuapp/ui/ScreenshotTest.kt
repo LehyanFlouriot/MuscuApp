@@ -8,17 +8,22 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollToIndex
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
 import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
+import com.lehyanflouriot.muscuapp.core.domain.DEFAULT_BODY_WEIGHT
+import com.lehyanflouriot.muscuapp.core.domain.WeightPeriod
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
 import com.lehyanflouriot.muscuapp.core.domain.history
 import com.lehyanflouriot.muscuapp.core.domain.lastEntry
 import com.lehyanflouriot.muscuapp.core.domain.metricValue
 import com.lehyanflouriot.muscuapp.core.domain.records
+import com.lehyanflouriot.muscuapp.core.domain.suggestedWeight
 import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
 import com.lehyanflouriot.muscuapp.core.model.AppData
@@ -35,6 +40,8 @@ import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
+import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
+import com.lehyanflouriot.muscuapp.ui.weight.WeightScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,12 +66,18 @@ class ScreenshotTest {
     private val data = SampleData.build(today)
     private val now = 1_000_000L
 
-    private fun capture(name: String, darkTheme: Boolean = false, content: @Composable () -> Unit) {
+    private fun capture(
+        name: String,
+        darkTheme: Boolean = false,
+        before: () -> Unit = {},
+        content: @Composable () -> Unit,
+    ) {
         composeRule.setContent {
             MuscuTheme(darkTheme = darkTheme) {
                 Surface(color = MaterialTheme.colorScheme.background) { content() }
             }
         }
+        before()
         composeRule.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
@@ -99,6 +112,40 @@ class ScreenshotTest {
                     onAddExercise = {},
                     onQuickAdd = {},
                     onOpenSettings = {},
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun Weight(appData: AppData) {
+        MuscuScaffold(
+            currentRoute = Routes.WEIGHT,
+            timerState = TimerState.Idle,
+            now = now,
+            onNavigate = {},
+            onTimerToggle = {},
+            onTimerAdd = {},
+            onTimerRestart = {},
+            onTimerStop = {},
+        ) { padding ->
+            Surface(
+                Modifier
+                    .padding(padding)
+                    .consumeWindowInsets(padding),
+            ) {
+                val weights = appData.bodyWeights
+                val form = remember { WeighInState(suggestedWeight(weights, today) ?: DEFAULT_BODY_WEIGHT) }
+                WeightScreen(
+                    weights = weights,
+                    today = today,
+                    form = form,
+                    period = WeightPeriod.THREE_MONTHS,
+                    onDateChange = {},
+                    onSave = {},
+                    onPeriodChange = {},
+                    onUpdate = { _, _ -> },
+                    onDelete = {},
                 )
             }
         }
@@ -236,6 +283,19 @@ class ScreenshotTest {
             onSave = {},
         )
     }
+
+    @Test
+    fun weight() = capture("8-poids") { Weight(data) }
+
+    @Test
+    fun weightChart() = capture(
+        "8-poids-courbe",
+        darkTheme = true,
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(2) },
+    ) { Weight(data) }
+
+    @Test
+    fun weightFirstTime() = capture("8-poids-vide") { Weight(AppData.initial()) }
 
     @Test
     fun settings() = capture("7-reglages") {

@@ -1,6 +1,5 @@
 package com.lehyanflouriot.muscuapp.ui.log
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +14,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
@@ -24,20 +22,14 @@ import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -64,17 +56,17 @@ import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.ui.common.CompactStepper
+import com.lehyanflouriot.muscuapp.ui.common.DateChips
 import com.lehyanflouriot.muscuapp.ui.common.ExerciseAvatar
 import com.lehyanflouriot.muscuapp.ui.common.NumberInputDialog
 import com.lehyanflouriot.muscuapp.ui.common.NumberStepper
+import com.lehyanflouriot.muscuapp.ui.common.PastDatePickerDialog
 import com.lehyanflouriot.muscuapp.ui.common.describe
 import com.lehyanflouriot.muscuapp.ui.common.labelRes
 import com.lehyanflouriot.muscuapp.ui.common.relativeDay
 import com.lehyanflouriot.muscuapp.ui.common.repsLabel
 import com.lehyanflouriot.muscuapp.ui.common.repsTotal
 import com.lehyanflouriot.muscuapp.ui.common.setsCount
-import com.lehyanflouriot.muscuapp.ui.common.toUtcMillis
-import com.lehyanflouriot.muscuapp.ui.common.utcMillisToLocalDate
 import java.time.LocalDate
 import kotlin.math.roundToLong
 
@@ -356,66 +348,13 @@ fun LogEntryForm(
     }
 
     if (pickingDate) {
-        val todayMillis = today.toUtcMillis()
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = state.date.toUtcMillis(),
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayMillis
-                override fun isSelectableYear(year: Int): Boolean = year <= today.year
-            },
-        )
-        DatePickerDialog(
-            onDismissRequest = { pickingDate = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pickerState.selectedDateMillis?.let { state.date = utcMillisToLocalDate(it) }
-                        pickingDate = false
-                    },
-                ) { Text(stringResource(R.string.action_ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pickingDate = false }) { Text(stringResource(R.string.action_cancel)) }
-            },
-        ) {
-            DatePicker(state = pickerState)
-        }
-    }
-}
-
-@Composable
-private fun DateChips(
-    date: LocalDate,
-    today: LocalDate,
-    onSelect: (LocalDate) -> Unit,
-    onPickDate: () -> Unit,
-) {
-    val yesterday = today.minusDays(1)
-    val custom = date != today && date != yesterday
-    Row(
-        modifier = Modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        FilterChip(
-            selected = date == today,
-            onClick = { onSelect(today) },
-            label = { Text(stringResource(R.string.date_today)) },
-        )
-        FilterChip(
-            selected = date == yesterday,
-            onClick = { onSelect(yesterday) },
-            label = { Text(stringResource(R.string.date_yesterday)) },
-        )
-        FilterChip(
-            selected = custom,
-            onClick = onPickDate,
-            label = { Text(if (custom) Fmt.day(date) else stringResource(R.string.date_other)) },
-            leadingIcon = {
-                Icon(
-                    Icons.Rounded.CalendarToday,
-                    contentDescription = null,
-                    modifier = Modifier.size(FilterChipDefaults.IconSize),
-                )
+        PastDatePickerDialog(
+            initialDate = state.date,
+            today = today,
+            onDismiss = { pickingDate = false },
+            onConfirm = {
+                state.date = it
+                pickingDate = false
             },
         )
     }

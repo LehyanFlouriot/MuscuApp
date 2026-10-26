@@ -18,6 +18,7 @@
     <string name="tab_week">Semaine</string>
     <string name="tab_progress">Progrès</string>
     <string name="tab_rest">Repos</string>
+    <string name="tab_weight">Poids</string>
 
     <!-- Units and fields -->
     <string name="unit_kg">kg</string>
@@ -184,6 +185,39 @@
     <string name="streak_keep_going">Continue comme ça\u00A0!</string>
     <string name="streak_dont_break">Note une séance cette semaine pour garder ta série\u00A0!</string>
 
+    <!-- Body weight -->
+    <string name="weight_title">Mon poids</string>
+    <string name="weight_weigh_in">Ma pesée</string>
+    <string name="weight_previous">Pesée précédente\u00A0: %1$s (%2$s)</string>
+    <string name="weight_type_hint">Touche le nombre pour taper ton poids au clavier.</string>
+    <string name="weight_saved_state">Enregistré</string>
+    <string name="weight_saved">Poids enregistré ✓</string>
+    <string name="weight_updated">Poids mis à jour ✓</string>
+    <string name="weight_deleted">Pesée supprimée</string>
+    <string name="weight_range_error">Entre 20 et 400\u00A0kg</string>
+    <string name="weight_intro_title">Suis ta prise de masse</string>
+    <string name="weight_intro_text">Note ton poids chaque jour, de préférence le matin au réveil\u00A0: ta courbe et ta tendance apparaîtront ici.</string>
+    <string name="weight_one_entry">Première pesée notée\u00A0! Dès la prochaine, ta courbe apparaîtra ici.</string>
+    <string name="weight_current">actuel</string>
+    <string name="weight_since_start">depuis le début</string>
+    <string name="weight_per_week">par semaine</string>
+    <string name="weight_summary_hint">Première pesée le %1$s. Rythme calculé sur les 4 dernières semaines.</string>
+    <string name="weight_summary_hint_pending">Première pesée le %1$s. Le rythme par semaine s\'affiche après une semaine de pesées.</string>
+    <string name="weight_chart_title">Évolution</string>
+    <string name="weight_period_change">%1$s sur la période</string>
+    <string name="weight_period_stable">Stable sur la période</string>
+    <string name="weight_period_empty">Aucune pesée sur cette période.</string>
+    <string name="weight_period_month">1 mois</string>
+    <string name="weight_period_three_months">3 mois</string>
+    <string name="weight_period_year">1 an</string>
+    <string name="weight_period_all">Tout</string>
+    <string name="weight_legend_trend">Moyenne sur 7 jours</string>
+    <string name="weight_legend_weights">Pesées</string>
+    <string name="weight_chart_description">Courbe de ton poids, de %1$s à %2$s</string>
+    <string name="weight_history">Historique</string>
+    <string name="weight_edit_title">Pesée du %1$s</string>
+    <string name="weight_delete">Supprimer cette pesée</string>
+
     <!-- Rest timer -->
     <string name="rest_title">Repos</string>
     <string name="rest_ready">Prêt</string>
@@ -257,7 +291,7 @@
     <string name="settings_data">Mes données</string>
     <string name="settings_data_summary">%1$s · %2$s enregistrées</string>
     <string name="settings_export">Exporter une sauvegarde</string>
-    <string name="settings_export_hint">Crée un fichier avec tous tes exercices et tes séances.</string>
+    <string name="settings_export_hint">Crée un fichier avec tous tes exercices, tes séances et tes pesées.</string>
     <string name="settings_import">Restaurer une sauvegarde</string>
     <string name="settings_import_hint">Remplace les données de l\'app par celles d\'un fichier.</string>
     <string name="settings_data_hint">Tes données restent sur ton téléphone. Exporte une sauvegarde de temps en temps pour ne rien perdre (changement de téléphone, réinstallation…).</string>

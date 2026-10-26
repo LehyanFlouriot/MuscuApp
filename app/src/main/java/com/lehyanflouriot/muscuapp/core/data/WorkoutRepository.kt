@@ -1,6 +1,9 @@
 package com.lehyanflouriot.muscuapp.core.data
 
+import com.lehyanflouriot.muscuapp.core.domain.BODY_WEIGHT_RANGE
+import com.lehyanflouriot.muscuapp.core.domain.roundBodyWeight
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.BodyWeightEntry
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
@@ -222,6 +225,39 @@ class WorkoutRepository(
 
     // endregion
 
+    // region Body weight
+
+    /** Notes the user's weight for [date], replacing the one already noted that day. */
+    fun saveBodyWeight(date: LocalDate, weight: Double) {
+        if (weight !in BODY_WEIGHT_RANGE) return
+        mutate { data ->
+            val existing = data.bodyWeights.firstOrNull { it.date == date }
+            val entry = BodyWeightEntry(date = date, weight = roundBodyWeight(weight), createdAt = existing?.createdAt ?: clock())
+            data.copy(bodyWeights = sortBodyWeights(data.bodyWeights.filterNot { it.date == date } + entry))
+        }
+    }
+
+    fun deleteBodyWeight(date: LocalDate): BodyWeightEntry? {
+        var deleted: BodyWeightEntry? = null
+        mutate { data ->
+            deleted = data.bodyWeights.firstOrNull { it.date == date }
+            if (deleted == null) data else data.copy(bodyWeights = data.bodyWeights.filterNot { it.date == date })
+        }
+        return deleted
+    }
+
+    fun restoreBodyWeight(entry: BodyWeightEntry) {
+        mutate { data ->
+            if (data.bodyWeights.any { it.date == entry.date }) {
+                data
+            } else {
+                data.copy(bodyWeights = sortBodyWeights(data.bodyWeights + entry))
+            }
+        }
+    }
+
+    // endregion
+
     // region Rest presets
 
     fun addPreset(seconds: Int, label: String = "") {
@@ -279,6 +315,8 @@ class WorkoutRepository(
 
         private fun sortPresets(presets: List<RestPreset>): List<RestPreset> = presets.sortedBy { it.seconds }
 
+        private fun sortBodyWeights(weights: List<BodyWeightEntry>): List<BodyWeightEntry> = weights.sortedBy { it.date }
+
         /** Drops anything that would break the app (orphan entries, empty sets, duplicates...). */
         internal fun sanitize(data: AppData): AppData {
             val exercises = data.exercises
@@ -290,6 +328,12 @@ class WorkoutRepository(
                 .map { it.copy(sets = cleanSets(it.sets)) }
                 .filter { it.sets.isNotEmpty() }
                 .distinctBy { it.id }
+            // One weight per day: the last one noted wins.
+            val bodyWeights = data.bodyWeights
+                .filter { it.weight in BODY_WEIGHT_RANGE }
+                .map { it.copy(weight = roundBodyWeight(it.weight)) }
+                .sortedWith(compareBy<BodyWeightEntry> { it.date }.thenByDescending { it.createdAt })
+                .distinctBy { it.date }
             val presets = data.restPresets
                 .filter { it.seconds in MIN_REST..MAX_REST }
                 .distinctBy { it.id }
@@ -299,6 +343,7 @@ class WorkoutRepository(
                 schemaVersion = AppData.CURRENT_SCHEMA_VERSION,
                 exercises = exercises,
                 entries = entries,
+                bodyWeights = bodyWeights,
                 restPresets = sortPresets(presets),
                 settings = settings,
             )

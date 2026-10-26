@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.MonitorWeight
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -56,12 +57,14 @@ import com.lehyanflouriot.muscuapp.ui.rest.displayed
 import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsRoute
 import com.lehyanflouriot.muscuapp.ui.week.WeekRoute
+import com.lehyanflouriot.muscuapp.ui.weight.WeightRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 
 object Routes {
     const val WEEK = "week"
     const val PROGRESS = "progress"
+    const val WEIGHT = "weight"
     const val REST = "rest"
     const val SETTINGS = "settings"
     const val EXERCISE = "exercise/{id}"
@@ -74,6 +77,7 @@ private class Tab(val route: String, @param:StringRes val label: Int, val icon: 
 private val tabs = listOf(
     Tab(Routes.WEEK, R.string.tab_week, Icons.Rounded.FitnessCenter),
     Tab(Routes.PROGRESS, R.string.tab_progress, Icons.Rounded.Insights),
+    Tab(Routes.WEIGHT, R.string.tab_weight, Icons.Rounded.MonitorWeight),
     Tab(Routes.REST, R.string.tab_rest, Icons.Rounded.Timer),
 )
 
@@ -154,6 +158,9 @@ fun MuscuApp(
                         data = data,
                         onOpenExercise = { navController.navigate(Routes.exercise(it)) },
                     )
+                }
+                composable(Routes.WEIGHT) {
+                    WeightRoute(data = data, repository = repository)
                 }
                 composable(Routes.REST) {
                     RestRoute(presets = data.restPresets, repository = repository, timer = timer)

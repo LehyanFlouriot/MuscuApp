@@ -1,7 +1,9 @@
 package com.lehyanflouriot.muscuapp.ui
 
+import com.lehyanflouriot.muscuapp.core.domain.roundBodyWeight
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.BodyWeightEntry
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
@@ -50,6 +52,19 @@ object SampleData {
         return AppData.initial().copy(
             exercises = listOf(bench, flyes, pullUps, row, squat, plank),
             entries = entries,
+            bodyWeights = bodyWeights(today),
         )
+    }
+
+    /** Three months of weigh-ins during a bulk: about +0.25 kg a week, with daily ups and downs. */
+    private fun bodyWeights(today: LocalDate): List<BodyWeightEntry> {
+        val noise = listOf(0.3, -0.2, 0.4, 0.0, -0.4, 0.2, -0.1, 0.5, -0.3, 0.1)
+        return (89 downTo 0).filter { it % 6 != 4 }.map { daysAgo ->
+            val day = 89 - daysAgo
+            BodyWeightEntry(
+                date = today.minusDays(daysAgo.toLong()),
+                weight = roundBodyWeight(74.0 + day * 0.036 + noise[day % noise.size]),
+            )
+        }
     }
 }

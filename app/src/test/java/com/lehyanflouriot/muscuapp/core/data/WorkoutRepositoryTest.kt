@@ -117,6 +117,32 @@ class WorkoutRepositoryTest {
     }
 
     @Test
+    fun bodyWeightIsOnePerDay() = runTest {
+        val storage = FakeStorage()
+        val repo = repository(storage)
+        repo.saveBodyWeight(day, 78.44)
+        assertEquals(78.4, repo.data.value!!.bodyWeights.single().weight, 0.0)
+        repo.saveBodyWeight(day.minusDays(1), 78.0)
+        repo.saveBodyWeight(day, 78.6)
+        // Not a body weight: ignored.
+        repo.saveBodyWeight(day, 7.8)
+        val weights = repo.data.value!!.bodyWeights
+        assertEquals(listOf(day.minusDays(1), day), weights.map { it.date })
+        assertEquals(78.6, weights.last().weight, 0.0)
+        assertEquals(1000L, weights.last().createdAt)
+
+        val deleted = repo.deleteBodyWeight(day)!!
+        assertEquals(listOf(day.minusDays(1)), repo.data.value!!.bodyWeights.map { it.date })
+        repo.restoreBodyWeight(deleted)
+        repo.restoreBodyWeight(deleted)
+        assertEquals(weights, repo.data.value!!.bodyWeights)
+        assertNull(repo.deleteBodyWeight(day.plusDays(3)))
+
+        runCurrent()
+        assertEquals(weights, repository(FakeStorage(storage.content)).data.value!!.bodyWeights)
+    }
+
+    @Test
     fun presetsStaySortedByDuration() = runTest {
         val repo = repository(FakeStorage())
         repo.addPreset(75, " Moyen ")
@@ -162,6 +188,7 @@ class WorkoutRepositoryTest {
         val repo = repository(FakeStorage())
         val id = repo.addExercise(ExerciseDraft("Développé couché", MuscleGroup.CHEST))
         repo.saveEntry(null, id, day, listOf(WorkSet(10, 60.0)))
+        repo.saveBodyWeight(day, 81.3)
         val backup = repo.exportBackup()
         assertTrue(backup.contains("\"2026-10-26\""))
 
@@ -170,6 +197,7 @@ class WorkoutRepositoryTest {
         other.replaceAll(parsed)
         assertEquals(repo.data.value!!.exercises, other.data.value!!.exercises)
         assertEquals(repo.data.value!!.entries, other.data.value!!.entries)
+        assertEquals(repo.data.value!!.bodyWeights, other.data.value!!.bodyWeights)
 
         try {
             other.parseBackup("[1, 2, 3]")
@@ -192,6 +220,12 @@ class WorkoutRepositoryTest {
                 {"id": "2", "exerciseId": "b", "date": "2026-10-26", "sets": [{"reps": 5}]},
                 {"id": "3", "exerciseId": "a", "date": "2026-10-27", "sets": [{"reps": 0}]}
               ],
+              "bodyWeights": [
+                {"date": "2026-10-26", "weight": 78.0, "createdAt": 1},
+                {"date": "2026-10-26", "weight": 78.5, "createdAt": 2},
+                {"date": "2026-10-25", "weight": 5.0},
+                {"date": "2026-10-24", "weight": 77.96}
+              ],
               "restPresets": [{"id": "p", "seconds": 0}],
               "settings": {"weightStep": -1}
             }
@@ -203,5 +237,14 @@ class WorkoutRepositoryTest {
         assertEquals(listOf("1"), data.entries.map { it.id })
         assertTrue(data.restPresets.isEmpty())
         assertEquals(2.5, data.settings.weightStep, 0.0)
+        // One weight per day (the last noted), sorted, rounded, impossible values dropped.
+        assertEquals(listOf(LocalDate.of(2026, 10, 24), day), data.bodyWeights.map { it.date })
+        assertEquals(listOf(78.0, 78.5), data.bodyWeights.map { it.weight })
+    }
+
+    @Test
+    fun documentsWithoutBodyWeightsStillLoad() {
+        val data = WorkoutRepository.sanitize(AppJson.decode("""{"schemaVersion": 1, "exercises": []}"""))
+        assertTrue(data.bodyWeights.isEmpty())
     }
 }

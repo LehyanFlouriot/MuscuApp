@@ -48,6 +48,18 @@ class FmtTest {
     }
 
     @Test
+    fun bodyWeights() {
+        assertEquals("78,0", Fmt.bodyWeight(78.0))
+        assertEquals("78,4 kg", Fmt.bodyWeightKg(78.4).plain())
+        assertEquals("+1,2 kg", Fmt.signedKg(1.2000000001).plain())
+        assertEquals("−0,4 kg", Fmt.signedKg(-0.36).plain())
+        assertEquals("0 kg", Fmt.signedKg(0.04).plain())
+        assertEquals("+0,29 kg", Fmt.signedKg(0.2857, maxDecimals = 2).plain())
+        assertEquals("26 oct.", Fmt.dayMonth(LocalDate.of(2026, 10, 26)))
+        assertEquals("26 oct. 2025", Fmt.dayMonth(LocalDate.of(2025, 10, 26), withYear = true).plain())
+    }
+
+    @Test
     fun uniformSetsAreCompact() {
         val sets = List(4) { WorkSet(10, 60.0) }
         assertEquals("4 × 10 · 60 kg", Fmt.sets(sets, Measure.REPS, showWeight = true).plain())

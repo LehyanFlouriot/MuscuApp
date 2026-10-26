@@ -1,10 +1,10 @@
 # MuscuApp 💪
 
-Application Android pour suivre ses séances de musculation **semaine après semaine** : tes exercices, tes séries, tes répétitions (et ta charge), avec un **minuteur de repos** qui sonne même écran éteint.
+Application Android pour suivre ses séances de musculation **semaine après semaine** : tes exercices, tes séries, tes répétitions (et ta charge), **ton poids jour après jour** pour suivre ta prise de masse, et un **minuteur de repos** qui sonne même écran éteint.
 
-| Ma semaine | Saisie d'une séance | Repos | Progrès |
-|:---:|:---:|:---:|:---:|
-| ![Semaine](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/1-semaine.png) | ![Saisie](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/2-saisie.png) | ![Repos](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/3-repos.png) | ![Progrès](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/4-progres.png) |
+| Ma semaine | Saisie d'une séance | Mon poids | Repos | Progrès |
+|:---:|:---:|:---:|:---:|:---:|
+| ![Semaine](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/1-semaine.png) | ![Saisie](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/2-saisie.png) | ![Poids](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/8-poids.png) | ![Repos](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/3-repos.png) | ![Progrès](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/4-progres.png) |
 
 ## Installer l'app sur ton téléphone
 
@@ -40,6 +40,12 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - Nombre de semaines d'entraînement d'affilée 🔥 et séries par semaine.
 - Pour chaque exercice : records (charge max, 1RM estimé, max de répétitions, meilleure semaine), graphique sur 12 semaines (volume, charge max ou répétitions) et historique complet.
 
+### ⚖️ Mon poids
+- Note ton poids en deux secondes : il est pré-rempli avec ta dernière pesée, ajuste avec **− / +** (0,1 kg) ou touche le nombre pour le taper.
+- **Courbe** sur 1 mois, 3 mois, 1 an ou depuis le début, avec la **moyenne sur 7 jours** qui lisse les variations d'un jour à l'autre (eau, repas…).
+- Ton poids actuel, ce que tu as pris depuis la première pesée et ton **rythme par semaine** : de quoi suivre ta prise de masse.
+- Historique complet avec l'écart d'une pesée à l'autre ; touche une pesée pour la corriger ou la supprimer.
+
 ### ⚙️ Réglages
 - Pas du poids des boutons + / − (0,5 à 5 kg), thème clair / sombre, couleurs du fond d'écran.
 - **Sauvegarde** : export / import de toutes tes données dans un fichier (pratique pour changer de téléphone).
@@ -55,7 +61,7 @@ Projet Android natif en **Kotlin** avec **Jetpack Compose** et **Material 3**.
 ./gradlew assembleRelease     # APK signé : app/build/outputs/apk/release/app-release.apk
 ```
 
-- `app/src/main/java/.../core` : logique sans dépendance Android (modèle, statistiques, semaines, minuteur), testée par des tests unitaires.
+- `app/src/main/java/.../core` : logique sans dépendance Android (modèle, statistiques, semaines, poids, minuteur), testée par des tests unitaires.
 - `app/src/main/java/.../ui` : écrans Compose. `.../timer` : minuteur (alarme exacte + notifications).
 - À chaque push sur la branche principale, GitHub Actions construit l'APK et le publie dans les **Releases** (avec les captures d'écran).
 

@@ -43,7 +43,10 @@ fun parseNumber(text: String, allowDecimal: Boolean): Double? {
     return value
 }
 
-/** Lets the user type a value instead of tapping +/- many times. */
+/**
+ * Lets the user type a value instead of tapping +/- many times. Values outside [valueRange] are
+ * refused, with [rangeError] under the field.
+ */
 @Composable
 fun NumberInputDialog(
     title: String,
@@ -52,11 +55,14 @@ fun NumberInputDialog(
     onDismiss: () -> Unit,
     onConfirm: (Double) -> Unit,
     suffix: String? = null,
+    valueRange: ClosedFloatingPointRange<Double>? = null,
+    rangeError: String? = null,
 ) {
     var text by remember {
         mutableStateOf(TextFieldValue(initialValue, selection = TextRange(0, initialValue.length)))
     }
-    val parsed = parseNumber(text.text, allowDecimal)
+    val number = parseNumber(text.text, allowDecimal)
+    val parsed = number?.takeIf { valueRange == null || it in valueRange }
     val focusRequester = remember { FocusRequester() }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -68,6 +74,11 @@ fun NumberInputDialog(
                 singleLine = true,
                 isError = text.text.isNotBlank() && parsed == null,
                 suffix = suffix?.let { { Text(it) } },
+                supportingText = if (number != null && parsed == null && rangeError != null) {
+                    { Text(rangeError) }
+                } else {
+                    null
+                },
                 textStyle = MaterialTheme.typography.headlineSmall,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = if (allowDecimal) KeyboardType.Decimal else KeyboardType.Number,

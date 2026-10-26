@@ -8,6 +8,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.math.roundToLong
 
 /** French formatting of numbers, durations, sets and dates. */
@@ -37,6 +38,18 @@ object Fmt {
 
     /** "62,5 kg" */
     fun kg(kg: Double): String = "${weight(kg)}${NBSP}kg"
+
+    /** Body weight, always with one decimal: "78,0", "78,4". */
+    fun bodyWeight(kg: Double): String = DecimalFormat("#,##0.0", DecimalFormatSymbols(locale)).format(kg)
+
+    /** "78,4 kg" */
+    fun bodyWeightKg(kg: Double): String = "${bodyWeight(kg)}${NBSP}kg"
+
+    /** A change of weight: "+1,2 kg", "−0,4 kg", "0 kg". */
+    fun signedKg(kg: Double, maxDecimals: Int = 1): String {
+        val factor = 10.0.pow(maxDecimals)
+        return "${signed((kg * factor).roundToLong() / factor)}${NBSP}kg"
+    }
 
     /** "12 450 kg" */
     fun volume(kg: Double): String = "${number(kg.roundToLong().toDouble(), 0)}${NBSP}kg"
@@ -121,6 +134,10 @@ object Fmt {
 
     /** "lun." */
     fun dayOfWeek(date: LocalDate): String = date.format(dayOfWeekFormatter)
+
+    /** "20 oct.", or "20 oct. 2025" with the year. */
+    fun dayMonth(date: LocalDate, withYear: Boolean = false): String =
+        date.format(if (withYear) dayMonthYearFormatter else dayMonthFormatter)
 
     /** "lundi 20 octobre" */
     fun longDay(date: LocalDate): String = date.format(longDayFormatter)
