@@ -70,7 +70,6 @@
     <string name="reference_line">%1$s\u00A0: %2$s</string>
     <string name="reference_target">🎯 %1$s\u00A0: %2$s</string>
     <string name="reference_sessions">%1$s · %2$s · %3$s</string>
-    <string name="trend_reps">%1$s reps</string>
     <string name="trend_seconds">%1$s s</string>
     <string name="trend_same">Stable</string>
     <string name="trend_up_cd">En progrès</string>
@@ -299,6 +298,11 @@
         <item quantity="one">%1$d semaine d\'affilée</item>
         <item quantity="many">%1$d semaines d\'affilée</item>
         <item quantity="other">%1$d semaines d\'affilée</item>
+    </plurals>
+    <plurals name="trend_reps">
+        <item quantity="one">%1$s rep</item>
+        <item quantity="many">%1$s reps</item>
+        <item quantity="other">%1$s reps</item>
     </plurals>
     <plurals name="sets_label">
         <item quantity="one">série</item>

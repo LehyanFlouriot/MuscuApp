@@ -436,7 +436,7 @@ private fun DetailedSets(
                 text = stringResource(R.string.log_set_header),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.width(48.dp),
+                modifier = Modifier.width(44.dp),
             )
             Text(
                 text = repsName,
@@ -446,6 +446,7 @@ private fun DetailedSets(
                 modifier = Modifier.weight(1f),
             )
             if (exercise.usesWeight) {
+                Spacer(Modifier.width(10.dp))
                 Text(
                     text = stringResource(R.string.field_weight_kg),
                     style = MaterialTheme.typography.labelLarge,
@@ -461,7 +462,7 @@ private fun DetailedSets(
                 Text(
                     text = (index + 1).toString(),
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.width(48.dp),
+                    modifier = Modifier.width(44.dp),
                 )
                 CompactStepper(
                     value = set.reps.toString(),
@@ -473,6 +474,7 @@ private fun DetailedSets(
                     modifier = Modifier.weight(1f),
                 )
                 if (exercise.usesWeight) {
+                    Spacer(Modifier.width(10.dp))
                     CompactStepper(
                         value = Fmt.weight(set.weight),
                         description = stringResource(R.string.log_set_value, weightName, index + 1),

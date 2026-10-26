@@ -15,9 +15,11 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -67,6 +69,7 @@ fun MiniTimerBar(
                     drawStopIndicator = {},
                 )
             }
+            val buttonColors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -98,7 +101,7 @@ fun MiniTimerBar(
                 }
                 when (state) {
                     is TimerState.Running -> {
-                        TextButton(onClick = onAdd) { Text(stringResource(R.string.rest_plus_15)) }
+                        TextButton(onClick = onAdd, colors = buttonColors) { Text(stringResource(R.string.rest_plus_15)) }
                         IconButton(onClick = onToggle) {
                             Icon(Icons.Rounded.Pause, contentDescription = stringResource(R.string.rest_pause))
                         }
@@ -106,7 +109,7 @@ fun MiniTimerBar(
                     is TimerState.Paused -> IconButton(onClick = onToggle) {
                         Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.rest_resume))
                     }
-                    else -> TextButton(onClick = onRestart) { Text(stringResource(R.string.mini_restart)) }
+                    else -> TextButton(onClick = onRestart, colors = buttonColors) { Text(stringResource(R.string.mini_restart)) }
                 }
                 IconButton(onClick = onStop) {
                     Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.rest_stop))

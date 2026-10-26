@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingFlat
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -24,6 +25,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +40,7 @@ import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
+import kotlin.math.abs
 
 /** Snackbars of the whole app go through this host. */
 val LocalSnackbarHostState = staticCompositionLocalOf { SnackbarHostState() }
@@ -136,7 +139,7 @@ fun TrendBadge(progress: Progress, measure: Measure, modifier: Modifier = Modifi
         progress.trend == Trend.SAME -> stringResource(R.string.trend_same)
         progress.metric == ProgressMetric.VOLUME && progress.ratio != null -> Fmt.signedPercent(progress.ratio!!)
         measure == Measure.SECONDS -> stringResource(R.string.trend_seconds, Fmt.signed(progress.delta))
-        else -> stringResource(R.string.trend_reps, Fmt.signed(progress.delta))
+        else -> pluralStringResource(R.plurals.trend_reps, abs(progress.delta).toInt(), Fmt.signed(progress.delta))
     }
     Surface(shape = CircleShape, color = container, contentColor = content, modifier = modifier) {
         Row(
@@ -164,7 +167,7 @@ fun StatTile(value: String, label: String, modifier: Modifier = Modifier) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = LocalContentColor.current.copy(alpha = 0.8f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

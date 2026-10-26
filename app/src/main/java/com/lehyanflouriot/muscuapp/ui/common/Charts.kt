@@ -52,6 +52,7 @@ fun WeeklyBarChart(
         fontWeight = FontWeight.Bold,
     )
     val baselineColor = MaterialTheme.colorScheme.outlineVariant
+    val valueBackground = MaterialTheme.colorScheme.surfaceContainerHighest
     val dimBarColor = barColor.copy(alpha = 0.35f)
     val maxValue = max(points.maxOf { it.value }, 1e-9)
 
@@ -107,16 +108,26 @@ fun WeeklyBarChart(
                     ),
                 )
             }
-            if (index == selected) {
-                val layout = textMeasurer.measure(formatValue(point.value), style = valueStyle)
-                drawText(
-                    textLayoutResult = layout,
-                    topLeft = Offset(
-                        (centerX - layout.size.width / 2f).coerceAtMost(size.width - layout.size.width).coerceAtLeast(0f),
-                        (baseline - height - layout.size.height - 4.dp.toPx()).coerceAtLeast(0f),
-                    ),
-                )
-            }
+        }
+
+        // The value of the selected week, drawn last so that no bar covers it.
+        points.getOrNull(selected)?.let { point ->
+            val centerX = slot * selected + slot / 2
+            val height = if (point.value > 0) max((point.value / maxValue * chartHeight).toFloat(), 4.dp.toPx()) else 0f
+            val layout = textMeasurer.measure(formatValue(point.value), style = valueStyle)
+            val padX = 6.dp.toPx()
+            val padY = 2.dp.toPx()
+            val boxWidth = layout.size.width + padX * 2
+            val boxHeight = layout.size.height + padY * 2
+            val left = (centerX - boxWidth / 2f).coerceAtMost(size.width - boxWidth).coerceAtLeast(0f)
+            val top = (baseline - height - boxHeight - 4.dp.toPx()).coerceAtLeast(0f)
+            drawRoundRect(
+                color = valueBackground,
+                topLeft = Offset(left, top),
+                size = Size(boxWidth, boxHeight),
+                cornerRadius = CornerRadius(boxHeight / 2, boxHeight / 2),
+            )
+            drawText(textLayoutResult = layout, topLeft = Offset(left + padX, top + padY))
         }
     }
 }
