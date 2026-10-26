@@ -1,0 +1,258 @@
+package com.lehyanflouriot.muscuapp.ui
+
+import android.app.Application
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onRoot
+import com.github.takahirom.roborazzi.captureRoboImage
+import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
+import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
+import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
+import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
+import com.lehyanflouriot.muscuapp.core.domain.history
+import com.lehyanflouriot.muscuapp.core.domain.lastEntry
+import com.lehyanflouriot.muscuapp.core.domain.metricValue
+import com.lehyanflouriot.muscuapp.core.domain.records
+import com.lehyanflouriot.muscuapp.core.domain.weekStreak
+import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
+import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.Measure
+import com.lehyanflouriot.muscuapp.core.model.WorkSet
+import com.lehyanflouriot.muscuapp.core.timer.TimerState
+import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailScreen
+import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseEditorForm
+import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseFormState
+import com.lehyanflouriot.muscuapp.ui.log.LogEntryForm
+import com.lehyanflouriot.muscuapp.ui.log.LogFormState
+import com.lehyanflouriot.muscuapp.ui.progress.ProgressScreen
+import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
+import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
+import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
+import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import java.time.LocalDate
+
+/**
+ * Renders the main screens with sample data into app/build/outputs/roborazzi, so that the
+ * design can be reviewed without a device (the CI publishes these images).
+ */
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi", application = Application::class)
+class ScreenshotTest {
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    // A Wednesday.
+    private val today = LocalDate.of(2026, 10, 28)
+    private val data = SampleData.build(today)
+    private val now = 1_000_000L
+
+    private fun capture(name: String, darkTheme: Boolean = false, content: @Composable () -> Unit) {
+        composeRule.setContent {
+            MuscuTheme(darkTheme = darkTheme) {
+                Surface(color = MaterialTheme.colorScheme.background) { content() }
+            }
+        }
+        composeRule.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
+    }
+
+    @Composable
+    private fun Week(appData: AppData, timerState: TimerState = TimerState.Idle) {
+        MuscuScaffold(
+            currentRoute = Routes.WEEK,
+            timerState = timerState,
+            now = now,
+            onNavigate = {},
+            onTimerToggle = {},
+            onTimerAdd = {},
+            onTimerRestart = {},
+            onTimerStop = {},
+        ) { padding ->
+            Surface(
+                Modifier
+                    .padding(padding)
+                    .consumeWindowInsets(padding),
+            ) {
+                WeekScreen(
+                    overview = buildWeekOverview(appData, today),
+                    today = today,
+                    hasAnyEntry = appData.entries.isNotEmpty(),
+                    suggestions = ExerciseCatalog.popular,
+                    onPreviousWeek = {},
+                    onNextWeek = {},
+                    onThisWeek = {},
+                    onLog = {},
+                    onEditEntry = {},
+                    onOpenExercise = {},
+                    onAddExercise = {},
+                    onQuickAdd = {},
+                    onOpenSettings = {},
+                )
+            }
+        }
+    }
+
+    @Test
+    fun welcome() = capture("0-bienvenue") { Week(AppData.initial()) }
+
+    @Test
+    fun week() = capture("1-semaine") {
+        Week(data, TimerState.Running(endAt = now + 72_000, total = 90_000, label = "Développé couché"))
+    }
+
+    @Test
+    fun weekDark() = capture("1-semaine-sombre", darkTheme = true) { Week(data) }
+
+    @Test
+    fun logEntry() = capture("2-saisie") {
+        val state = remember { LogFormState(today, List(4) { WorkSet(10, 77.5) }, "", Measure.REPS) }
+        LogEntryForm(
+            exercise = SampleData.bench,
+            state = state,
+            today = today,
+            isEdit = false,
+            previous = lastEntry(data.entriesOf(SampleData.bench.id)),
+            weightStep = 2.5,
+            onSave = {},
+            restButtonText = "Repos 2:00",
+            onRestClick = {},
+        )
+    }
+
+    @Test
+    fun logEntryDetailed() = capture("2-saisie-detaillee", darkTheme = true) {
+        val sets = listOf(WorkSet(10, 77.5), WorkSet(9, 77.5), WorkSet(8, 80.0))
+        val state = remember { LogFormState(today, sets, "Dernière série difficile", Measure.REPS) }
+        LogEntryForm(
+            exercise = SampleData.bench,
+            state = state,
+            today = today,
+            isEdit = true,
+            previous = lastEntry(data.entriesOf(SampleData.bench.id)),
+            weightStep = 2.5,
+            onSave = {},
+            restButtonText = "1:12",
+            onRestClick = {},
+            onDelete = {},
+        )
+    }
+
+    @Test
+    fun restRunning() = capture("3-repos") {
+        RestScreen(
+            state = TimerState.Running(endAt = now + 72_000, total = 90_000, label = "Développé couché"),
+            now = now,
+            idleDurationMs = 90_000,
+            presets = data.restPresets,
+            notificationsEnabled = true,
+            onToggle = {},
+            onAdjust = {},
+            onStop = {},
+            onRestart = {},
+            onStartPreset = {},
+            onAddPreset = {},
+            onEditPreset = {},
+            onEnableNotifications = {},
+            onEditIdleDuration = {},
+        )
+    }
+
+    @Test
+    fun restFinished() = capture("3-repos-termine", darkTheme = true) {
+        RestScreen(
+            state = TimerState.Finished(finishedAt = now - 23_000, total = 120_000, label = "Squat"),
+            now = now,
+            idleDurationMs = 90_000,
+            presets = data.restPresets,
+            notificationsEnabled = false,
+            onToggle = {},
+            onAdjust = {},
+            onStop = {},
+            onRestart = {},
+            onStartPreset = {},
+            onAddPreset = {},
+            onEditPreset = {},
+            onEnableNotifications = {},
+            onEditIdleDuration = {},
+        )
+    }
+
+    @Test
+    fun progress() = capture("4-progres") {
+        ProgressScreen(
+            items = buildProgressItems(data, today),
+            activity = weeklySeries(data.entries, today, 12) { metricValue(it, ChartMetric.SETS) },
+            streak = weekStreak(data.entries, today),
+            trainedThisWeek = true,
+            today = today,
+            onOpenExercise = {},
+        )
+    }
+
+    @Test
+    fun exerciseDetail() = capture("5-exercice") {
+        val exercise = SampleData.bench
+        val entries = data.entriesOf(exercise.id)
+        ExerciseDetailScreen(
+            exercise = exercise,
+            weeks = history(entries),
+            records = records(exercise, entries),
+            metric = ChartMetric.VOLUME,
+            series = weeklySeries(entries, today, 12) { metricValue(it, ChartMetric.VOLUME) },
+            today = today,
+            restLabel = "Repos 2:00",
+            onMetricChange = {},
+            onBack = {},
+            onEdit = {},
+            onToggleArchive = {},
+            onDelete = {},
+            onLog = {},
+            onStartRest = {},
+            onEditEntry = {},
+        )
+    }
+
+    @Test
+    fun exerciseEditor() = capture("6-nouvel-exercice") {
+        val state = remember { ExerciseFormState(null).apply { name = "Dév" } }
+        ExerciseEditorForm(
+            state = state,
+            isNew = true,
+            existingNames = data.exercises.map { it.name },
+            restPresets = data.restPresets,
+            onCancel = {},
+            onSave = {},
+        )
+    }
+
+    @Test
+    fun settings() = capture("7-reglages") {
+        SettingsScreen(
+            settings = data.settings,
+            exerciseCount = data.exercises.size,
+            entryCount = data.entries.size,
+            versionName = "1.0.0",
+            dynamicColorAvailable = true,
+            onBack = {},
+            onWeightStepChange = {},
+            onThemeChange = {},
+            onDynamicColorChange = {},
+            onOpenNotifications = {},
+            onOpenAlertSettings = {},
+            onExport = {},
+            onImport = {},
+        )
+    }
+}

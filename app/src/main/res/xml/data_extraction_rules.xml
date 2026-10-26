@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Everything is backed up (exercises, sessions, settings) except the state of the rest timer. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="rest_timer.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="rest_timer.xml" />
+    </device-transfer>
+</data-extraction-rules>

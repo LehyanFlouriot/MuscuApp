@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="fr">
+    <string name="app_name" translatable="false">MuscuApp</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Retour</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_done">Terminé</string>
+    <string name="action_edit">Modifier</string>
+    <string name="action_hide">Masquer</string>
+    <string name="action_ok">OK</string>
+    <string name="action_save">Enregistrer</string>
+    <string name="action_show">Afficher</string>
+    <string name="action_undo">Annuler</string>
+
+    <!-- Tabs -->
+    <string name="tab_week">Semaine</string>
+    <string name="tab_progress">Progrès</string>
+    <string name="tab_rest">Repos</string>
+
+    <!-- Units and fields -->
+    <string name="unit_kg">kg</string>
+    <string name="unit_seconds">s</string>
+    <string name="seconds_total">%1$s s</string>
+    <string name="field_sets">Séries</string>
+    <string name="field_reps">Répétitions</string>
+    <string name="field_seconds">Secondes</string>
+    <string name="field_minutes">Minutes</string>
+    <string name="field_weight">Poids</string>
+    <string name="field_weight_kg">Poids (kg)</string>
+
+    <!-- Muscle groups -->
+    <string name="group_chest">Pectoraux</string>
+    <string name="group_back">Dos</string>
+    <string name="group_shoulders">Épaules</string>
+    <string name="group_biceps">Biceps</string>
+    <string name="group_triceps">Triceps</string>
+    <string name="group_legs">Jambes</string>
+    <string name="group_glutes">Fessiers</string>
+    <string name="group_abs">Abdos</string>
+    <string name="group_cardio">Cardio</string>
+    <string name="group_other">Autre</string>
+
+    <!-- Dates and weeks -->
+    <string name="date_today">Aujourd\'hui</string>
+    <string name="date_yesterday">Hier</string>
+    <string name="date_other">Autre jour</string>
+    <string name="week_this">Cette semaine</string>
+    <string name="week_last">Semaine dernière</string>
+    <string name="week_number">Semaine %1$d</string>
+    <string name="reference_last_week">Sem. dernière</string>
+    <string name="reference_weeks_ago">Il y a %1$d sem.</string>
+
+    <!-- Week screen -->
+    <string name="week_screen_title">Ma semaine</string>
+    <string name="week_previous">Semaine précédente</string>
+    <string name="week_next">Semaine suivante</string>
+    <string name="week_back_to_current">Revenir à cette semaine</string>
+    <string name="week_add_exercise">Exercice</string>
+    <string name="week_empty_current">Rien de noté pour l\'instant cette semaine. C\'est parti\u00A0!</string>
+    <string name="week_empty_past">Aucune séance notée cette semaine-là.</string>
+    <string name="week_volume">Volume soulevé\u00A0: %1$s</string>
+    <string name="week_previous_summary">Semaine précédente\u00A0: %1$s · %2$s</string>
+    <string name="week_tip">Après ton exercice, touche + pour noter tes séries, tes répétitions et ta charge.</string>
+    <string name="week_not_done">Pas encore fait cette semaine</string>
+    <string name="week_done_cd">Fait cette semaine</string>
+    <string name="week_log_cd">Noter une séance de %1$s</string>
+    <string name="week_edit_entry">Modifier cette séance</string>
+    <string name="reference_line">%1$s\u00A0: %2$s</string>
+    <string name="reference_target">🎯 %1$s\u00A0: %2$s</string>
+    <string name="reference_sessions">%1$s · %2$s · %3$s</string>
+    <string name="trend_reps">%1$s reps</string>
+    <string name="trend_seconds">%1$s s</string>
+    <string name="trend_same">Stable</string>
+    <string name="trend_up_cd">En progrès</string>
+    <string name="trend_down_cd">En baisse</string>
+    <string name="trend_same_cd">Stable</string>
+    <string name="exercise_added">«\u00A0%1$s\u00A0» ajouté ✓</string>
+
+    <!-- Welcome -->
+    <string name="welcome_title">Bienvenue sur MuscuApp 💪</string>
+    <string name="welcome_text">Ajoute les exercices que tu fais en salle. Chaque semaine, note tes séries et tes répétitions\u00A0: MuscuApp te montre ta progression.</string>
+    <string name="welcome_add">Ajouter un exercice</string>
+    <string name="welcome_quick_add">Ajout rapide</string>
+    <string name="welcome_quick_add_hint">Touche un exercice pour l\'ajouter directement.</string>
+
+    <!-- Log sheet -->
+    <string name="log_save">Enregistrer</string>
+    <string name="log_update">Mettre à jour</string>
+    <string name="log_saved">Séance enregistrée ✓</string>
+    <string name="log_updated">Séance mise à jour ✓</string>
+    <string name="log_deleted">Séance supprimée</string>
+    <string name="log_delete">Supprimer cette séance</string>
+    <string name="log_detailed_mode">Séries différentes\u00A0? Détailler chaque série</string>
+    <string name="log_simple_mode">Revenir au mode simple</string>
+    <string name="log_set_header">Série</string>
+    <string name="log_set_value">%1$s, série %2$d</string>
+    <string name="log_add_set">Ajouter une série</string>
+    <string name="log_remove_set">Supprimer la série %1$d</string>
+    <string name="log_note">Note (facultatif)</string>
+    <string name="log_note_placeholder">Sensations, difficulté…</string>
+    <string name="log_first_time_hint">Astuce\u00A0: touche un nombre pour le taper au clavier, ou maintiens + pour aller plus vite.</string>
+    <string name="log_total">Total\u00A0: %1$s</string>
+    <string name="log_previous">Dernière fois (%1$s)\u00A0: %2$s</string>
+    <string name="log_rest_button">Repos %1$s</string>
+    <string name="cd_decrease">%1$s\u00A0: diminuer</string>
+    <string name="cd_increase">%1$s\u00A0: augmenter</string>
+    <string name="cd_type_value">Saisir la valeur</string>
+
+    <!-- Exercise editor -->
+    <string name="editor_new_title">Nouvel exercice</string>
+    <string name="editor_edit_title">Modifier l\'exercice</string>
+    <string name="editor_name">Nom de l\'exercice</string>
+    <string name="editor_name_placeholder">Ex.\u00A0: Développé couché</string>
+    <string name="editor_duplicate">Cet exercice existe déjà</string>
+    <string name="editor_suggestions">Suggestions</string>
+    <string name="editor_group">Groupe musculaire</string>
+    <string name="editor_measure">Je compte</string>
+    <string name="editor_measure_reps">Des répétitions</string>
+    <string name="editor_measure_seconds">Des secondes</string>
+    <string name="editor_weight">Avec charge (kg)</string>
+    <string name="editor_weight_hint">Désactive pour les exercices au poids du corps.</string>
+    <string name="editor_rest">Repos entre les séries</string>
+    <string name="editor_rest_none">Aucun</string>
+    <string name="editor_rest_other">Autre…</string>
+    <string name="editor_notes">Notes (facultatif)</string>
+    <string name="editor_notes_placeholder">Réglages de la machine, consignes…</string>
+    <string name="editor_create">Créer</string>
+
+    <!-- Exercise detail -->
+    <string name="detail_edit">Modifier l\'exercice</string>
+    <string name="detail_more">Plus d\'options</string>
+    <string name="detail_archive">Archiver</string>
+    <string name="detail_unarchive">Réactiver</string>
+    <string name="detail_archived">Exercice archivé\u00A0: il n\'apparaît plus dans ta semaine.</string>
+    <string name="detail_archived_message">Exercice archivé</string>
+    <string name="detail_unarchived_message">Exercice réactivé</string>
+    <string name="detail_delete">Supprimer</string>
+    <string name="detail_delete_title">Supprimer «\u00A0%1$s\u00A0»\u00A0?</string>
+    <string name="detail_delete_text">L\'exercice et tout son historique seront supprimés.</string>
+    <string name="detail_deleted_message">«\u00A0%1$s\u00A0» supprimé</string>
+    <string name="detail_log">Noter une séance</string>
+    <string name="detail_empty">Aucune séance notée pour l\'instant. Touche «\u00A0Noter une séance\u00A0» après ton exercice.</string>
+    <string name="detail_history">Historique</string>
+    <string name="detail_rest_chip">Repos %1$s</string>
+    <string name="detail_type_weighted">Avec charge</string>
+    <string name="detail_type_bodyweight">Poids du corps</string>
+    <string name="detail_type_timed">En durée</string>
+    <string name="record_title">Mes records</string>
+    <string name="record_heaviest">Charge max</string>
+    <string name="record_heaviest_caption">× %1$d · %2$s</string>
+    <string name="record_one_rep_max">1RM estimé</string>
+    <string name="record_one_rep_max_caption">Charge max sur 1 répétition</string>
+    <string name="record_most_reps">Max de reps</string>
+    <string name="record_longest">Plus longue série</string>
+    <string name="record_at_weight">à %1$s</string>
+    <string name="record_best_week">Meilleure semaine</string>
+    <string name="record_sessions">Séances</string>
+    <string name="record_sessions_caption">au total</string>
+    <string name="chart_title">Progression par semaine</string>
+    <string name="chart_hint">Touche une barre pour voir sa valeur.</string>
+    <string name="chart_description">Graphique\u00A0: %1$s par semaine</string>
+    <string name="metric_volume">Volume</string>
+    <string name="metric_max_weight">Charge max</string>
+    <string name="metric_reps">Reps</string>
+    <string name="metric_seconds">Secondes</string>
+    <string name="metric_sets">Séries</string>
+
+    <!-- Progress -->
+    <string name="progress_title">Progrès</string>
+    <string name="progress_empty_title">Pas encore de statistiques</string>
+    <string name="progress_empty_text">Note ta première séance dans l\'onglet Semaine\u00A0: ta progression apparaîtra ici.</string>
+    <string name="progress_activity_title">Séries par semaine</string>
+    <string name="progress_activity_average">Moyenne\u00A0: %1$s séries par semaine d\'entraînement</string>
+    <string name="progress_exercises">Mes exercices</string>
+    <string name="progress_archived">Archivés (%1$d)</string>
+    <string name="progress_record_weight">Record\u00A0: %1$s × %2$s</string>
+    <string name="progress_record_reps">Record\u00A0: %1$s</string>
+    <string name="progress_no_record">Pas encore de record</string>
+    <string name="progress_last_session">Dernière séance\u00A0: %1$s</string>
+    <string name="progress_never">Pas encore de séance</string>
+    <string name="streak_none">Lance ta série</string>
+    <string name="streak_start">Entraîne-toi cette semaine pour démarrer une série de semaines actives.</string>
+    <string name="streak_keep_going">Continue comme ça\u00A0!</string>
+    <string name="streak_dont_break">Note une séance cette semaine pour garder ta série\u00A0!</string>
+
+    <!-- Rest timer -->
+    <string name="rest_title">Repos</string>
+    <string name="rest_ready">Prêt</string>
+    <string name="rest_of_total">sur %1$s</string>
+    <string name="rest_paused">En pause</string>
+    <string name="rest_done">Repos terminé\u00A0!</string>
+    <string name="rest_overtime">depuis %1$s</string>
+    <string name="rest_start">Démarrer</string>
+    <string name="rest_pause">Pause</string>
+    <string name="rest_resume">Reprendre</string>
+    <string name="rest_stop">Arrêter</string>
+    <string name="rest_finish">Terminer</string>
+    <string name="rest_restart">Relancer %1$s</string>
+    <string name="rest_minus_15">−15 s</string>
+    <string name="rest_plus_15">+15 s</string>
+    <string name="rest_dial_action">Démarrer ou mettre en pause</string>
+    <string name="rest_change_duration">Changer la durée</string>
+    <string name="rest_presets_title">Mes temps de repos</string>
+    <string name="rest_presets_hint">Touche un temps pour lancer le repos aussitôt.</string>
+    <string name="rest_presets_edit_hint">Touche un temps de repos pour le modifier ou le supprimer.</string>
+    <string name="rest_preset_add">Ajouter</string>
+    <string name="rest_preset_edit">Modifier</string>
+    <string name="rest_tip">Le minuteur continue même écran éteint ou app fermée\u00A0: une notification et une vibration te préviennent à la fin du repos.</string>
+    <string name="rest_notifications_off">Notifications désactivées\u00A0: tu ne seras pas prévenu quand l\'écran est éteint.</string>
+    <string name="rest_notifications_enable">Activer</string>
+    <string name="preset_new_title">Nouveau temps de repos</string>
+    <string name="preset_edit_title">Modifier le temps de repos</string>
+    <string name="preset_label_field">Nom (facultatif)</string>
+    <string name="preset_label_placeholder">Ex.\u00A0: Force</string>
+    <string name="preset_delete">Supprimer ce temps de repos</string>
+    <string name="mini_running">Repos · %1$s</string>
+    <string name="mini_paused">En pause · %1$s</string>
+    <string name="mini_done">Repos terminé\u00A0!</string>
+    <string name="mini_restart">Relancer</string>
+
+    <!-- Notifications -->
+    <string name="channel_running_name">Minuteur de repos</string>
+    <string name="channel_running_description">Affiche le décompte du repos en cours.</string>
+    <string name="channel_done_name">Fin du repos</string>
+    <string name="channel_done_description">Sonne et vibre quand le repos est terminé.</string>
+    <string name="notif_running_title">Repos en cours</string>
+    <string name="notif_running_text">La prochaine série commence à la fin du décompte</string>
+    <string name="notif_paused_title">Repos en pause</string>
+    <string name="notif_paused_text">Encore %1$s de repos</string>
+    <string name="notif_done_title">Repos terminé\u00A0!</string>
+    <string name="notif_done_text">C\'est reparti pour une série 💪</string>
+    <string name="notif_done_text_label">%1$s\u00A0: c\'est reparti 💪</string>
+    <string name="notif_action_add">+30 s</string>
+    <string name="notif_action_pause">Pause</string>
+    <string name="notif_action_resume">Reprendre</string>
+    <string name="notif_action_stop">Arrêter</string>
+    <string name="notif_action_restart">Relancer %1$s</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Réglages</string>
+    <string name="settings_logging">Saisie</string>
+    <string name="settings_weight_step">Pas du poids</string>
+    <string name="settings_weight_step_hint">De combien les boutons + et − changent la charge.</string>
+    <string name="settings_appearance">Apparence</string>
+    <string name="settings_theme">Thème</string>
+    <string name="settings_theme_system">Système</string>
+    <string name="settings_theme_light">Clair</string>
+    <string name="settings_theme_dark">Sombre</string>
+    <string name="settings_dynamic_color">Couleurs du fond d\'écran</string>
+    <string name="settings_dynamic_color_hint">Adapte les couleurs de l\'app à ton fond d\'écran.</string>
+    <string name="settings_timer">Minuteur de repos</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_hint">Autoriser l\'alerte de fin de repos</string>
+    <string name="settings_alert">Son et vibration de fin de repos</string>
+    <string name="settings_alert_hint">Choisir la sonnerie, la vibration, l\'affichage…</string>
+    <string name="settings_data">Mes données</string>
+    <string name="settings_data_summary">%1$s · %2$s enregistrées</string>
+    <string name="settings_export">Exporter une sauvegarde</string>
+    <string name="settings_export_hint">Crée un fichier avec tous tes exercices et tes séances.</string>
+    <string name="settings_import">Restaurer une sauvegarde</string>
+    <string name="settings_import_hint">Remplace les données de l\'app par celles d\'un fichier.</string>
+    <string name="settings_data_hint">Tes données restent sur ton téléphone. Exporte une sauvegarde de temps en temps pour ne rien perdre (changement de téléphone, réinstallation…).</string>
+    <string name="settings_about">À propos</string>
+    <string name="settings_version">MuscuApp %1$s</string>
+    <string name="settings_about_text">Suis tes exercices, tes séries et tes répétitions semaine après semaine.</string>
+
+    <!-- Backups -->
+    <string name="backup_export_done">Sauvegarde exportée ✓</string>
+    <string name="backup_export_failed">Impossible d\'écrire le fichier de sauvegarde</string>
+    <string name="backup_import_invalid">Ce fichier n\'est pas une sauvegarde MuscuApp</string>
+    <string name="backup_import_title">Restaurer la sauvegarde\u00A0?</string>
+    <string name="backup_import_text">Elle contient %1$s et %2$s. Tes données actuelles seront remplacées.</string>
+    <string name="backup_import_confirm">Restaurer</string>
+    <string name="backup_import_done">Sauvegarde restaurée ✓</string>
+
+    <plurals name="sets_count">
+        <item quantity="one">%1$s série</item>
+        <item quantity="many">%1$s séries</item>
+        <item quantity="other">%1$s séries</item>
+    </plurals>
+    <plurals name="reps_count">
+        <item quantity="one">%1$s rep</item>
+        <item quantity="many">%1$s reps</item>
+        <item quantity="other">%1$s reps</item>
+    </plurals>
+    <plurals name="sessions_count">
+        <item quantity="one">%1$d séance</item>
+        <item quantity="many">%1$d séances</item>
+        <item quantity="other">%1$d séances</item>
+    </plurals>
+    <plurals name="exercises_count">
+        <item quantity="one">%1$d exercice</item>
+        <item quantity="many">%1$d exercices</item>
+        <item quantity="other">%1$d exercices</item>
+    </plurals>
+    <plurals name="streak_weeks">
+        <item quantity="one">%1$d semaine d\'affilée</item>
+        <item quantity="many">%1$d semaines d\'affilée</item>
+        <item quantity="other">%1$d semaines d\'affilée</item>
+    </plurals>
+    <plurals name="sets_label">
+        <item quantity="one">série</item>
+        <item quantity="many">séries</item>
+        <item quantity="other">séries</item>
+    </plurals>
+    <plurals name="reps_label">
+        <item quantity="one">rep</item>
+        <item quantity="many">reps</item>
+        <item quantity="other">reps</item>
+    </plurals>
+    <plurals name="sessions_label">
+        <item quantity="one">séance</item>
+        <item quantity="many">séances</item>
+        <item quantity="other">séances</item>
+    </plurals>
+</resources>
