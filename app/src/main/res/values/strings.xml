@@ -304,17 +304,17 @@
         <item quantity="many">%1$s reps</item>
         <item quantity="other">%1$s reps</item>
     </plurals>
-    <plurals name="sets_label">
+    <plurals name="sets_label" tools:ignore="ImpliedQuantity">
         <item quantity="one">série</item>
         <item quantity="many">séries</item>
         <item quantity="other">séries</item>
     </plurals>
-    <plurals name="reps_label">
+    <plurals name="reps_label" tools:ignore="ImpliedQuantity">
         <item quantity="one">rep</item>
         <item quantity="many">reps</item>
         <item quantity="other">reps</item>
     </plurals>
-    <plurals name="sessions_label">
+    <plurals name="sessions_label" tools:ignore="ImpliedQuantity">
         <item quantity="one">séance</item>
         <item quantity="many">séances</item>
         <item quantity="other">séances</item>
