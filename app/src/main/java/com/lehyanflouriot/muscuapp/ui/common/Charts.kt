@@ -68,7 +68,7 @@ fun WeeklyBarChart(
                 }
             },
     ) {
-        val topSpace = 26.dp.toPx()
+        val topSpace = 30.dp.toPx()
         val bottomSpace = 22.dp.toPx()
         val chartHeight = size.height - topSpace - bottomSpace
         val slot = size.width / points.size
@@ -76,6 +76,8 @@ fun WeeklyBarChart(
         val radius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
         val baseline = topSpace + chartHeight
         val labelEvery = if (points.size > 8) 2 else 1
+        fun barHeight(value: Double): Float =
+            if (value > 0) max((value / maxValue * chartHeight).toFloat(), 4.dp.toPx()) else 0f
 
         drawLine(
             color = baselineColor,
@@ -85,7 +87,7 @@ fun WeeklyBarChart(
         )
         points.forEachIndexed { index, point ->
             val centerX = slot * index + slot / 2
-            val height = if (point.value > 0) max((point.value / maxValue * chartHeight).toFloat(), 4.dp.toPx()) else 0f
+            val height = barHeight(point.value)
             if (height > 0f) {
                 drawRoundRect(
                     color = if (index == selected) barColor else dimBarColor,
@@ -113,14 +115,20 @@ fun WeeklyBarChart(
         // The value of the selected week, drawn last so that no bar covers it.
         points.getOrNull(selected)?.let { point ->
             val centerX = slot * selected + slot / 2
-            val height = if (point.value > 0) max((point.value / maxValue * chartHeight).toFloat(), 4.dp.toPx()) else 0f
             val layout = textMeasurer.measure(formatValue(point.value), style = valueStyle)
             val padX = 6.dp.toPx()
             val padY = 2.dp.toPx()
             val boxWidth = layout.size.width + padX * 2
             val boxHeight = layout.size.height + padY * 2
             val left = (centerX - boxWidth / 2f).coerceAtMost(size.width - boxWidth).coerceAtLeast(0f)
-            val top = (baseline - height - boxHeight - 4.dp.toPx()).coerceAtLeast(0f)
+            // The label is wider than a bar: keep it above every bar it spans so that it hides none.
+            val highest = points.indices
+                .filter { index ->
+                    val barCenter = slot * index + slot / 2
+                    barCenter + barWidth / 2 > left && barCenter - barWidth / 2 < left + boxWidth
+                }
+                .maxOfOrNull { barHeight(points[it].value) } ?: 0f
+            val top = (baseline - highest - boxHeight - 4.dp.toPx()).coerceAtLeast(0f)
             drawRoundRect(
                 color = valueBackground,
                 topLeft = Offset(left, top),

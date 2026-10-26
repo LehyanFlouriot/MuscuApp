@@ -207,7 +207,7 @@
     <string name="rest_preset_add">Ajouter</string>
     <string name="rest_preset_edit">Modifier</string>
     <string name="rest_tip">Le minuteur continue même écran éteint ou app fermée\u00A0: une notification et une vibration te préviennent à la fin du repos.</string>
-    <string name="rest_notifications_off">Notifications désactivées\u00A0: tu ne seras pas prévenu quand l\'écran est éteint.</string>
+    <string name="rest_notifications_off">Notifications désactivées\u00A0: pas de décompte ni d\'alerte visible hors de l\'app.</string>
     <string name="rest_notifications_enable">Activer</string>
     <string name="preset_new_title">Nouveau temps de repos</string>
     <string name="preset_edit_title">Modifier le temps de repos</string>

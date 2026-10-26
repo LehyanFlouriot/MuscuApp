@@ -41,13 +41,7 @@ class RestNotifications(private val context: Context) {
             description = context.getString(R.string.channel_done_description)
             enableVibration(true)
             vibrationPattern = VIBRATION_PATTERN
-            setSound(
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build(),
-            )
+            setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION), ALERT_ATTRIBUTES)
         }
         manager.createNotificationChannels(listOf(running, done))
     }
@@ -113,9 +107,13 @@ class RestNotifications(private val context: Context) {
             @Suppress("DEPRECATION")
             context.getSystemService(Vibrator::class.java)
         }
-        runCatching { vibrator?.vibrate(VibrationEffect.createWaveform(VIBRATION_PATTERN, -1)) }
+        // Without a notification usage, Android drops the vibrations of apps in the background.
+        @Suppress("DEPRECATION")
+        runCatching { vibrator?.vibrate(VibrationEffect.createWaveform(VIBRATION_PATTERN, -1), ALERT_ATTRIBUTES) }
         runCatching {
-            RingtoneManager.getRingtone(context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))?.play()
+            RingtoneManager.getRingtone(context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                ?.apply { audioAttributes = ALERT_ATTRIBUTES }
+                ?.play()
         }
     }
 
@@ -165,5 +163,9 @@ class RestNotifications(private val context: Context) {
         private const val ID_DONE = 2
         private const val DONE_TIMEOUT_MS = 2 * 60_000L
         private val VIBRATION_PATTERN = longArrayOf(0, 400, 200, 400, 200, 700)
+        private val ALERT_ATTRIBUTES: AudioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
     }
 }
