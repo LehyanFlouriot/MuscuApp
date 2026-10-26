@@ -89,7 +89,8 @@ android {
     lint {
         abortOnError = false
         textReport = true
-        textOutput = file("stdout")
+        // Special value understood by lint: print the report in the build log.
+        textOutput = File("stdout")
     }
 
     packaging {

@@ -69,7 +69,7 @@ object Routes {
     fun exercise(id: String) = "exercise/$id"
 }
 
-private class Tab(val route: String, @StringRes val label: Int, val icon: ImageVector)
+private class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector)
 
 private val tabs = listOf(
     Tab(Routes.WEEK, R.string.tab_week, Icons.Rounded.FitnessCenter),
