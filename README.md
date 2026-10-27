@@ -63,11 +63,42 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - Ton poids actuel, ce que tu as pris depuis la première pesée et ton **rythme par semaine** : de quoi suivre ta prise de masse.
 - Historique complet avec l'écart d'une pesée à l'autre ; touche une pesée pour la corriger ou la supprimer.
 
+### ☁️ Synchronisation avec ton compte Google
+- Les **mêmes données sur tous tes appareils** connectés au même compte Google : séances, pesées, plan alimentaire, repas cochés, liste de courses et réglages.
+- Tout se fait seul : à l'ouverture de l'app, quelques secondes après chaque changement, toutes les minutes quand l'app est ouverte, et dès que le réseau revient (même app fermée).
+- Utilisé deux appareils sans réseau ? Les changements des deux sont **fusionnés** : chaque séance, pesée ou aliment coché est gardé. Si une même valeur a été changée des deux côtés, celle de l'appareil qui se synchronise en dernier l'emporte.
+- Les données sont gardées dans un **dossier caché de ton Google Drive**, que seule l'app peut lire (elles n'apparaissent pas dans tes fichiers). L'app n'a accès à rien d'autre de ton Drive.
+- Un nouvel appareil récupère tout dès la connexion. Si l'appareil a déjà ses propres données, l'app te demande quoi garder : celles du compte, les deux fusionnées, ou celles de l'appareil.
+- Installe la même version de l'app sur tous tes appareils : un appareil resté sur une version plus ancienne attend sa mise à jour pour ne rien abîmer.
+
+À configurer une seule fois, voir [Activer la synchronisation Google](#activer-la-synchronisation-google).
+
 ### ⚙️ Réglages
 - Pas du poids des boutons + / − (0,5 à 5 kg), thème clair / sombre, couleurs du fond d'écran.
-- **Sauvegarde** : export / import de toutes tes données dans un fichier (pratique pour changer de téléphone).
+- **Synchronisation** avec ton compte Google : connexion, état de la dernière synchronisation, déconnexion.
+- **Sauvegarde** : export / import de toutes tes données dans un fichier.
 
-Tes données restent sur ton téléphone (et dans la sauvegarde automatique Android si elle est activée).
+Sans synchronisation, tes données restent sur ton téléphone (et dans la sauvegarde automatique Android si elle est activée).
+
+## Activer la synchronisation Google
+
+Google n'autorise une app à utiliser Google Drive que si elle est déclarée dans un projet **Google Cloud**. Comme l'app n'est pas sur le Play Store, c'est à toi de créer ce projet, gratuitement, en 5 minutes. Il n'y a rien à copier dans l'app ensuite.
+
+1. Ouvre la **[console Google Cloud](https://console.cloud.google.com/)** avec ton compte Google et crée un projet (par exemple « MuscuApp »).
+2. Active l'**[API Google Drive](https://console.cloud.google.com/apis/library/drive.googleapis.com)** pour ce projet : bouton **Activer**.
+3. Ouvre **[Google Auth Platform](https://console.cloud.google.com/auth/overview)** et clique sur **Commencer** : nom de l'app « MuscuApp », ton adresse e-mail pour l'assistance, audience **Externe**, ton adresse e-mail pour les coordonnées, puis **Créer**.
+4. Dans **Accès aux données** : *Ajouter ou supprimer des niveaux d'accès*, coche `.../auth/drive.appdata` (« Afficher, créer et supprimer ses propres données de configuration dans votre Google Drive »), puis **Mettre à jour** et **Enregistrer**.
+5. Dans **Audience** : clique sur **Publier l'application**. Aucune validation de Google n'est nécessaire, car cet accès est classé « non sensible ». En restant en mode « Test », il faudrait t'ajouter comme utilisateur test et Google pourrait redemander l'autorisation régulièrement.
+6. Dans **Clients** : *Créer un client*, type **Android**, puis :
+   - nom du package : `com.lehyanflouriot.muscuapp`
+   - empreinte du certificat SHA-1 : `E1:EF:4D:50:D8:F8:89:AE:D4:09:81:E5:29:77:C5:82:E8:B9:76:B3`
+
+   Puis **Créer**.
+7. Sur ton téléphone : **Réglages → Synchronisation → Se connecter avec Google**, choisis ton compte et accepte. Fais de même sur tes autres appareils.
+
+Les réglages de la console peuvent mettre quelques minutes à s'appliquer : si la connexion échoue juste après, réessaie un peu plus tard. Si l'app affiche « le projet Google Cloud de l'app n'est pas prêt », vérifie les étapes 2 et 6.
+
+Pour effacer la copie gardée sur ton compte : Google Drive → *Paramètres* → *Gérer les applications* → MuscuApp → *Options* → *Supprimer les données d'application masquées*.
 
 ## Développement
 
@@ -79,11 +110,12 @@ Projet Android natif en **Kotlin** avec **Jetpack Compose** et **Material 3**.
 ```
 
 - `app/src/main/java/.../core` : logique sans dépendance Android (modèle, statistiques, semaines, poids, plan alimentaire, minuteur), testée par des tests unitaires.
-- `app/src/main/java/.../ui` : écrans Compose. `.../timer` : minuteur (alarme exacte + notifications).
+- `app/src/main/java/.../core/sync` : synchronisation (fusion à trois voies des données, client Google Drive), testée avec un faux compte partagé par plusieurs appareils et un faux serveur Google.
+- `app/src/main/java/.../ui` : écrans Compose. `.../timer` : minuteur (alarme exacte + notifications). `.../sync` : connexion Google et moments de synchronisation.
 - À chaque push sur la branche principale, GitHub Actions construit l'APK et le publie dans les **Releases** (avec les captures d'écran).
 
 ### Signature de l'APK
 
 Pour que chaque nouvelle version s'installe par-dessus la précédente, l'APK est toujours signé avec la même clé : `signing/muscuapp.jks`. Cette clé est publique (elle est dans le dépôt), ce qui suffit pour un usage personnel.
 
-Pour utiliser ta propre clé privée, ajoute dans *Settings → Secrets and variables → Actions* du dépôt : `MUSCUAPP_KEYSTORE_BASE64` (le fichier `.jks` encodé en base64), `MUSCUAPP_KEYSTORE_PASSWORD`, `MUSCUAPP_KEY_ALIAS` et `MUSCUAPP_KEY_PASSWORD`. Attention : changer de clé oblige à désinstaller l'app une fois ; exporte une sauvegarde avant.
+Pour utiliser ta propre clé privée, ajoute dans *Settings → Secrets and variables → Actions* du dépôt : `MUSCUAPP_KEYSTORE_BASE64` (le fichier `.jks` encodé en base64), `MUSCUAPP_KEYSTORE_PASSWORD`, `MUSCUAPP_KEY_ALIAS` et `MUSCUAPP_KEY_PASSWORD`. Attention : changer de clé oblige à désinstaller l'app une fois ; exporte une sauvegarde avant. Il faut aussi déclarer l'empreinte SHA-1 de ta clé dans le client Android du projet Google Cloud (`keytool -list -v -keystore ta-cle.jks`).

@@ -7,6 +7,7 @@ import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
@@ -27,6 +28,7 @@ object Fmt {
     private val longDayFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM", locale)
     private val dayMonthFormatter = DateTimeFormatter.ofPattern("d MMM", locale)
     private val dayMonthYearFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", locale)
+    private val hourMinuteFormatter = DateTimeFormatter.ofPattern("HH:mm", locale)
 
     fun number(value: Double, maxDecimals: Int = 2): String {
         val pattern = if (maxDecimals > 0) "#,##0." + "#".repeat(maxDecimals) else "#,##0"
@@ -193,6 +195,9 @@ object Fmt {
 
     /** "lundi 20 octobre" */
     fun longDay(date: LocalDate): String = date.format(longDayFormatter)
+
+    /** "18:42" */
+    fun hourMinute(time: LocalTime): String = time.format(hourMinuteFormatter)
 
     /** "20 – 26 oct.", "27 oct. – 2 nov.", with the year when it is not the current one. */
     fun weekRange(weekStart: LocalDate, today: LocalDate): String {

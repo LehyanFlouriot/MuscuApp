@@ -273,6 +273,7 @@ fun MuscuApp(
                     SettingsRoute(
                         data = data,
                         repository = repository,
+                        sync = container.sync,
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
                     )
                 }

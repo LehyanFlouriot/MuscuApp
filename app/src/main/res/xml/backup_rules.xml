@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Everything is backed up (exercises, sessions, settings) except the state of the rest timer. -->
+<!--
+    Everything is backed up (exercises, sessions, settings) except the state of the rest timer, and
+    the state of the sync: a restored device connects its Google account again.
+-->
 <full-backup-content>
     <exclude domain="sharedpref" path="rest_timer.xml" />
+    <exclude domain="file" path="muscuapp-sync.json" />
 </full-backup-content>

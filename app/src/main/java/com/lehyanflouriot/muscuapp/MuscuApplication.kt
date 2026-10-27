@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.data.FileDataStorage
+import com.lehyanflouriot.muscuapp.sync.SyncController
 import com.lehyanflouriot.muscuapp.timer.RestNotifications
 import com.lehyanflouriot.muscuapp.timer.RestTimer
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +20,7 @@ class MuscuApplication : Application() {
         super.onCreate()
         container = AppContainer(this)
         container.repository.load()
+        container.sync.start()
     }
 }
 
@@ -31,6 +33,9 @@ class AppContainer(context: Context) {
         scope = scope,
         ioDispatcher = Dispatchers.IO,
     )
+
+    /** Keeps the data the same on the devices of the user's Google account. */
+    val sync = SyncController(context, repository, scope)
 
     val restTimer: RestTimer
 

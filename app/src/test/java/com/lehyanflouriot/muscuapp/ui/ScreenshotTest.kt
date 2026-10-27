@@ -9,7 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollToIndex
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -31,6 +33,9 @@ import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
+import com.lehyanflouriot.muscuapp.core.sync.RemoteDocument
+import com.lehyanflouriot.muscuapp.core.sync.SyncProblem
+import com.lehyanflouriot.muscuapp.core.sync.SyncStatus
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailScreen
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseEditorForm
@@ -44,7 +49,9 @@ import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingActions
 import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingScreen
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressScreen
 import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
+import com.lehyanflouriot.muscuapp.ui.settings.FirstSyncDialog
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
+import com.lehyanflouriot.muscuapp.ui.settings.SyncActions
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
@@ -57,6 +64,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Renders the main screens with sample data into app/build/outputs/roborazzi, so that the
@@ -77,6 +85,7 @@ class ScreenshotTest {
     private fun capture(
         name: String,
         darkTheme: Boolean = false,
+        dialog: Boolean = false,
         before: () -> Unit = {},
         content: @Composable () -> Unit,
     ) {
@@ -88,7 +97,9 @@ class ScreenshotTest {
         before()
         // Let the entrance animations finish: the images show the screens at rest.
         composeRule.waitForIdle()
-        composeRule.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
+        // A dialog has a window of its own, shown after the one of the screen.
+        val node = if (dialog) composeRule.onAllNodes(isRoot()).onLast() else composeRule.onRoot()
+        node.captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
     @Composable
@@ -447,14 +458,18 @@ class ScreenshotTest {
     @Test
     fun weightFirstTime() = capture("8-poids-vide") { Weight(AppData.initial()) }
 
-    @Test
-    fun settings() = capture("7-reglages") {
+    @Composable
+    private fun Settings(sync: SyncStatus, connecting: Boolean = false) {
         SettingsScreen(
             settings = data.settings,
             exerciseCount = data.exercises.size,
             entryCount = data.entries.size,
             versionName = "1.0.0",
             dynamicColorAvailable = true,
+            sync = sync,
+            syncConnecting = connecting,
+            today = today,
+            syncActions = SyncActions(onConnect = {}, onReconnect = {}, onSyncNow = {}, onDisconnect = {}, onChoose = {}),
             onBack = {},
             onWeightStepChange = {},
             onThemeChange = {},
@@ -463,6 +478,39 @@ class ScreenshotTest {
             onOpenAlertSettings = {},
             onExport = {},
             onImport = {},
+        )
+    }
+
+    /** 18:42 on the day of the screenshots. */
+    private val syncedAt = today.atTime(18, 42).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    @Test
+    fun settings() = capture("7-reglages") { Settings(SyncStatus()) }
+
+    @Test
+    fun settingsSynced() = capture("7-reglages-synchro") {
+        Settings(SyncStatus(account = "lehyan@example.com", lastSync = syncedAt))
+    }
+
+    @Test
+    fun settingsSyncProblem() = capture("7-reglages-synchro-erreur", darkTheme = true) {
+        Settings(
+            SyncStatus(
+                account = "lehyan@example.com",
+                lastSync = syncedAt,
+                problem = SyncProblem.SETUP,
+                detail = "Google Drive API has not been used in project 1234 before or it is disabled.",
+            ),
+        )
+    }
+
+    @Test
+    fun firstSyncChoice() = capture("7-reglages-synchro-choix", dialog = true) {
+        FirstSyncDialog(
+            document = RemoteDocument("doc", "r", device = "Pixel 8", modifiedAt = syncedAt - 86_400_000L),
+            today = today,
+            onDismiss = {},
+            onConfirm = {},
         )
     }
 }

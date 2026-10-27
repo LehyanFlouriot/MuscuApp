@@ -43,10 +43,12 @@ import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.Settings
 import com.lehyanflouriot.muscuapp.core.model.ThemeMode
+import com.lehyanflouriot.muscuapp.core.sync.SyncStatus
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
 import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.reveal
+import java.time.LocalDate
 
 private val WEIGHT_STEPS = listOf(0.5, 1.0, 1.25, 2.0, 2.5, 5.0)
 
@@ -57,6 +59,10 @@ fun SettingsScreen(
     entryCount: Int,
     versionName: String,
     dynamicColorAvailable: Boolean,
+    sync: SyncStatus,
+    syncConnecting: Boolean,
+    today: LocalDate,
+    syncActions: SyncActions,
     onBack: () -> Unit,
     onWeightStepChange: (Double) -> Unit,
     onThemeChange: (ThemeMode) -> Unit,
@@ -89,6 +95,11 @@ fun SettingsScreen(
                 .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            Column(Modifier.reveal(reveal, "sync"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(text = stringResource(R.string.settings_sync))
+                SyncCard(status = sync, connecting = syncConnecting, today = today, actions = syncActions)
+            }
+
             Column(Modifier.reveal(reveal, "logging"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionHeader(text = stringResource(R.string.settings_logging))
                 Text(stringResource(R.string.settings_weight_step), style = MaterialTheme.typography.titleSmall)
@@ -191,7 +202,7 @@ fun SettingsScreen(
                     onClick = onImport,
                 )
                 Text(
-                    text = stringResource(R.string.settings_data_hint),
+                    text = stringResource(if (sync.account != null) R.string.settings_data_hint_synced else R.string.settings_data_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

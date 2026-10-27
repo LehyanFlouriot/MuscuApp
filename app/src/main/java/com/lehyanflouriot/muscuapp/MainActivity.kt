@@ -53,6 +53,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        appContainer.sync.onForeground()
+    }
+
+    override fun onStop() {
+        appContainer.sync.onBackground()
+        super.onStop()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

@@ -24,14 +24,18 @@ import com.lehyanflouriot.muscuapp.core.model.ShoppingWeek
 import com.lehyanflouriot.muscuapp.core.model.Settings
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
+import com.lehyanflouriot.muscuapp.core.sync.mergeData
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.UUID
@@ -78,6 +82,9 @@ class WorkoutRepository(
     /** Current data, null until [load] has read the saved document. */
     val data: StateFlow<AppData?> = state.asStateFlow()
 
+    /** The data as last written to [storage]. */
+    private val saved = MutableStateFlow<AppData?>(null)
+
     private val loadStarted = AtomicBoolean(false)
 
     fun load() {
@@ -98,6 +105,7 @@ class WorkoutRepository(
                     val written = runCatching { storage.write(AppJson.encode(current)) }.isSuccess
                     if (written) lastWritten = current
                 }
+                if (current === lastWritten) saved.value = current
             }
         }
     }
@@ -515,9 +523,28 @@ class WorkoutRepository(
 
     // endregion
 
+    // region Sync
+
+    /**
+     * Puts in place [synced], the data merged with the other devices from [before]. What was
+     * changed here in the meantime is merged again on top of it, so that it is not lost.
+     */
+    fun applySynced(before: AppData, synced: AppData) {
+        state.update { current -> if (current == null || current == before) synced else mergeData(before, current, synced) }
+    }
+
+    /** Waits until the data, as it is now, is written. Returns false when it takes too long. */
+    suspend fun awaitSaved(timeoutMillis: Long = SAVE_TIMEOUT_MS): Boolean =
+        withTimeoutOrNull(timeoutMillis) {
+            combine(state, saved) { current, written -> current != null && current == written }.first { it }
+        } != null
+
+    // endregion
+
     companion object {
         const val MIN_REST = 5
         const val MAX_REST = 60 * 60
+        private const val SAVE_TIMEOUT_MS = 5_000L
 
         private fun cleanSets(sets: List<WorkSet>): List<WorkSet> =
             sets.filter { it.reps > 0 }.map { it.copy(weight = it.weight.coerceAtLeast(0.0)) }

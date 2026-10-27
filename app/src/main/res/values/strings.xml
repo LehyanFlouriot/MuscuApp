@@ -296,6 +296,7 @@
     <string name="settings_import">Restaurer une sauvegarde</string>
     <string name="settings_import_hint">Remplace les données de l\'app par celles d\'un fichier.</string>
     <string name="settings_data_hint">Tes données restent sur ton téléphone. Exporte une sauvegarde de temps en temps pour ne rien perdre (changement de téléphone, réinstallation…).</string>
+    <string name="settings_data_hint_synced">Tes données sont aussi synchronisées avec ton compte Google. Une sauvegarde reste utile pour garder une copie à toi.</string>
     <string name="settings_about">À propos</string>
     <string name="settings_version">MuscuApp %1$s</string>
     <string name="settings_about_text">Suis tes exercices, tes séries et tes répétitions semaine après semaine.</string>
@@ -575,4 +576,47 @@
         <item quantity="many">Renommer aussi les %1$d autres «\u00A0%2$s\u00A0» du programme</item>
         <item quantity="other">Renommer aussi les %1$d autres «\u00A0%2$s\u00A0» du programme</item>
     </plurals>
+
+    <!-- Sync with the Google account -->
+    <string name="settings_sync">Synchronisation</string>
+    <string name="sync_off_title">Synchroniser avec Google</string>
+    <string name="sync_off_text">Retrouve les mêmes séances, pesées et repas sur tous tes appareils connectés au même compte Google. Tout est gardé dans un dossier caché de ton Google Drive, que seule l\'app peut lire.</string>
+    <string name="sync_connect">Se connecter avec Google</string>
+    <string name="sync_connecting">Connexion…</string>
+    <string name="sync_account_unknown">Compte Google</string>
+    <string name="sync_running">Synchronisation…</string>
+    <string name="sync_done">Synchronisé %1$s</string>
+    <string name="sync_never">Pas encore synchronisé</string>
+    <string name="sync_when_today">aujourd\'hui à %1$s</string>
+    <string name="sync_when_yesterday">hier à %1$s</string>
+    <string name="sync_when_on">le %1$s à %2$s</string>
+    <string name="sync_now">Synchroniser</string>
+    <string name="sync_disconnect">Déconnecter</string>
+    <string name="sync_reconnect">Se reconnecter</string>
+    <string name="sync_choose">Choisir</string>
+    <string name="sync_auto_hint">Tout se fait seul\u00A0: à l\'ouverture de l\'app, quelques secondes après chaque changement, et dès que le réseau revient.</string>
+    <string name="sync_problem_offline">Hors connexion\u00A0: tes changements partiront dès le retour du réseau.</string>
+    <string name="sync_problem_sign_in">Google ne donne plus accès à ton Drive. Reconnecte-toi pour reprendre la synchronisation.</string>
+    <string name="sync_problem_setup">Google refuse l\'accès\u00A0: le projet Google Cloud de l\'app n\'est pas prêt (voir le guide d\'installation).</string>
+    <string name="sync_problem_server">Google Drive ne répond pas pour l\'instant. Nouvel essai dans un moment.</string>
+    <string name="sync_problem_update">Un autre appareil utilise une version plus récente de MuscuApp\u00A0: mets l\'app à jour ici pour continuer à synchroniser.</string>
+    <string name="sync_problem_unreadable">La copie de ton compte Google est illisible.</string>
+    <string name="sync_problem_choice">Ton compte contient déjà des données\u00A0: choisis quoi en faire.</string>
+    <string name="sync_connected">Compte Google connecté ✓</string>
+    <string name="sync_done_now">Synchronisé ✓</string>
+    <string name="sync_connect_refused">Sans accès à Google Drive, la synchronisation est impossible.</string>
+    <string name="sync_choice_title">Ton compte a déjà des données</string>
+    <string name="sync_choice_text">Ton compte Google contient déjà des données MuscuApp, et cet appareil a aussi les siennes. Que veux-tu garder\u00A0?</string>
+    <string name="sync_choice_origin">Dernier envoi %1$s.</string>
+    <string name="sync_choice_origin_device">Dernier envoi depuis «\u00A0%1$s\u00A0», %2$s.</string>
+    <string name="sync_choice_account">Celles du compte</string>
+    <string name="sync_choice_account_hint">Conseillé pour un nouvel appareil\u00A0: les données de celui-ci sont remplacées.</string>
+    <string name="sync_choice_merge">Les deux, fusionnées</string>
+    <string name="sync_choice_merge_hint">Tout est gardé. Quand un même élément diffère, la version de cet appareil l\'emporte.</string>
+    <string name="sync_choice_device">Celles de cet appareil</string>
+    <string name="sync_choice_device_hint">Les données du compte sont remplacées, sur tous tes appareils.</string>
+    <string name="sync_choice_confirm">Continuer</string>
+    <string name="sync_disconnect_title">Arrêter la synchronisation\u00A0?</string>
+    <string name="sync_disconnect_text">Tes données restent sur cet appareil, et sur ton compte Google pour tes autres appareils.</string>
+    <string name="sync_disconnected">Synchronisation arrêtée</string>
 </resources>
