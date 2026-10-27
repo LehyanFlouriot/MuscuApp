@@ -643,10 +643,11 @@ private fun DayTypeChip(day: DayPlan) {
     val label = day.label.ifBlank {
         stringResource(if (day.training) R.string.nutrition_training else R.string.nutrition_rest_day)
     }
+    // Discreet next to the rings, which are what the eye should go to.
     Surface(
         shape = CircleShape,
-        color = if (day.training) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = if (day.training) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Row(
             modifier = Modifier.padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
@@ -655,6 +656,7 @@ private fun DayTypeChip(day: DayPlan) {
             Icon(
                 imageVector = if (day.training) Icons.Rounded.FitnessCenter else Icons.Rounded.Spa,
                 contentDescription = null,
+                tint = if (day.training) MaterialTheme.colorScheme.primary else MuscuTheme.extendedColors.success,
                 modifier = Modifier.size(16.dp),
             )
             Spacer(Modifier.width(6.dp))

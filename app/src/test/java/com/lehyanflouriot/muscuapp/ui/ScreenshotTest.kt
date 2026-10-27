@@ -230,6 +230,23 @@ class ScreenshotTest {
     }
 
     @Test
+    fun planEditorMeals() = capture(
+        "10-programme-repas",
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(2) },
+    ) {
+        PlanEditorScreen(
+            plan = nutrition.plans.single(),
+            day = DayOfWeek.WEDNESDAY,
+            keepsHistory = true,
+            onDayChange = {},
+            onOpen = {},
+            onTrainingChange = {},
+            onWaterChange = {},
+            onBack = {},
+        )
+    }
+
+    @Test
     fun planEditorSettings() = capture(
         "10-programme-reglages",
         darkTheme = true,

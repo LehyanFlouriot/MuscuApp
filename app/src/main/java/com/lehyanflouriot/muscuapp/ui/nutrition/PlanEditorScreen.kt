@@ -416,6 +416,8 @@ private fun DaySettings(
                     onIncrement = { onWaterChange((day.waterGlasses + 1).coerceAtMost(MAX_WATER_GLASSES)) },
                     onValueClick = onEditWater,
                     canDecrement = day.waterGlasses > 0,
+                    // The stepper fills the room it is given: keep it compact next to its label.
+                    modifier = Modifier.width(140.dp),
                 )
             }
             TextButton(

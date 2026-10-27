@@ -356,7 +356,7 @@ private fun StartChoice(
 ) {
     val monday = nextMonday(today)
     var picking by remember { mutableStateOf(false) }
-    val custom = start != null && start != today && start != monday
+    val custom = start?.takeIf { it != today && it != monday }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(
             selected = start == today,
@@ -369,9 +369,9 @@ private fun StartChoice(
             label = { Text(stringResource(R.string.program_start_next_monday)) },
         )
         FilterChip(
-            selected = custom,
+            selected = custom != null,
             onClick = { picking = true },
-            label = { Text(if (custom && start != null) Fmt.day(start) else stringResource(R.string.program_start_pick)) },
+            label = { Text(custom?.let(Fmt::day) ?: stringResource(R.string.program_start_pick)) },
             leadingIcon = {
                 Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize))
             },
