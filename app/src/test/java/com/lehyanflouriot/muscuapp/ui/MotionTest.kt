@@ -5,10 +5,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onRoot
 import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
 import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
 import com.lehyanflouriot.muscuapp.core.domain.DEFAULT_BODY_WEIGHT
@@ -34,12 +35,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
+import java.util.Locale
 import kotlin.math.abs
 
 /**
- * Follows the entrance animations frame by frame: for each moment, the share of each quarter of
- * the screen that is not yet in place. The table is printed in the build log, and the screens must
- * end up still.
+ * Follows the entrance animations frame by frame, without a device: how far elements still are
+ * from their place (in dp) and what counters show at each moment. The tables are printed in the
+ * build log, and everything must have settled before the end.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -50,53 +52,67 @@ class MotionTest {
 
     private val today = LocalDate.of(2026, 10, 28)
     private val data = SampleData.build(today)
-    private val times = listOf(16L, 100L, 200L, 300L, 450L, 600L, 900L, 1_500L, 3_000L, 4_000L)
+    private val times = listOf(0L, 50L, 100L, 200L, 300L, 450L, 600L, 900L, 1_500L, 3_000L, 4_000L)
 
-    private fun follow(name: String, content: @Composable () -> Unit) {
+    private class Tracked(val name: String, val matcher: SemanticsMatcher, val readText: Boolean = false)
+
+    private fun follow(screen: String, tracked: List<Tracked>, content: @Composable () -> Unit) {
         composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
             MuscuTheme(darkTheme = false) {
                 Surface(color = MaterialTheme.colorScheme.background) { content() }
             }
         }
+        val density = composeRule.density.density
         var elapsed = 0L
-        var width = 0
-        var height = 0
-        val frames = times.map { time ->
+        val samples = times.map { time ->
             composeRule.mainClock.advanceTimeBy(time - elapsed, ignoreFrameDuration = true)
             elapsed = time
-            val bitmap = composeRule.onRoot().captureToImage().asAndroidBitmap()
-            width = bitmap.width
-            height = bitmap.height
-            time to IntArray(width * height).also { bitmap.getPixels(it, 0, width, 0, 0, width, height) }
+            tracked.map { item ->
+                val node = composeRule.onAllNodes(item.matcher, useUnmergedTree = true).fetchSemanticsNodes().firstOrNull()
+                when {
+                    node == null -> "-"
+                    item.readText -> node.config.getOrNull(SemanticsProperties.Text)?.joinToString().orEmpty()
+                    else -> (node.boundsInRoot.top / density).toString()
+                }
+            }
         }
-        val final = frames.last().second
-        val table = frames.joinToString("\n") { (time, pixels) ->
-            val quarters = (0 until 4).map { quarter -> movingShare(pixels, final, width, height, quarter) }
-            "  ${time.toString().padStart(5)} ms  " + quarters.joinToString("  ") { "${it.toString().padStart(3)} %" }
+        // Positions are shown as the distance left to travel to the final place.
+        val final = samples.last()
+        val header = "  time   " + tracked.joinToString(" | ") { it.name.take(14).padEnd(14) }
+        val rows = samples.mapIndexed { index, values ->
+            "  ${times[index].toString().padStart(4)}ms " + values.mapIndexed { column, value ->
+                val cell = if (tracked[column].readText || value == "-") {
+                    value
+                } else {
+                    String.format(Locale.US, "%.1f", value.toFloat() - final[column].toFloat())
+                }
+                cell.take(14).padEnd(14)
+            }.joinToString(" | ")
         }
-        println("MOTION $name: share of each quarter of the screen not yet in place, top to bottom\n$table")
-        // One second before the end, everything has settled.
-        assertEquals(0, (0 until 4).sumOf { movingShare(frames[frames.lastIndex - 1].second, final, width, height, it) })
-    }
-
-    private fun movingShare(pixels: IntArray, final: IntArray, width: Int, height: Int, quarter: Int): Int {
-        val from = quarter * height / 4 * width
-        val to = (quarter + 1) * height / 4 * width
-        var moving = 0
-        for (i in from until to) {
-            val a = pixels[i]
-            val b = final[i]
-            val difference = abs((a shr 16 and 0xFF) - (b shr 16 and 0xFF)) +
-                abs((a shr 8 and 0xFF) - (b shr 8 and 0xFF)) +
-                abs((a and 0xFF) - (b and 0xFF))
-            if (difference > 24) moving++
+        println("MOTION $screen\n$header\n" + rows.joinToString("\n"))
+        // A second before the end, everything is in place.
+        tracked.indices.filterNot { tracked[it].readText }.forEach { column ->
+            val settled = samples[samples.lastIndex - 1][column]
+            if (settled != "-") assertEquals(0f, abs(settled.toFloat() - final[column].toFloat()), 0.5f)
         }
-        return moving * 100 / (to - from)
+        tracked.indices.filter { tracked[it].readText }.forEach { column ->
+            assertEquals(final[column], samples[samples.lastIndex - 1][column])
+        }
     }
 
     @Test
-    fun week() = follow("Semaine") {
+    fun week() = follow(
+        "Semaine",
+        listOf(
+            Tracked("selector", hasText("Cette semaine")),
+            Tracked("summary", hasText("séances")),
+            Tracked("first card", hasText("Développé couché")),
+            Tracked("later card", hasText("Rowing barre")),
+            Tracked("button", hasText("Exercice")),
+            Tracked("volume text", hasText("Volume", substring = true), readText = true),
+        ),
+    ) {
         WeekScreen(
             overview = buildWeekOverview(data, today),
             today = today,
@@ -115,7 +131,15 @@ class MotionTest {
     }
 
     @Test
-    fun progress() = follow("Progres") {
+    fun progress() = follow(
+        "Progres",
+        listOf(
+            Tracked("streak card", hasText("Continue", substring = true)),
+            Tracked("chart card", hasText("Séries par semaine")),
+            Tracked("first row", hasText("Développé couché")),
+            Tracked("streak text", hasText("d'affilée", substring = true), readText = true),
+        ),
+    ) {
         ProgressScreen(
             items = buildProgressItems(data, today),
             activity = weeklySeries(data.entries, today, 12) { metricValue(it, ChartMetric.SETS) },
@@ -127,7 +151,15 @@ class MotionTest {
     }
 
     @Test
-    fun rest() = follow("Repos") {
+    fun rest() = follow(
+        "Repos",
+        listOf(
+            Tracked("dial", hasText("1:12")),
+            Tracked("controls", hasText("+15 s")),
+            Tracked("first preset", hasText("Court")),
+            Tracked("last preset", hasText("Très lourd")),
+        ),
+    ) {
         RestScreen(
             state = TimerState.Running(endAt = 1_072_000, total = 90_000, label = "Développé couché"),
             now = 1_000_000,
@@ -147,7 +179,15 @@ class MotionTest {
     }
 
     @Test
-    fun weight() = follow("Poids") {
+    fun weight() = follow(
+        "Poids",
+        listOf(
+            Tracked("weigh-in", hasText("Ma pesée")),
+            Tracked("summary", hasText("actuel")),
+            Tracked("chart", hasText("Évolution")),
+            Tracked("change value", hasText("+", substring = true), readText = true),
+        ),
+    ) {
         val weights = data.bodyWeights
         val form = remember { WeighInState(suggestedWeight(weights, today) ?: DEFAULT_BODY_WEIGHT) }
         WeightScreen(
