@@ -19,6 +19,8 @@ import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.core.model.Nutrition
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.RestPreset
+import com.lehyanflouriot.muscuapp.core.model.ShoppingExtra
+import com.lehyanflouriot.muscuapp.core.model.ShoppingWeek
 import com.lehyanflouriot.muscuapp.core.model.Settings
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
@@ -347,6 +349,51 @@ class WorkoutRepository(
     fun clearSwap(date: LocalDate, itemId: String) {
         mutateNutrition { nutrition ->
             nutrition.updateDay(date) { day -> day.copy(swaps = day.swaps.filterNot { it.itemId == itemId }) }
+        }
+    }
+
+    /** Puts a food of the shopping list of a week in the cart, or takes it out. */
+    fun toggleShoppingItem(weekStart: LocalDate, key: String) {
+        mutateNutrition { nutrition ->
+            nutrition.updateShoppingWeek(weekStart) { week ->
+                week.copy(checked = if (key in week.checked) week.checked - key else week.checked + key)
+            }
+        }
+    }
+
+    /** Empties the cart of a week: everything is to buy again. */
+    fun clearShoppingChecks(weekStart: LocalDate) {
+        mutateNutrition { nutrition ->
+            nutrition.updateShoppingWeek(weekStart) { week ->
+                week.copy(checked = emptyList(), extras = week.extras.map { it.copy(checked = false) })
+            }
+        }
+    }
+
+    /** Puts back a shopping list as it was, to undo emptying its cart. */
+    fun restoreShoppingWeek(week: ShoppingWeek) {
+        mutateNutrition { nutrition -> nutrition.updateShoppingWeek(week.weekStart) { week } }
+    }
+
+    /** Adds something to buy that is not in the program. */
+    fun addShoppingExtra(weekStart: LocalDate, name: String) {
+        val cleanName = name.trim()
+        if (cleanName.isEmpty()) return
+        val extra = ShoppingExtra(id = newId(), name = cleanName)
+        mutateNutrition { nutrition -> nutrition.updateShoppingWeek(weekStart) { it.copy(extras = it.extras + extra) } }
+    }
+
+    fun toggleShoppingExtra(weekStart: LocalDate, id: String) {
+        mutateNutrition { nutrition ->
+            nutrition.updateShoppingWeek(weekStart) { week ->
+                week.copy(extras = week.extras.map { if (it.id == id) it.copy(checked = !it.checked) else it })
+            }
+        }
+    }
+
+    fun removeShoppingExtra(weekStart: LocalDate, id: String) {
+        mutateNutrition { nutrition ->
+            nutrition.updateShoppingWeek(weekStart) { week -> week.copy(extras = week.extras.filterNot { it.id == id }) }
         }
     }
 

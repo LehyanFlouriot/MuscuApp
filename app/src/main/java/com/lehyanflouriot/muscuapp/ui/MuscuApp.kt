@@ -67,6 +67,7 @@ import com.lehyanflouriot.muscuapp.ui.common.SnackbarMessenger
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailRoute
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionRoute
 import com.lehyanflouriot.muscuapp.ui.nutrition.PlanEditorRoute
+import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingRoute
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressRoute
 import com.lehyanflouriot.muscuapp.ui.rest.ADJUST_STEP_MS
 import com.lehyanflouriot.muscuapp.ui.rest.MiniTimerBar
@@ -79,6 +80,7 @@ import com.lehyanflouriot.muscuapp.ui.weight.WeightRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 object Routes {
     const val WEEK = "week"
@@ -89,10 +91,14 @@ object Routes {
     const val SETTINGS = "settings"
     const val EXERCISE = "exercise/{id}"
     const val PLAN = "plan/{id}?day={day}"
+    const val SHOPPING = "shopping?week={week}"
 
     fun exercise(id: String) = "exercise/$id"
 
     fun plan(id: String, day: DayOfWeek) = "plan/$id?day=${day.value}"
+
+    /** The shopping list of the week starting [weekStart], or of the week to shop for. */
+    fun shopping(weekStart: LocalDate?) = "shopping?week=${weekStart?.toEpochDay() ?: -1}"
 }
 
 private class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector)
@@ -201,6 +207,7 @@ fun MuscuApp(
                         repository = repository,
                         onEditPlan = { id, day -> navController.navigate(Routes.plan(id, day)) },
                         onOpenWeight = { navController.navigateToTab(Routes.WEIGHT) },
+                        onOpenShopping = { navController.navigate(Routes.shopping(it)) },
                     )
                 }
                 composable(Routes.PROGRESS) {
@@ -241,6 +248,22 @@ fun MuscuApp(
                     PlanEditorRoute(
                         planId = entry.arguments?.getString("id").orEmpty(),
                         initialDay = DayOfWeek.of((entry.arguments?.getInt("day") ?: 1).coerceIn(1, 7)),
+                        data = data,
+                        repository = repository,
+                        onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
+                    )
+                }
+                composable(
+                    route = Routes.SHOPPING,
+                    arguments = listOf(
+                        navArgument("week") {
+                            type = NavType.LongType
+                            defaultValue = -1L
+                        },
+                    ),
+                ) { entry ->
+                    ShoppingRoute(
+                        initialWeek = entry.arguments?.getLong("week")?.takeIf { it >= 0 }?.let(LocalDate::ofEpochDay),
                         data = data,
                         repository = repository,
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },

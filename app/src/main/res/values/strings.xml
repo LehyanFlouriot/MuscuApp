@@ -531,4 +531,43 @@
         <item quantity="many">Tout est coché\u00A0! Encore %d verres d\'eau.</item>
         <item quantity="other">Tout est coché\u00A0! Encore %d verres d\'eau.</item>
     </plurals>
+
+    <!-- Shopping list -->
+    <string name="shopping_title">Liste de courses</string>
+    <string name="shopping_share">Partager la liste</string>
+    <string name="shopping_share_chooser">Partager la liste de courses</string>
+    <string name="shopping_share_header">Courses · %1$s</string>
+    <string name="shopping_clear">Tout décocher</string>
+    <string name="shopping_cleared">Panier vidé</string>
+    <string name="shopping_whole_week">Toute la semaine</string>
+    <string name="shopping_from_today">Dès aujourd\'hui</string>
+    <string name="shopping_progress">%1$d sur %2$d dans le panier</string>
+    <string name="shopping_done">Tout est dans le panier\u00A0!</string>
+    <string name="shopping_every_day">Tous les jours</string>
+    <string name="shopping_spoons_volume">≈\u00A0%1$s</string>
+    <string name="shopping_extras">Mes articles</string>
+    <string name="shopping_add_hint">Ajouter un article</string>
+    <string name="shopping_add">Ajouter</string>
+    <string name="shopping_remove">Retirer %1$s</string>
+    <string name="shopping_empty_title">Rien à acheter</string>
+    <string name="shopping_empty_text">Aucun programme n\'est prévu cette semaine-là.</string>
+    <string name="shopping_hint">Les quantités viennent de ton programme, aliments remplacés compris.</string>
+    <string name="shopping_in_cart">%1$s · %2$d dans le panier</string>
+    <string name="aisle_produce">Fruits et légumes</string>
+    <string name="aisle_meat_fish">Viandes, poissons et œufs</string>
+    <string name="aisle_dairy">Produits laitiers</string>
+    <string name="aisle_starches">Féculents et céréales</string>
+    <string name="aisle_grocery">Épicerie</string>
+    <string name="aisle_supplements">Compléments</string>
+    <string name="aisle_other">Autres</string>
+    <plurals name="shopping_meals">
+        <item quantity="one">%d repas</item>
+        <item quantity="many">%d repas</item>
+        <item quantity="other">%d repas</item>
+    </plurals>
+    <plurals name="shopping_items">
+        <item quantity="one">%d article</item>
+        <item quantity="many">%d articles</item>
+        <item quantity="other">%d articles</item>
+    </plurals>
 </resources>

@@ -239,6 +239,7 @@ class MotionTest {
                 onOpenPrograms = {},
                 onCreateProgram = {},
                 onOpenWeight = {},
+                onOpenShopping = {},
             ),
         )
     }

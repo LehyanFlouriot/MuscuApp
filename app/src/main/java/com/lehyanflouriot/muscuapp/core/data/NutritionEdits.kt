@@ -13,6 +13,7 @@ import com.lehyanflouriot.muscuapp.core.model.Nutrition
 import com.lehyanflouriot.muscuapp.core.model.NutritionDay
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
 import com.lehyanflouriot.muscuapp.core.model.PlannedMeal
+import com.lehyanflouriot.muscuapp.core.model.ShoppingWeek
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -21,6 +22,9 @@ const val MAX_MEAL_KCAL = 5_000
 const val MAX_MEAL_PROTEIN = 500
 
 val GLASS_ML_RANGE = 50..2_000
+
+/** Shopping lists older than this many weeks are forgotten. */
+const val SHOPPING_WEEKS_KEPT = 8
 
 // region Changes of a plan, kept free of ids generation so that they read simply
 
@@ -152,6 +156,14 @@ internal fun Nutrition.startPlan(planId: String, from: LocalDate): Nutrition {
 internal fun Nutrition.cancelStart(planId: String, from: LocalDate, today: LocalDate): Nutrition =
     if (from <= today) this else copy(schedule = schedule.filterNot { it.planId == planId && it.from == from }.merged())
 
+/** Changes the shopping list of the week of [weekStart], forgetting the lists of long ago. */
+internal fun Nutrition.updateShoppingWeek(weekStart: LocalDate, transform: (ShoppingWeek) -> ShoppingWeek): Nutrition {
+    val start = weekStart.startOfWeek()
+    val updated = transform(shoppingWeek(start))
+    val others = shopping.filterNot { it.weekStart == start || it.weekStart < start.minusWeeks(SHOPPING_WEEKS_KEPT.toLong()) }
+    return copy(shopping = if (updated.isEmpty) others else (others + updated).sortedBy { it.weekStart })
+}
+
 internal fun Nutrition.updateDay(date: LocalDate, transform: (NutritionDay) -> NutritionDay): Nutrition {
     val updated = transform(day(date))
     val others = days.filterNot { it.date == date }
@@ -265,7 +277,19 @@ internal fun sanitizeNutrition(nutrition: Nutrition): Nutrition {
             )
         }
         .filterNot { it.isEmpty }
-    return cleaned.copy(days = days)
+    val shopping = nutrition.shopping
+        .map { week ->
+            week.copy(
+                weekStart = week.weekStart.startOfWeek(),
+                checked = week.checked.filter { it.isNotBlank() }.distinct(),
+                extras = week.extras.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id },
+            )
+        }
+        .filterNot { it.isEmpty }
+        .distinctBy { it.weekStart }
+        .sortedBy { it.weekStart }
+        .takeLast(SHOPPING_WEEKS_KEPT * 2)
+    return cleaned.copy(days = days, shopping = shopping)
 }
 
 // endregion

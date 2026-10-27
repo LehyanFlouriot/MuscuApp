@@ -1,6 +1,7 @@
 package com.lehyanflouriot.muscuapp.ui
 
 import com.lehyanflouriot.muscuapp.core.data.DefaultMealPlan
+import com.lehyanflouriot.muscuapp.core.domain.shoppingKey
 import com.lehyanflouriot.muscuapp.core.domain.roundBodyWeight
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.model.AppData
@@ -12,6 +13,8 @@ import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.core.model.Nutrition
 import com.lehyanflouriot.muscuapp.core.model.NutritionDay
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
+import com.lehyanflouriot.muscuapp.core.model.ShoppingExtra
+import com.lehyanflouriot.muscuapp.core.model.ShoppingWeek
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import java.time.LocalDate
@@ -105,6 +108,14 @@ object SampleData {
                 NutritionDay(today, foods(today, "matin", partial = "dejeuner" to 2), water = 6),
             ),
             seeded = true,
+            // A few things already in the cart, and two of the user's own.
+            shopping = listOf(
+                ShoppingWeek(
+                    weekStart = monday,
+                    checked = listOf("lait", "flocons d'avoine", "banane", "pomme", "poulet", "riz", "skyr").map(::shoppingKey),
+                    extras = listOf(ShoppingExtra("x1", "Éponges"), ShoppingExtra("x2", "Café moulu", checked = true)),
+                ),
+            ),
         )
     }
 

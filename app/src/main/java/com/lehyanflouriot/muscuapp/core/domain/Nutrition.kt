@@ -176,7 +176,7 @@ internal fun normalizeFood(text: String): String =
         .replace(accents, "")
         .trim()
 
-private fun String.containsWord(word: String): Boolean =
+internal fun String.containsWord(word: String): Boolean =
     word.isNotEmpty() && Regex("(^|[^a-z0-9])" + Regex.escape(word) + "($|[^a-z0-9])").containsMatchIn(this)
 
 /** Foods that can replace [name] according to the substitutions of the plan, in their order. */

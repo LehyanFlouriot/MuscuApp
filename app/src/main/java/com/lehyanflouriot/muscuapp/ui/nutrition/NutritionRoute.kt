@@ -20,6 +20,7 @@ import com.lehyanflouriot.muscuapp.core.domain.hasHistory
 import com.lehyanflouriot.muscuapp.core.domain.planAt
 import com.lehyanflouriot.muscuapp.core.domain.programAt
 import com.lehyanflouriot.muscuapp.core.domain.programInfos
+import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.domain.substitutesFor
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
@@ -41,6 +42,7 @@ fun NutritionRoute(
     repository: WorkoutRepository,
     onEditPlan: (planId: String, day: DayOfWeek) -> Unit,
     onOpenWeight: () -> Unit,
+    onOpenShopping: (weekStart: LocalDate?) -> Unit,
 ) {
     val today = rememberToday()
     val nutrition = data.nutrition
@@ -71,6 +73,8 @@ fun NutritionRoute(
             onOpenPrograms = { showPrograms = true },
             onCreateProgram = { creating = true },
             onOpenWeight = onOpenWeight,
+            // From today, the list is the one of the week to shop for; from another day, of its week.
+            onOpenShopping = { day -> onOpenShopping(day.takeIf { it != today }?.startOfWeek()) },
         ),
     )
 

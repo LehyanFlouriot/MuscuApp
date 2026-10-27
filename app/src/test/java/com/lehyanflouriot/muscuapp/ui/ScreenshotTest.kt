@@ -18,11 +18,13 @@ import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
 import com.lehyanflouriot.muscuapp.core.domain.DEFAULT_BODY_WEIGHT
 import com.lehyanflouriot.muscuapp.core.domain.WeightPeriod
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
+import com.lehyanflouriot.muscuapp.core.domain.buildShoppingList
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
 import com.lehyanflouriot.muscuapp.core.domain.history
 import com.lehyanflouriot.muscuapp.core.domain.lastEntry
 import com.lehyanflouriot.muscuapp.core.domain.metricValue
 import com.lehyanflouriot.muscuapp.core.domain.records
+import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.domain.suggestedWeight
 import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
@@ -38,6 +40,8 @@ import com.lehyanflouriot.muscuapp.ui.log.LogFormState
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionActions
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionScreen
 import com.lehyanflouriot.muscuapp.ui.nutrition.PlanEditorScreen
+import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingActions
+import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingScreen
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressScreen
 import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
@@ -191,6 +195,7 @@ class ScreenshotTest {
                         onOpenPrograms = {},
                         onCreateProgram = {},
                         onOpenWeight = {},
+                        onOpenShopping = {},
                     ),
                 )
             }
@@ -214,6 +219,38 @@ class ScreenshotTest {
         "9-nutrition-demain",
         before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(2) },
     ) { Nutrition(today.plusDays(1)) }
+
+    @Composable
+    private fun Shopping() {
+        val weekStart = today.startOfWeek()
+        ShoppingScreen(
+            list = buildShoppingList(nutrition, weekStart, weekStart.plusDays(6)),
+            week = nutrition.shoppingWeek(weekStart),
+            today = today,
+            fromToday = false,
+            actions = ShoppingActions(
+                onBack = {},
+                onWeekChange = {},
+                onFromTodayChange = {},
+                onToggle = {},
+                onToggleExtra = {},
+                onRemoveExtra = {},
+                onAddExtra = {},
+                onClear = {},
+                onShare = {},
+            ),
+        )
+    }
+
+    @Test
+    fun shopping() = capture("11-courses") { Shopping() }
+
+    @Test
+    fun shoppingAisles() = capture(
+        "11-courses-rayons",
+        darkTheme = true,
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(24) },
+    ) { Shopping() }
 
     @Test
     fun planEditor() = capture("10-programme") {

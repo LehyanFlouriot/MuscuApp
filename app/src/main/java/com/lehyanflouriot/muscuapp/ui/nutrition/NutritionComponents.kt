@@ -43,10 +43,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lehyanflouriot.muscuapp.R
+import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.MealMoment
 import com.lehyanflouriot.muscuapp.ui.common.Motion
 import com.lehyanflouriot.muscuapp.ui.common.animateFillAsState
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
+
+/** "Mardi 27 octobre", "Riz basmati". */
+internal fun String.capitalized(): String = replaceFirstChar { it.titlecase(Fmt.locale) }
 
 val MealMoment.icon: ImageVector
     get() = when (this) {

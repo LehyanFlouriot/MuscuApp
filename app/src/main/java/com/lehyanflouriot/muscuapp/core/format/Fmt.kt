@@ -1,5 +1,7 @@
 package com.lehyanflouriot.muscuapp.core.format
 
+import com.lehyanflouriot.muscuapp.core.domain.Amount
+import com.lehyanflouriot.muscuapp.core.domain.AmountUnit
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import java.text.DecimalFormat
@@ -92,6 +94,24 @@ object Fmt {
 
     /** Grams of protein: "155 g". */
     fun grams(grams: Int): String = "$grams${NBSP}g"
+
+    /** A quantity to buy: "850 g", "1,05 kg", "2,1 L", "6", "1,5 c. à s.". */
+    fun amount(amount: Amount): String {
+        val value = amount.value
+        return when (amount.unit) {
+            AmountUnit.GRAM ->
+                if (value >= 1_000) "${number(value / 1_000)}${NBSP}kg" else "${number(value.roundToLong().toDouble(), 0)}${NBSP}g"
+            AmountUnit.MILLILITER ->
+                if (value >= 1_000) "${number(value / 1_000)}${NBSP}L" else "${number(value.roundToLong().toDouble(), 0)}${NBSP}ml"
+            AmountUnit.PIECE -> number(value, 1)
+            AmountUnit.TABLESPOON -> "${number(value, 1)}${NBSP}c.${NBSP}à${NBSP}s."
+            AmountUnit.TEASPOON -> "${number(value, 1)}${NBSP}c.${NBSP}à${NBSP}c."
+            AmountUnit.OTHER -> "${number(value, 1)}$NBSP${amount.label}"
+        }
+    }
+
+    /** Quantities in different units, added: "5 c. à s. + 2 c. à c.". */
+    fun amounts(amounts: List<Amount>): String = amounts.joinToString(" + ") { amount(it) }
 
     /** A quantity never split over two lines: "1,5 c. à s.". */
     fun quantity(text: String): String = text.trim().replace(' ', NBSP)

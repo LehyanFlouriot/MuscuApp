@@ -60,6 +60,7 @@ import androidx.compose.material.icons.rounded.LocalDrink
 import androidx.compose.material.icons.rounded.MonitorWeight
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Today
@@ -121,6 +122,8 @@ import com.lehyanflouriot.muscuapp.core.domain.ProgramStatus
 import com.lehyanflouriot.muscuapp.core.domain.WeightAdvice
 import com.lehyanflouriot.muscuapp.core.domain.WeightGuidance
 import com.lehyanflouriot.muscuapp.core.domain.buildNutritionDay
+import com.lehyanflouriot.muscuapp.core.domain.buildShoppingList
+import com.lehyanflouriot.muscuapp.core.domain.defaultShoppingWeek
 import com.lehyanflouriot.muscuapp.core.domain.nutritionWeek
 import com.lehyanflouriot.muscuapp.core.domain.programAt
 import com.lehyanflouriot.muscuapp.core.domain.programInfos
@@ -163,6 +166,8 @@ class NutritionActions(
     val onOpenPrograms: () -> Unit,
     val onCreateProgram: () -> Unit,
     val onOpenWeight: () -> Unit,
+    /** Opens the shopping list of the week of the day shown. */
+    val onOpenShopping: (LocalDate) -> Unit,
 )
 
 /**
@@ -196,6 +201,9 @@ fun NutritionScreen(
                         IconButton(onClick = { actions.onSelectDate(today) }) {
                             Icon(Icons.Rounded.Today, contentDescription = stringResource(R.string.nutrition_back_to_today))
                         }
+                    }
+                    IconButton(onClick = { actions.onOpenShopping(date) }) {
+                        Icon(Icons.Rounded.ShoppingCart, contentDescription = stringResource(R.string.shopping_title))
                     }
                     if (program != null) {
                         IconButton(onClick = { actions.onEditPlan(program, date.dayOfWeek) }) {
@@ -368,6 +376,23 @@ private fun DayList(
                 )
             }
         }
+        item(key = "shopping") {
+            // On the weekend, today's list is the one of the week to come.
+            val shoppingWeek = if (date == today) defaultShoppingWeek(today) else date.startOfWeek()
+            val list = remember(nutrition, shoppingWeek) { buildShoppingList(nutrition, shoppingWeek, shoppingWeek.plusDays(6)) }
+            val cart = nutrition.shoppingWeek(shoppingWeek)
+            val checked = cart.checked.toSet()
+            ShoppingCard(
+                weekStart = shoppingWeek,
+                today = today,
+                items = list.items.size + cart.extras.size,
+                taken = list.items.count { it.key in checked } + cart.extras.count { it.checked },
+                onOpen = { actions.onOpenShopping(date) },
+                modifier = Modifier
+                    .animateItem(fadeInSpec = null)
+                    .reveal(reveal, "shopping"),
+            )
+        }
         if (view.plan.notes.isNotEmpty()) {
             item(key = "tips") {
                 SectionHeader(
@@ -528,7 +553,6 @@ private fun relativeDayName(date: LocalDate, today: LocalDate): String? = when (
     else -> null
 }
 
-private fun String.capitalized(): String = replaceFirstChar { it.titlecase(Fmt.locale) }
 
 private fun share(value: Double, target: Int?): Float =
     if (target == null || target <= 0) 0f else (value / target).toFloat().coerceIn(0f, 1f)

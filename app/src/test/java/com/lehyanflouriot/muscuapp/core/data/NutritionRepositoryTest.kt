@@ -11,6 +11,8 @@ import com.lehyanflouriot.muscuapp.core.model.MealMoment
 import com.lehyanflouriot.muscuapp.core.model.Nutrition
 import com.lehyanflouriot.muscuapp.core.model.NutritionDay
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
+import com.lehyanflouriot.muscuapp.core.model.ShoppingExtra
+import com.lehyanflouriot.muscuapp.core.model.ShoppingWeek
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -234,6 +236,40 @@ class NutritionRepositoryTest {
     }
 
     @Test
+    fun theShoppingCartIsKeptPerWeek() = runTest {
+        val storage = FakeStorage()
+        val repo = repository(storage)
+        // Any day of the week opens the list of its week.
+        repo.toggleShoppingItem(today, "lait")
+        repo.toggleShoppingItem(monday, "riz")
+        repo.toggleShoppingItem(monday, "riz")
+        repo.addShoppingExtra(monday, "  éponges ")
+        repo.addShoppingExtra(monday, " ")
+        var week = repo.nutrition.shoppingWeek(monday)
+        assertEquals(listOf("lait"), week.checked)
+        assertEquals(listOf("éponges"), week.extras.map { it.name })
+        repo.toggleShoppingExtra(monday, week.extras.single().id)
+        assertTrue(repo.nutrition.shoppingWeek(monday).extras.single().checked)
+        // Next week starts with an empty cart.
+        assertTrue(repo.nutrition.shoppingWeek(monday.plusWeeks(1)).isEmpty)
+
+        runCurrent()
+        assertEquals(repo.nutrition.shopping, repository(FakeStorage(storage.content)).nutrition.shopping)
+
+        repo.clearShoppingChecks(monday)
+        week = repo.nutrition.shoppingWeek(monday)
+        assertTrue(week.checked.isEmpty())
+        assertFalse(week.extras.single().checked)
+        repo.removeShoppingExtra(monday, week.extras.single().id)
+        assertTrue(repo.nutrition.shopping.isEmpty())
+
+        // The lists of long ago are forgotten.
+        repo.toggleShoppingItem(monday.minusWeeks(20), "riz")
+        repo.toggleShoppingItem(monday, "riz")
+        assertEquals(listOf(monday), repo.nutrition.shopping.map { it.weekStart })
+    }
+
+    @Test
     fun sanitizeDropsBrokenNutrition() {
         val plan = DefaultMealPlan.create()
         val mondayShake = plan.day(DayOfWeek.MONDAY).meal("matin").items
@@ -251,6 +287,19 @@ class NutritionRepositoryTest {
         )
         val nutrition = WorkoutRepository.sanitize(raw).nutrition
         assertEquals(listOf("Prise de masse 66 → 75 kg"), nutrition.plans.map { it.name })
+        val shopping = WorkoutRepository.sanitize(
+            raw.copy(
+                nutrition = raw.nutrition.copy(
+                    shopping = listOf(
+                        ShoppingWeek(monday.plusDays(2), checked = listOf("riz", "riz", " ")),
+                        ShoppingWeek(monday, checked = listOf("lait")),
+                        ShoppingWeek(monday.plusWeeks(1), extras = listOf(ShoppingExtra("e", " "))),
+                    ),
+                ),
+            ),
+        ).nutrition.shopping
+        // One list per week, starting on Monday, without empty names.
+        assertEquals(listOf(ShoppingWeek(monday, checked = listOf("riz"))), shopping)
         assertEquals(listOf(PlanPeriod(plan.id, monday)), nutrition.schedule)
         // One record per day, with known foods only; nothing can be noted before the plan.
         assertEquals(listOf(NutritionDay(monday, eaten = listOf(mondayShake[0].id), water = 30)), nutrition.days)

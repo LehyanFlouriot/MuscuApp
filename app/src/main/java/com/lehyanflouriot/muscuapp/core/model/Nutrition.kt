@@ -151,6 +151,26 @@ data class NutritionDay(
     fun swap(itemId: String): FoodSwap? = swaps.firstOrNull { it.itemId == itemId }
 }
 
+/** Something the user added to a shopping list, besides the foods of the program. */
+@Serializable
+data class ShoppingExtra(
+    val id: String,
+    val name: String,
+    val checked: Boolean = false,
+)
+
+/** What is already in the cart for the shopping list of a week. */
+@Serializable
+data class ShoppingWeek(
+    @Serializable(with = LocalDateIsoSerializer::class)
+    val weekStart: LocalDate,
+    /** Keys of the foods of the program already taken. */
+    val checked: List<String> = emptyList(),
+    val extras: List<ShoppingExtra> = emptyList(),
+) {
+    val isEmpty: Boolean get() = checked.isEmpty() && extras.isEmpty()
+}
+
 @Serializable
 data class Nutrition(
     val plans: List<MealPlan> = emptyList(),
@@ -160,10 +180,15 @@ data class Nutrition(
     val days: List<NutritionDay> = emptyList(),
     /** Whether the plan the app comes with was already added: it is never added again. */
     val seeded: Boolean = false,
+    /** Sorted by week, only the recent weeks where something was checked or added. */
+    val shopping: List<ShoppingWeek> = emptyList(),
 ) {
     fun plan(id: String): MealPlan? = plans.firstOrNull { it.id == id }
 
     fun day(date: LocalDate): NutritionDay = days.firstOrNull { it.date == date } ?: NutritionDay(date)
+
+    fun shoppingWeek(weekStart: LocalDate): ShoppingWeek =
+        shopping.firstOrNull { it.weekStart == weekStart } ?: ShoppingWeek(weekStart)
 }
 
 /** Stores days of the week by name ("MONDAY"), like the rest of the readable backups. */

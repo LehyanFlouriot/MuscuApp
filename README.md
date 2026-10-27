@@ -40,6 +40,12 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - **Modifier le programme** : change un aliment ou une quantité, ajoute ou supprime un repas, copie un jour vers d'autres, ajuste l'eau, les objectifs et les conseils. Les changements s'appliquent dès aujourd'hui ; les jours passés gardent ce qui était prévu.
 - **Mes programmes** : dans quelques mois, crée un **nouveau programme** (vide ou à partir de l'actuel) et choisis le jour où il commence : aujourd'hui, lundi prochain ou une autre date. L'ancien reste dans ton historique.
 
+### 🛒 Liste de courses
+- Tout ce qu'il faut acheter pour suivre le programme de la semaine, **quantités additionnées** sur les 7 jours (« Fromage blanc : 1,7 kg », « Lait : 2,1 L », « Miel : 5 c. à s. + 2 c. à c. ») et rangées **par rayon** du supermarché.
+- **Coche** ce que tu mets dans le panier : l'article descend en bas de son rayon, ce qu'il reste à prendre reste sous tes yeux. La liste est gardée si tu fermes l'app.
+- Le week-end, la liste est celle de la semaine qui arrive ; les flèches permettent de changer de semaine, et « Dès aujourd'hui » ne garde que ce qu'il reste à manger si tu fais les courses en milieu de semaine.
+- Les aliments remplacés pour un jour sont pris en compte. Ajoute tes propres articles (éponges, café…) et **partage** la liste par message.
+
 ### ⏱️ Repos
 - Grand minuteur circulaire : démarrer, pause, **−15 s / +15 s**.
 - **Mes temps de repos** : tes durées favorites en un seul appui (modifiables, avec un nom).
