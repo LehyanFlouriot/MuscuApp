@@ -102,7 +102,7 @@ object SampleData {
                 NutritionDay(
                     tuesday,
                     foods(tuesday, "matin", "dejeuner", "pre-seance", "post-seance"),
-                    swaps = listOf(FoodSwap(pasta.id, "riz", "150 g")),
+                    swaps = listOf(FoodSwap(pasta.id, "riz basmati", "150 g")),
                     water = 11,
                 ),
                 NutritionDay(today, foods(today, "matin", partial = "dejeuner" to 2), water = 6),
@@ -112,7 +112,7 @@ object SampleData {
             shopping = listOf(
                 ShoppingWeek(
                     weekStart = monday,
-                    checked = listOf("lait", "flocons d'avoine", "banane", "pomme", "poulet", "riz", "skyr").map(::shoppingKey),
+                    checked = listOf("lait", "flocons d'avoine", "banane", "pomme", "poulet", "riz basmati", "skyr").map(::shoppingKey),
                     extras = listOf(ShoppingExtra("x1", "Éponges"), ShoppingExtra("x2", "Café moulu", checked = true)),
                 ),
             ),

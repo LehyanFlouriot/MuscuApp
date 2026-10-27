@@ -3,6 +3,7 @@ package com.lehyanflouriot.muscuapp.core.data
 import com.lehyanflouriot.muscuapp.core.domain.MAX_WATER_GLASSES
 import com.lehyanflouriot.muscuapp.core.domain.periodAt
 import com.lehyanflouriot.muscuapp.core.domain.planAt
+import com.lehyanflouriot.muscuapp.core.domain.shoppingKey
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.model.DayPlan
 import com.lehyanflouriot.muscuapp.core.model.FoodItem
@@ -45,6 +46,18 @@ fun MealPlan.updateFood(itemId: String, transform: (FoodItem) -> FoodItem): Meal
         day.copy(meals = day.meals.map { meal -> meal.copy(items = meal.items.map { if (it.id == itemId) transform(it) else it }) })
     },
 )
+
+/** Gives a single new name to every food called [from] in the week, and in the substitutions. */
+fun MealPlan.renameFoods(from: String, to: String): MealPlan {
+    val key = shoppingKey(from)
+    fun String.renamed() = if (shoppingKey(this) == key) to else this
+    return copy(
+        days = days.map { day ->
+            day.copy(meals = day.meals.map { meal -> meal.copy(items = meal.items.map { it.copy(name = it.name.renamed()) }) })
+        },
+        substitutions = substitutions.map { group -> group.map { it.renamed() }.distinct() },
+    )
+}
 
 fun MealPlan.removeFood(itemId: String): MealPlan = copy(
     days = days.map { day ->

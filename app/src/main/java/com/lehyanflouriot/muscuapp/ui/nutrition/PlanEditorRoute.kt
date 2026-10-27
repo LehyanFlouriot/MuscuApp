@@ -27,6 +27,8 @@ import com.lehyanflouriot.muscuapp.core.data.updateMeal
 import com.lehyanflouriot.muscuapp.core.data.updateSlot
 import com.lehyanflouriot.muscuapp.core.domain.BODY_WEIGHT_RANGE
 import com.lehyanflouriot.muscuapp.core.domain.MAX_WATER_GLASSES
+import com.lehyanflouriot.muscuapp.core.domain.foodNames
+import com.lehyanflouriot.muscuapp.core.domain.foodsNamed
 import com.lehyanflouriot.muscuapp.core.domain.hasHistory
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
@@ -168,10 +170,13 @@ fun PlanEditorRoute(
                 name = item?.name.orEmpty(),
                 note = item?.note.orEmpty(),
                 onDismiss = close,
-                onSave = { name, quantity, note ->
+                suggestions = remember(plan) { plan.foodNames() },
+                sameNameCount = item?.let { plan.foodsNamed(it.name) - 1 } ?: 0,
+                onSave = { name, quantity, note, everywhere ->
                     if (item == null) {
                         repository.addFood(planId, day, current.slotId, name, quantity, note)
                     } else {
+                        if (everywhere) repository.renameFood(planId, item.name, name)
                         repository.updateFood(planId, item.id, name, quantity, note)
                     }
                     close()

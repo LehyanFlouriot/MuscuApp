@@ -16,6 +16,8 @@ import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.data.removeFood
 import com.lehyanflouriot.muscuapp.core.domain.FoodView
 import com.lehyanflouriot.muscuapp.core.domain.ProgramStatus
+import com.lehyanflouriot.muscuapp.core.domain.foodNames
+import com.lehyanflouriot.muscuapp.core.domain.foodsNamed
 import com.lehyanflouriot.muscuapp.core.domain.hasHistory
 import com.lehyanflouriot.muscuapp.core.domain.planAt
 import com.lehyanflouriot.muscuapp.core.domain.programAt
@@ -117,7 +119,10 @@ fun NutritionRoute(
                 name = item.name,
                 note = item.note,
                 onDismiss = { editingFood = null },
-                onSave = { name, quantity, note ->
+                suggestions = remember(program) { program.foodNames() },
+                sameNameCount = program.foodsNamed(item.name) - 1,
+                onSave = { name, quantity, note, everywhere ->
+                    if (everywhere) repository.renameFood(program.id, item.name, name)
                     repository.updateFood(program.id, item.id, name, quantity, note)
                     editingFood = null
                 },

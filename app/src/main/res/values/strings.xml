@@ -570,4 +570,9 @@
         <item quantity="many">%d articles</item>
         <item quantity="other">%d articles</item>
     </plurals>
+    <plurals name="nutrition_rename_everywhere">
+        <item quantity="one">Renommer aussi l\'autre «\u00A0%2$s\u00A0» du programme</item>
+        <item quantity="many">Renommer aussi les %1$d autres «\u00A0%2$s\u00A0» du programme</item>
+        <item quantity="other">Renommer aussi les %1$d autres «\u00A0%2$s\u00A0» du programme</item>
+    </plurals>
 </resources>

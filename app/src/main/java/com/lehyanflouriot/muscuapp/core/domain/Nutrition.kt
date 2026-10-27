@@ -188,6 +188,21 @@ fun MealPlan.substitutesFor(name: String): List<String> {
         .distinctBy(::normalizeFood)
 }
 
+/** The names of the foods of the week, the most used first: to keep calling a food the same way. */
+fun MealPlan.foodNames(): List<String> =
+    days.flatMap { day -> day.meals.flatMap { meal -> meal.items.map { it.name.trim() } } }
+        .filter { it.isNotEmpty() }
+        .groupBy(::shoppingKey)
+        .values
+        .sortedWith(compareByDescending<List<String>> { it.size }.thenBy { normalizeFood(it.first()) })
+        .map { spellings -> spellings.groupingBy { it }.eachCount().maxBy { it.value }.key }
+
+/** How many foods of the week are called [name], whatever their case or accents. */
+fun MealPlan.foodsNamed(name: String): Int {
+    val key = shoppingKey(name)
+    return days.sumOf { day -> day.meals.sumOf { meal -> meal.items.count { shoppingKey(it.name) == key } } }
+}
+
 // endregion
 
 // region Weight guidance

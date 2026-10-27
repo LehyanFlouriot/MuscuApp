@@ -84,11 +84,13 @@ class WorkoutRepository(
         if (!loadStarted.compareAndSet(false, true)) return
         scope.launch(ioDispatcher) {
             val stored = runCatching { storage.read() }.getOrNull()
-            val loaded = stored?.let(::decodeOrNull)
+            val decoded = stored?.let { runCatching { AppJson.decode(it) }.getOrNull() }
+            val loaded = decoded?.let { runCatching { sanitize(it) }.getOrNull() }
             if (stored != null && loaded == null) runCatching { storage.keepUnreadableCopy(stored) }
             val initial = withDefaultPlan(loaded ?: AppData.initial())
-            // Data that was just created or completed still has to be written once.
-            var lastWritten: AppData? = if (initial === loaded) initial else null
+            // Data that was just created, completed or brought up to date still has to be written once.
+            val upToDate = decoded?.schemaVersion == AppData.CURRENT_SCHEMA_VERSION
+            var lastWritten: AppData? = if (initial === loaded && upToDate) initial else null
             state.value = initial
             state.filterNotNull().collect { current ->
                 if (current !== lastWritten) {
@@ -99,9 +101,6 @@ class WorkoutRepository(
             }
         }
     }
-
-    private fun decodeOrNull(text: String): AppData? =
-        runCatching { sanitize(AppJson.decode(text)) }.getOrNull()
 
     private fun mutate(transform: (AppData) -> AppData) {
         state.update { current -> current?.let(transform) }
@@ -423,6 +422,13 @@ class WorkoutRepository(
         }
     }
 
+    /** Calls every food named [from] in the program [to], so that a food keeps a single name. */
+    fun renameFood(planId: String, from: String, to: String) {
+        val cleanName = to.trim()
+        if (cleanName.isEmpty()) return
+        updatePlan(planId) { it.renameFoods(from, cleanName) }
+    }
+
     fun addSlot(planId: String, name: String, hint: String, moment: MealMoment, kcal: Int?, protein: Int?) {
         val cleanName = name.trim()
         if (cleanName.isEmpty()) return
@@ -520,8 +526,12 @@ class WorkoutRepository(
 
         private fun sortBodyWeights(weights: List<BodyWeightEntry>): List<BodyWeightEntry> = weights.sortedBy { it.date }
 
-        /** Drops anything that would break the app (orphan entries, empty sets, duplicates...). */
-        internal fun sanitize(data: AppData): AppData {
+        /**
+         * Brings an older document up to date, then drops anything that would break the app
+         * (orphan entries, empty sets, duplicates...).
+         */
+        internal fun sanitize(document: AppData): AppData {
+            val data = migrate(document)
             val exercises = data.exercises
                 .filter { it.name.isNotBlank() }
                 .distinctBy { it.id }

@@ -38,6 +38,7 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - **Pilotage du poids** : avec tes pesées, l'app compare ton rythme des 2 dernières semaines à la cible du plan (+0,1 à +0,4 kg par semaine) et te rappelle quoi faire (+ 200 kcal de féculents si ça stagne, − 150 kcal si ça monte trop vite).
 - La semaine en haut de l'écran montre où tu en es chaque jour ; glisse à gauche / à droite pour changer de jour, et regarde les jours à venir pour préparer tes repas.
 - **Modifier le programme** : change un aliment ou une quantité, ajoute ou supprime un repas, copie un jour vers d'autres, ajuste l'eau, les objectifs et les conseils. Les changements s'appliquent dès aujourd'hui ; les jours passés gardent ce qui était prévu.
+- **Un seul nom par aliment** : en tapant un aliment, l'app propose les noms déjà utilisés dans le programme, et un aliment renommé peut l'être partout d'un coup. Ainsi la liste de courses ne compte chaque aliment qu'une fois.
 - **Mes programmes** : dans quelques mois, crée un **nouveau programme** (vide ou à partir de l'actuel) et choisis le jour où il commence : aujourd'hui, lundi prochain ou une autre date. L'ancien reste dans ton historique.
 
 ### 🛒 Liste de courses

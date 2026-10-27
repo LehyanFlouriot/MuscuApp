@@ -2,6 +2,7 @@ package com.lehyanflouriot.muscuapp.core.data
 
 import com.lehyanflouriot.muscuapp.core.domain.ProgramStatus
 import com.lehyanflouriot.muscuapp.core.domain.buildNutritionDay
+import com.lehyanflouriot.muscuapp.core.domain.foodsNamed
 import com.lehyanflouriot.muscuapp.core.domain.planAt
 import com.lehyanflouriot.muscuapp.core.domain.programAt
 import com.lehyanflouriot.muscuapp.core.domain.programInfos
@@ -267,6 +268,88 @@ class NutritionRepositoryTest {
         repo.toggleShoppingItem(monday.minusWeeks(20), "riz")
         repo.toggleShoppingItem(monday, "riz")
         assertEquals(listOf(monday), repo.nutrition.shopping.map { it.weekStart })
+    }
+
+    /** The plan as the first version of the app added it, before each food had a single name. */
+    private fun firstVersionPlan() = DefaultMealPlan.create().let { plan ->
+        val oldNames = mapOf(
+            "mon-post-seance-1" to "pâtes",
+            "mon-post-seance-2" to "bœuf 5 %",
+            "mon-post-seance-5" to "huile",
+            "tue-pre-seance-2" to "dinde",
+            "fri-post-seance-4" to "wok de légumes",
+            "sat-pre-seance-4" to "grosse banane",
+        )
+        plan.copy(
+            days = plan.days.map { day ->
+                day.copy(
+                    meals = day.meals.map { meal ->
+                        meal.copy(
+                            items = meal.items.map { item ->
+                                oldNames[item.id]?.let { item.copy(name = it, note = "") } ?: item
+                            },
+                        )
+                    },
+                )
+            },
+            substitutions = listOf(
+                listOf("riz", "pâtes", "semoule", "pommes de terre"),
+                listOf("poulet", "dinde", "cabillaud"),
+                listOf("fromage blanc", "skyr"),
+            ),
+        )
+    }
+
+    @Test
+    fun savedPlansGetOneNamePerFood() = runTest {
+        val old = firstVersionPlan()
+        // A food the user renamed in the meantime keeps its name.
+        val edited = old.updateFood("sun-dejeuner-4") { it.copy(name = "huile de colza") }
+        val saved = AppData.initial().copy(
+            schemaVersion = 1,
+            nutrition = Nutrition(
+                plans = listOf(edited),
+                schedule = listOf(PlanPeriod(edited.id, monday)),
+                days = listOf(NutritionDay(monday, eaten = listOf("mon-post-seance-5"))),
+                seeded = true,
+                shopping = listOf(ShoppingWeek(monday, checked = listOf("huile", "lait"))),
+            ),
+        )
+        val storage = FakeStorage(AppJson.encode(saved))
+        val repo = repository(storage)
+        val plan = repo.nutrition.plans.single()
+        fun item(id: String) = plan.days.flatMap { day -> day.meals.flatMap { it.items } }.single { it.id == id }
+        assertEquals("pâtes complètes", item("mon-post-seance-1").name)
+        assertEquals("bœuf haché 5 %", item("mon-post-seance-2").name)
+        assertEquals("huile d'olive", item("mon-post-seance-5").name)
+        assertEquals("blanc de dinde", item("tue-pre-seance-2").name)
+        assertEquals("En tranches", item("tue-pre-seance-2").note)
+        assertEquals("légumes variés", item("fri-post-seance-4").name)
+        assertEquals("En wok", item("fri-post-seance-4").note)
+        assertEquals("banane", item("sat-pre-seance-4").name)
+        assertEquals("huile de colza", item("sun-dejeuner-4").name)
+        assertEquals("dinde", item("wed-dejeuner-2").name)
+        assertEquals(DefaultMealPlan.SUBSTITUTIONS, plan.substitutions)
+        // What was eaten or put in the cart stays.
+        assertEquals(listOf("mon-post-seance-5"), repo.nutrition.day(monday).eaten)
+        assertEquals(listOf("huile d'olive", "lait"), repo.nutrition.shoppingWeek(monday).checked)
+        // The document is written again, up to date, and not changed a second time.
+        assertEquals(1, storage.writes)
+        val reloaded = FakeStorage(storage.content)
+        assertEquals(repo.nutrition, repository(reloaded).nutrition)
+        assertEquals(0, reloaded.writes)
+    }
+
+    @Test
+    fun aFoodCanBeRenamedEverywhere() = runTest {
+        val repo = repository(FakeStorage())
+        repo.renameFood(DefaultMealPlan.ID, "Huile d'olive", "huile de colza")
+        val plan = repo.nutrition.plan(DefaultMealPlan.ID)!!
+        assertEquals(0, plan.foodsNamed("huile d'olive"))
+        assertEquals(10, plan.foodsNamed("huile de colza"))
+        assertEquals(7, plan.foodsNamed("lait"))
+        repo.renameFood(DefaultMealPlan.ID, "pâtes complètes", "pâtes")
+        assertTrue(repo.nutrition.plan(DefaultMealPlan.ID)!!.substitutions.first().contains("pâtes"))
     }
 
     @Test

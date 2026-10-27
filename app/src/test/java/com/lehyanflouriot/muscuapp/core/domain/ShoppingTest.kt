@@ -74,19 +74,33 @@ class ShoppingTest {
         assertEquals("420 g", amounts("flocons d'avoine"))
         assertEquals("35 g", amounts("créatine"))
         assertEquals(DayOfWeek.entries, items.getValue("créatine").days)
-        assertEquals("5", amounts("banane"))
-        assertEquals(listOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY), items.getValue("banane").days)
-        assertEquals("630 g", amounts("riz"))
-        assertEquals("150 g", amounts("riz basmati"))
+        assertEquals("6", amounts("banane"))
+        assertEquals(
+            listOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY),
+            items.getValue("banane").days,
+        )
+        // Each food is bought under one name: no "riz" next to "riz basmati", no "huile" next to "huile d'olive".
+        assertEquals("780 g", amounts("riz basmati"))
+        assertEquals("12,5 c. à s.", amounts("huile d'olive"))
+        assertEquals("390 g", amounts("pâtes complètes"))
+        assertEquals("370 g", amounts("pain complet"))
+        assertEquals("280 g", amounts("bœuf haché 5 %"))
+        assertEquals("280 g", amounts("dinde"))
+        assertEquals("40 g", amounts("blanc de dinde"))
+        assertEquals("40 g + 5 c. à s. + 2 c. à c.", amounts("miel"))
         assertEquals("1,05 kg", amounts("skyr"))
         assertEquals("1,7 kg", amounts("fromage blanc"))
         assertEquals("540 g", amounts("poulet"))
         assertEquals("5", amounts("œufs"))
-        assertEquals("5,5 c. à s.", amounts("huile d'olive"))
-        assertEquals("5 c. à s. + 2 c. à c.", amounts("miel"))
+        val doubles = listOf(
+            "huile", "riz", "pâtes", "pain", "bœuf 5 %", "steak haché 5 %", "grosse banane", "miel ou confiture",
+            "wok de légumes", "poêlée de légumes", "légumes couscous", "pois chiches cuits",
+        )
+        assertTrue(doubles.none { it in items })
         // Foods without a quantity tell for how many meals they are.
         assertEquals(2, items.getValue("brocolis").unmeasured)
         assertTrue(items.getValue("brocolis").amounts.isEmpty())
+        assertEquals(3, items.getValue("légumes variés").unmeasured)
         // Aisles come in the order of the supermarket.
         assertEquals(Aisle.entries.filter { it != Aisle.OTHER }, list.aisles.map { it.first })
         assertEquals(list.items.size, list.items.map { it.key }.toSet().size)
@@ -96,15 +110,15 @@ class ShoppingTest {
     fun swapsAndDaysAreTakenIntoAccount() {
         val tuesday = monday.plusDays(1)
         val pasta = plan.day(DayOfWeek.TUESDAY).meal("dejeuner").items.first()
-        val swapped = nutrition.copy(days = listOf(NutritionDay(tuesday, swaps = listOf(FoodSwap(pasta.id, "riz", "150 g")))))
+        val swapped = nutrition.copy(days = listOf(NutritionDay(tuesday, swaps = listOf(FoodSwap(pasta.id, "riz basmati", "150 g")))))
         val items = buildShoppingList(swapped, monday, sunday).items.associateBy { it.name }
-        assertEquals("780 g", Fmt.amounts(items.getValue("riz").amounts).plain())
-        assertNull(items["pâtes complètes"])
+        assertEquals("930 g", Fmt.amounts(items.getValue("riz basmati").amounts).plain())
+        assertEquals("240 g", Fmt.amounts(items.getValue("pâtes complètes").amounts).plain())
 
         // From Thursday on, only what is left to eat.
         val rest = buildShoppingList(nutrition, monday.plusDays(3), sunday).items.associateBy { it.name }
         assertEquals("1,2 L", Fmt.amounts(rest.getValue("lait").amounts).plain())
-        assertNull(rest["riz basmati"])
+        assertNull(rest["brocolis"])
         // No plan, nothing to buy.
         assertTrue(buildShoppingList(nutrition, monday.minusWeeks(1), sunday.minusWeeks(1)).items.isEmpty())
     }

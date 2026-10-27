@@ -41,6 +41,11 @@ class NutritionTest {
         val items = plan.days.flatMap { day -> day.meals.flatMap { it.items } }
         assertEquals(items.size, items.map { it.id }.toSet().size)
         assertTrue(plan.days.all { day -> day.meal("matin").items.any { it.name == "créatine" && it.quantity == "5 g" } })
+        // A food is always written the same way, and the substitutions use these names.
+        assertEquals(listOf("riz basmati", "pâtes complètes", "semoule"), plan.substitutesFor("pommes de terre"))
+        assertEquals(10, plan.foodsNamed("huile d'olive"))
+        assertEquals("huile d'olive", plan.foodNames().first())
+        assertEquals(plan.foodNames().size, plan.foodNames().map(::shoppingKey).toSet().size)
         val mondayLunch = plan.day(DayOfWeek.MONDAY).meal("dejeuner").items
         assertEquals(listOf("riz basmati", "poulet", "brocolis", "huile d'olive"), mondayLunch.map { it.name })
         assertEquals(listOf("150 g", "130 g", "", "1,5 c. à s."), mondayLunch.map { it.quantity })
@@ -87,8 +92,8 @@ class NutritionTest {
 
     @Test
     fun substitutesComeFromTheGroupsOfThePlan() {
-        assertEquals(listOf("pâtes", "semoule", "pommes de terre"), plan.substitutesFor("riz basmati"))
-        assertEquals(listOf("riz", "semoule", "pommes de terre"), plan.substitutesFor("Pâtes complètes"))
+        assertEquals(listOf("pâtes complètes", "semoule", "pommes de terre"), plan.substitutesFor("riz basmati"))
+        assertEquals(listOf("riz basmati", "semoule", "pommes de terre"), plan.substitutesFor("Pâtes complètes"))
         assertEquals(listOf("dinde", "cabillaud"), plan.substitutesFor("poulet"))
         assertEquals(listOf("fromage blanc"), plan.substitutesFor("skyr"))
         assertEquals(emptyList<String>(), plan.substitutesFor("fromage frais"))

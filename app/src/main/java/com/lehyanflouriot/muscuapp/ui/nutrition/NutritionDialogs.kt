@@ -50,6 +50,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -65,6 +66,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -77,6 +79,7 @@ import com.lehyanflouriot.muscuapp.core.data.MAX_MEAL_PROTEIN
 import com.lehyanflouriot.muscuapp.core.domain.FoodView
 import com.lehyanflouriot.muscuapp.core.domain.ProgramInfo
 import com.lehyanflouriot.muscuapp.core.domain.ProgramStatus
+import com.lehyanflouriot.muscuapp.core.domain.normalizeFood
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.MealMoment
 import com.lehyanflouriot.muscuapp.core.model.MealPlan
@@ -98,7 +101,11 @@ class FormField(
     val singleLine: Boolean = true,
     val required: Boolean = false,
     val isValid: (String) -> Boolean = { true },
+    /** Values already used elsewhere, offered while typing so that the same thing keeps the same name. */
+    val suggestions: List<String> = emptyList(),
 )
+
+private const val MAX_SUGGESTIONS = 6
 
 /** A dialog with a few text fields, the first one ready to be typed in. */
 @Composable
@@ -153,6 +160,25 @@ fun FormDialog(
                             .fillMaxWidth()
                             .then(if (index == 0) Modifier.focusRequester(focusRequester) else Modifier),
                     )
+                    if (field.suggestions.isNotEmpty()) {
+                        val matches = remember(value, field.suggestions) {
+                            val typed = normalizeFood(value)
+                            if (typed.isEmpty()) {
+                                emptyList()
+                            } else {
+                                field.suggestions
+                                    .filter { normalizeFood(it).let { name -> name != typed && name.contains(typed) } }
+                                    .take(MAX_SUGGESTIONS)
+                            }
+                        }
+                        if (matches.isNotEmpty()) {
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                matches.forEach { suggestion ->
+                                    SuggestionChip(onClick = { values[index].value = suggestion }, label = { Text(suggestion) })
+                                }
+                            }
+                        }
+                    }
                 }
                 extraContent?.invoke()
             }
@@ -206,11 +232,16 @@ fun FoodDialog(
     name: String,
     note: String,
     onDismiss: () -> Unit,
-    onSave: (name: String, quantity: String, note: String) -> Unit,
+    onSave: (name: String, quantity: String, note: String, everywhere: Boolean) -> Unit,
     supportingText: String? = null,
+    /** Names of the other foods of the program, offered while typing. */
+    suggestions: List<String> = emptyList(),
+    /** How many other foods of the program have the same name, to rename them all at once. */
+    sameNameCount: Int = 0,
     onMove: ((Int) -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
+    var everywhere by remember { mutableStateOf(true) }
     FormDialog(
         title = title,
         supportingText = supportingText,
@@ -220,6 +251,7 @@ fun FoodDialog(
                 initial = name,
                 capitalization = KeyboardCapitalization.None,
                 required = true,
+                suggestions = suggestions,
             ),
             FormField(
                 label = stringResource(R.string.nutrition_food_quantity),
@@ -230,12 +262,28 @@ fun FoodDialog(
             FormField(label = stringResource(R.string.nutrition_food_note), initial = note),
         ),
         onDismiss = onDismiss,
-        onConfirm = { (newName, newQuantity, newNote) -> onSave(newName, newQuantity, newNote) },
-        extraContent = if (onMove == null && onDelete == null) {
+        onConfirm = { (newName, newQuantity, newNote) -> onSave(newName, newQuantity, newNote, everywhere && sameNameCount > 0) },
+        extraContent = if (onMove == null && onDelete == null && sameNameCount == 0) {
             null
         } else {
             {
                 Column {
+                    if (sameNameCount > 0) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .toggleable(value = everywhere, role = Role.Checkbox, onValueChange = { everywhere = it }),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = everywhere, onCheckedChange = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = pluralStringResource(R.plurals.nutrition_rename_everywhere, sameNameCount, sameNameCount, name),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
                     if (onMove != null) {
                         Row {
                             DialogAction(stringResource(R.string.nutrition_move_up), Icons.Rounded.ArrowUpward, { onMove(-1) })

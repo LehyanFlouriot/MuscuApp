@@ -41,6 +41,13 @@ object DefaultMealPlan {
 
     private val creatine = food("5 g", "créatine", "Tous les jours, même au repos")
 
+    /** With the names of the foods of the plan, so that a replaced food keeps one name in the shopping list. */
+    internal val SUBSTITUTIONS = listOf(
+        listOf("riz basmati", "pâtes complètes", "semoule", "pommes de terre"),
+        listOf("poulet", "dinde", "cabillaud"),
+        listOf("fromage blanc", "skyr"),
+    )
+
     private fun day(day: DayOfWeek, label: String, training: Boolean, water: Int, vararg meals: Meal): DayPlan {
         val code = day.name.take(3).lowercase()
         return DayPlan(
@@ -85,8 +92,8 @@ object DefaultMealPlan {
                 meal(PRE, food("200 g", "fromage blanc"), food("60 g", "flocons d'avoine"), food("1 c. à s.", "miel"), food("1", "pomme")),
                 meal(
                     POST,
-                    food("120 g", "pâtes"), food("130 g", "bœuf 5 %"), food("", "sauce tomate"), food("50 g", "pain"),
-                    food("1 c. à s.", "huile"),
+                    food("120 g", "pâtes complètes"), food("130 g", "bœuf haché 5 %"), food("", "sauce tomate"),
+                    food("50 g", "pain complet"), food("1 c. à s.", "huile d'olive"),
                 ),
                 meal(NIGHT, food("200 g", "skyr"), food("25 g", "amandes")),
             ),
@@ -98,10 +105,14 @@ object DefaultMealPlan {
                     food("15 g", "amandes"), creatine,
                 ),
                 meal(LUNCH, food("150 g", "pâtes complètes"), food("130 g", "thon"), food("", "courgettes"), food("1,5 c. à s.", "huile d'olive")),
-                meal(PRE, food("100 g", "pain complet"), food("40 g", "dinde"), food("50 g", "fromage frais"), food("1", "banane")),
+                meal(
+                    PRE,
+                    food("100 g", "pain complet"), food("40 g", "blanc de dinde", "En tranches"), food("50 g", "fromage frais"),
+                    food("1", "banane"),
+                ),
                 meal(
                     POST,
-                    food("120 g", "riz"), food("170 g", "saumon"), food("", "brocolis"), food("", "citron"),
+                    food("120 g", "riz basmati"), food("170 g", "saumon"), food("", "brocolis"), food("", "citron"),
                     note = "Sans huile, le saumon suffit",
                 ),
                 meal(NIGHT, food("200 g", "fromage blanc"), food("20 g", "noix"), food("1 c. à c.", "miel")),
@@ -122,8 +133,8 @@ object DefaultMealPlan {
                 ),
                 meal(
                     POST,
-                    food("400 g", "pommes de terre"), food("150 g", "steak haché 5 %"), food("", "haricots verts"),
-                    food("60 g", "pain"), food("1 c. à s.", "huile"),
+                    food("400 g", "pommes de terre"), food("150 g", "bœuf haché 5 %"), food("", "haricots verts"),
+                    food("60 g", "pain complet"), food("1 c. à s.", "huile d'olive"),
                 ),
                 meal(NIGHT, food("250 g", "skyr"), food("20 g", "beurre de cacahuète")),
             ),
@@ -132,11 +143,16 @@ object DefaultMealPlan {
                 meal(MORNING, food("300 ml", "lait"), food("40 g", "flocons d'avoine"), food("1", "poire"), food("15 g", "noix"), creatine),
                 meal(
                     LUNCH,
-                    food("120 g", "riz"), food("150 g", "cabillaud"), food("", "haricots verts"), food("1,5 c. à s.", "huile"),
+                    food("120 g", "riz basmati"), food("150 g", "cabillaud"), food("", "haricots verts"),
+                    food("1,5 c. à s.", "huile d'olive"),
                     kcal = 800, note = "Féculents réduits",
                 ),
-                meal(PRE, food("200 g", "skyr"), food("1", "fruit"), kcal = 250, note = "Simple collation"),
-                meal(POST, food("120 g", "pâtes"), food("130 g", "poulet"), food("", "courgettes"), food("30 g", "parmesan"), kcal = 750),
+                meal(PRE, food("200 g", "skyr"), food("1", "fruit", "Au choix"), kcal = 250, note = "Simple collation"),
+                meal(
+                    POST,
+                    food("120 g", "pâtes complètes"), food("130 g", "poulet"), food("", "courgettes"), food("30 g", "parmesan"),
+                    kcal = 750,
+                ),
                 meal(NIGHT, food("200 g", "fromage blanc"), food("25 g", "noisettes")),
             ),
             day(
@@ -148,14 +164,14 @@ object DefaultMealPlan {
                 ),
                 meal(
                     LUNCH,
-                    food("500 g", "patate douce"), food("130 g", "poulet"), food("", "poivrons"), food("60 g", "pain"),
-                    food("1 c. à s.", "huile"),
+                    food("500 g", "patate douce"), food("130 g", "poulet"), food("", "poivrons"), food("60 g", "pain complet"),
+                    food("1 c. à s.", "huile d'olive"),
                 ),
                 meal(PRE, food("200 g", "fromage blanc"), food("60 g", "muesli"), food("1 c. à s.", "miel"), food("1", "poire")),
                 meal(
                     POST,
-                    food("120 g", "riz"), food("150 g", "cabillaud"), food("2", "œufs"), food("", "wok de légumes"),
-                    food("1 c. à s.", "huile"),
+                    food("120 g", "riz basmati"), food("150 g", "cabillaud"), food("2", "œufs"), food("", "légumes variés", "En wok"),
+                    food("1 c. à s.", "huile d'olive"),
                 ),
                 meal(NIGHT, food("200 g", "skyr"), food("25 g", "amandes"), food("", "cannelle")),
             ),
@@ -166,17 +182,17 @@ object DefaultMealPlan {
                     food("300 ml", "lait"), food("50 g", "flocons d'avoine"), food("150 g", "mangue"),
                     food("1 c. à s.", "miel"), creatine,
                 ),
-                meal(LUNCH, food("150 g", "riz"), food("130 g", "saumon"), food("", "épinards"), food("1 c. à s.", "huile d'olive")),
+                meal(LUNCH, food("150 g", "riz basmati"), food("130 g", "saumon"), food("", "épinards"), food("1 c. à s.", "huile d'olive")),
                 meal(
                     PRE,
-                    food("100 g", "pain complet"), food("40 g", "miel ou confiture"), food("200 g", "fromage blanc"),
-                    food("1", "grosse banane"),
+                    food("100 g", "pain complet"), food("40 g", "miel", "Ou confiture"), food("200 g", "fromage blanc"),
+                    food("1", "banane", "Une grosse"),
                     kcal = 700, note = "Séance la plus dure",
                 ),
                 meal(
                     POST,
-                    food("120 g", "semoule"), food("150 g", "poulet"), food("100 g", "pois chiches cuits"),
-                    food("", "légumes couscous"),
+                    food("120 g", "semoule"), food("150 g", "poulet"), food("100 g", "pois chiches", "Pesés cuits"),
+                    food("", "légumes variés", "Pour le couscous"),
                 ),
                 meal(NIGHT, food("250 g", "fromage blanc"), food("20 g", "noix de cajou")),
             ),
@@ -189,13 +205,14 @@ object DefaultMealPlan {
                 ),
                 meal(
                     LUNCH,
-                    food("120 g", "lentilles"), food("3", "œufs"), food("", "salade"), food("1,5 c. à s.", "huile"),
+                    food("120 g", "lentilles"), food("3", "œufs"), food("", "salade"), food("1,5 c. à s.", "huile d'olive"),
                     kcal = 800, note = "Féculents réduits",
                 ),
                 meal(PRE, food("200 g", "fromage blanc"), food("20 g", "amandes"), kcal = 250, note = "Simple collation"),
                 meal(
                     POST,
-                    food("120 g", "riz"), food("150 g", "dinde"), food("", "poêlée de légumes"), food("40 g", "emmental"),
+                    food("120 g", "riz basmati"), food("150 g", "dinde"), food("", "légumes variés", "En poêlée"),
+                    food("40 g", "emmental"),
                     kcal = 750,
                 ),
                 meal(NIGHT, food("200 g", "skyr"), food("20 g", "purée d'amande")),
@@ -204,11 +221,7 @@ object DefaultMealPlan {
         glassMl = 250,
         waterHint = "2 au réveil · 3 dans la matinée · 2 au déjeuner · 2 avant la séance · 2 pendant · 2 le soir. " +
             "Le lait et le thé comptent, le café ne se déduit pas.",
-        substitutions = listOf(
-            listOf("riz", "pâtes", "semoule", "pommes de terre"),
-            listOf("poulet", "dinde", "cabillaud"),
-            listOf("fromage blanc", "skyr"),
-        ),
+        substitutions = SUBSTITUTIONS,
         notes = listOf(
             PlanNote(
                 "note-creatine",
