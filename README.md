@@ -82,21 +82,33 @@ Sans synchronisation, tes données restent sur ton téléphone (et dans la sauve
 
 ## Activer la synchronisation Google
 
-Google n'autorise une app à utiliser Google Drive que si elle est déclarée dans un projet **Google Cloud**. Comme l'app n'est pas sur le Play Store, c'est à toi de créer ce projet, gratuitement, en 5 minutes. Il n'y a rien à copier dans l'app ensuite.
+Google n'autorise une app à utiliser Google Drive que si elle est déclarée dans un projet **Google Cloud**. Comme l'app n'est pas sur le Play Store, c'est à toi de créer ce projet, une seule fois. C'est gratuit : aucune carte bancaire n'est nécessaire, et si la console propose un essai gratuit, ignore-le. Il n'y a rien à copier dans l'app ensuite.
 
-1. Ouvre la **[console Google Cloud](https://console.cloud.google.com/)** avec ton compte Google et crée un projet (par exemple « MuscuApp »).
-2. Active l'**[API Google Drive](https://console.cloud.google.com/apis/library/drive.googleapis.com)** pour ce projet : bouton **Activer**.
-3. Ouvre **[Google Auth Platform](https://console.cloud.google.com/auth/overview)** et clique sur **Commencer** : nom de l'app « MuscuApp », ton adresse e-mail pour l'assistance, audience **Externe**, ton adresse e-mail pour les coordonnées, puis **Créer**.
-4. Dans **Accès aux données** : *Ajouter ou supprimer des niveaux d'accès*, coche `.../auth/drive.appdata` (« Afficher, créer et supprimer ses propres données de configuration dans votre Google Drive »), puis **Mettre à jour** et **Enregistrer**.
-5. Dans **Audience** : clique sur **Publier l'application**. Aucune validation de Google n'est nécessaire, car cet accès est classé « non sensible ». En restant en mode « Test », il faudrait t'ajouter comme utilisateur test et Google pourrait redemander l'autorisation régulièrement.
-6. Dans **Clients** : *Créer un client*, type **Android**, puis :
+1. Mets en ligne le **site de l'app** (Google demande une page d'accueil et des règles de confidentialité publiques) : sur GitHub, ouvre *Settings → Pages* du dépôt, choisis la source **Deploy from a branch**, la branche `claude/android-workout-tracker-app-jljydq` et le dossier `/docs`, puis **Save**. Une minute plus tard, le site est sur [lehyanflouriot.github.io/MuscuApp](https://lehyanflouriot.github.io/MuscuApp/).
+2. Ouvre la **[console Google Cloud](https://console.cloud.google.com/)** avec ton compte Google et crée un projet (par exemple « MuscuApp »).
+3. Active l'**[API Google Drive](https://console.cloud.google.com/apis/library/drive.googleapis.com)** pour ce projet : bouton **Activer**.
+4. Ouvre **[Google Auth Platform](https://console.cloud.google.com/auth/overview)** et clique sur **Commencer** : nom de l'app « MuscuApp », ton adresse e-mail pour l'assistance, audience **Externe**, ton adresse e-mail pour les coordonnées, puis **Créer**.
+5. Dans **Branding**, complète :
+   - **pas de logo** : un logo oblige Google à vérifier l'app, ce qui prend des semaines ;
+   - page d'accueil de l'application : `https://lehyanflouriot.github.io/MuscuApp/`
+   - règles de confidentialité : `https://lehyanflouriot.github.io/MuscuApp/confidentialite.html`
+   - conditions d'utilisation : `https://lehyanflouriot.github.io/MuscuApp/conditions.html`
+   - domaines autorisés : `lehyanflouriot.github.io`
+   - coordonnées du développeur : ton adresse e-mail
+
+   Puis **Enregistrer**.
+6. Dans **Accès aux données** : *Ajouter ou supprimer des niveaux d'accès*, coche `.../auth/drive.appdata` (« Afficher, créer et supprimer ses propres données de configuration dans votre Google Drive »), puis **Mettre à jour** et **Enregistrer**.
+7. Dans **Audience** : clique sur **Publier l'application**. Aucune validation de Google n'est nécessaire, car cet accès est classé « non sensible ». L'app n'étant pas vérifiée, l'écran d'autorisation de Google affichera le domaine `lehyanflouriot.github.io` plutôt que son nom : c'est normal.
+8. Dans **Clients** : *Créer un client*, type **Android**, puis :
    - nom du package : `com.lehyanflouriot.muscuapp`
    - empreinte du certificat SHA-1 : `E1:EF:4D:50:D8:F8:89:AE:D4:09:81:E5:29:77:C5:82:E8:B9:76:B3`
 
    Puis **Créer**.
-7. Sur ton téléphone : **Réglages → Synchronisation → Se connecter avec Google**, choisis ton compte et accepte. Fais de même sur tes autres appareils.
+9. Sur ton téléphone : **Réglages → Synchronisation → Se connecter avec Google**, choisis ton compte et accepte. Fais de même sur tes autres appareils.
 
-Les réglages de la console peuvent mettre quelques minutes à s'appliquer : si la connexion échoue juste après, réessaie un peu plus tard. Si l'app affiche « le projet Google Cloud de l'app n'est pas prêt », vérifie les étapes 2 et 6.
+Pour essayer sans publier l'application : laisse-la en mode « Test » et ajoute ton adresse dans **Audience → Utilisateurs test**. La synchronisation marche tout de suite, mais Google peut redemander ton autorisation au bout de 7 jours (bouton « Se reconnecter » dans les réglages de l'app).
+
+Les réglages de la console peuvent mettre quelques minutes à s'appliquer : si la connexion échoue juste après, réessaie un peu plus tard. Si l'app affiche « le projet Google Cloud de l'app n'est pas prêt », vérifie les étapes 3 et 8.
 
 Pour effacer la copie gardée sur ton compte : Google Drive → *Paramètres* → *Gérer les applications* → MuscuApp → *Options* → *Supprimer les données d'application masquées*.
 
@@ -112,7 +124,8 @@ Projet Android natif en **Kotlin** avec **Jetpack Compose** et **Material 3**.
 - `app/src/main/java/.../core` : logique sans dépendance Android (modèle, statistiques, semaines, poids, plan alimentaire, minuteur), testée par des tests unitaires.
 - `app/src/main/java/.../core/sync` : synchronisation (fusion à trois voies des données, client Google Drive), testée avec un faux compte partagé par plusieurs appareils et un faux serveur Google.
 - `app/src/main/java/.../ui` : écrans Compose. `.../timer` : minuteur (alarme exacte + notifications). `.../sync` : connexion Google et moments de synchronisation.
-- À chaque push sur la branche principale, GitHub Actions construit l'APK et le publie dans les **Releases** (avec les captures d'écran).
+- À chaque push sur la branche principale, GitHub Actions construit l'APK et le publie dans les **Releases** (avec les captures d'écran). Les changements du site (`docs/`) et de ce README ne créent pas de nouvel APK.
+- `docs/` : le site de l'app (accueil, règles de confidentialité, conditions d'utilisation), publié avec GitHub Pages.
 
 ### Signature de l'APK
 

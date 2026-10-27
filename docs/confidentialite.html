@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Règles de confidentialité · MuscuApp</title>
+  <meta name="description" content="Quelles données MuscuApp utilise, où elles sont gardées et comment les supprimer.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <p><a href="./">← MuscuApp</a></p>
+  <h1>Règles de confidentialité</h1>
+  <p class="updated">Dernière mise à jour&nbsp;: 27 octobre 2026</p>
+
+  <div class="card">
+    <p><strong>En bref&nbsp;:</strong> MuscuApp n'a pas de serveur. Vos données restent sur votre téléphone et, si vous activez la synchronisation, dans le dossier caché réservé à l'application dans votre Google Drive. Elles ne sont ni vendues, ni partagées, ni utilisées pour de la publicité ou des statistiques.</p>
+  </div>
+
+  <h2>Les données de l'application</h2>
+  <p>MuscuApp enregistre ce que vous y notez&nbsp;: vos exercices et vos séances, vos pesées, votre plan alimentaire, les repas cochés, votre liste de courses et vos réglages. Ces données sont gardées dans l'espace privé de l'application sur votre téléphone. Si la sauvegarde automatique d'Android est activée sur votre téléphone, Android peut aussi les sauvegarder dans votre compte Google, comme pour les autres applications.</p>
+
+  <h2>Les données de votre compte Google</h2>
+  <p>La synchronisation est facultative. Elle ne démarre que si vous connectez votre compte Google dans les réglages de l'application. MuscuApp demande alors un seul accès&nbsp;:</p>
+  <ul>
+    <li><code>https://www.googleapis.com/auth/drive.appdata</code>&nbsp;: voir, créer et supprimer ses propres données de configuration dans votre Google Drive.</li>
+  </ul>
+  <p>Cet accès est limité au dossier caché réservé à MuscuApp dans votre Google Drive&nbsp;: l'application ne peut ni voir, ni modifier vos fichiers et dossiers. Avec cet accès&nbsp;:</p>
+  <ul>
+    <li>MuscuApp écrit dans ce dossier un seul fichier, qui contient vos données de l'application, le numéro de version de l'application et le nom de l'appareil qui l'a envoyé (pour vous dire d'où vient le dernier envoi).</li>
+    <li>MuscuApp lit ce même fichier pour retrouver vos données sur vos autres appareils.</li>
+    <li>MuscuApp lit l'adresse e-mail de votre compte Google pour l'afficher dans les réglages et toujours utiliser le même compte. Elle n'est gardée que sur votre téléphone.</li>
+  </ul>
+  <p>Ces données ne servent qu'à garder les mêmes données sur vos appareils. Elles passent directement de votre téléphone à Google Drive, par une connexion chiffrée (HTTPS), sans passer par un autre serveur. Elles ne sont transmises à personne.</p>
+  <p>L'utilisation et le transfert vers toute autre application des informations reçues des API Google par MuscuApp respectent le <a href="https://developers.google.com/terms/api-services-user-data-policy">Règlement sur les données des utilisateurs des services d'API Google</a>, y compris les exigences d'utilisation limitée.</p>
+
+  <h2>Supprimer vos données</h2>
+  <ul>
+    <li><strong>Arrêter la synchronisation&nbsp;:</strong> dans MuscuApp, Réglages → Synchronisation → Déconnecter.</li>
+    <li><strong>Supprimer la copie gardée dans Google Drive&nbsp;:</strong> dans Google Drive, Paramètres → Gérer les applications → MuscuApp → Options → Supprimer les données d'application masquées.</li>
+    <li><strong>Retirer l'accès de MuscuApp à votre compte&nbsp;:</strong> sur la page <a href="https://myaccount.google.com/connections">Applications et services tiers</a> de votre compte Google.</li>
+    <li><strong>Supprimer les données du téléphone&nbsp;:</strong> désinstallez l'application, ou effacez ses données dans les paramètres d'Android.</li>
+  </ul>
+
+  <h2>Changements</h2>
+  <p>Si ces règles changent, cette page est mise à jour et sa date aussi.</p>
+
+  <h2>Contact</h2>
+  <p>Pour toute question, ouvrez un ticket sur la <a href="https://github.com/LehyanFlouriot/MuscuApp/issues">page GitHub du projet</a>.</p>
+
+  <footer>
+    <a href="./">Accueil</a> ·
+    <a href="conditions.html">Conditions d'utilisation</a> ·
+    <a href="https://github.com/LehyanFlouriot/MuscuApp">Code source</a>
+  </footer>
+</main>
+</body>
+</html>

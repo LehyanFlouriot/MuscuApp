@@ -1,8 +1,15 @@
 name: Android
 
 on:
+  # The site and the README do not change the app: they need no new APK.
   push:
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
