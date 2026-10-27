@@ -4,7 +4,11 @@ import android.app.Application
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -20,14 +24,18 @@ import com.lehyanflouriot.muscuapp.core.domain.metricValue
 import com.lehyanflouriot.muscuapp.core.domain.suggestedWeight
 import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
+import com.lehyanflouriot.muscuapp.core.timer.TimerLogic
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressScreen
 import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
+import com.lehyanflouriot.muscuapp.ui.rest.rememberRestProgress
+import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
 import com.lehyanflouriot.muscuapp.ui.weight.WeightScreen
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -201,5 +209,73 @@ class MotionTest {
             onUpdate = { _, _ -> },
             onDelete = {},
         )
+    }
+
+    /**
+     * The ring of the rest timer follows the time at every frame, and glides when the timer is
+     * changed: it never jumps, not even when a rest is resumed after a long pause.
+     */
+    @Test
+    fun restRing() {
+        composeRule.mainClock.autoAdvance = false
+        var clock = 0L
+        var state by mutableStateOf<TimerState>(TimerState.Running(endAt = 30_000, total = 90_000))
+        var progress: () -> Float = { Float.NaN }
+        composeRule.setContent {
+            val now = rememberTimerNow(state) { clock }
+            progress = rememberRestProgress(state, now)
+        }
+        val rows = mutableListOf("  time    step         shown   truth")
+        var shown = progress()
+        var biggestStep = 0f
+        var elapsed = 0L
+        fun change(step: String, next: (TimerState) -> TimerState) {
+            composeRule.runOnIdle {
+                state = next(state)
+                Snapshot.sendApplyNotifications()
+            }
+            rows += "  ${elapsed.toString().padStart(5)}ms $step"
+        }
+        // Advances frame by frame, as drawing would read the progress.
+        fun frames(millis: Long, glide: Boolean = false) {
+            repeat((millis / FRAME_MS).toInt()) { frame ->
+                clock += FRAME_MS
+                elapsed += FRAME_MS
+                composeRule.mainClock.advanceTimeBy(FRAME_MS, ignoreFrameDuration = true)
+                val value = progress()
+                val step = abs(value - shown)
+                if (frame == 0) assertTrue("jump of $step right after a change", step < 0.02f)
+                if (!glide) biggestStep = maxOf(biggestStep, step)
+                shown = value
+                if (frame % 6 == 0) {
+                    val truth = TimerLogic.fractionRemaining(state, clock)
+                    rows += "  ${elapsed.toString().padStart(5)}ms              " +
+                        String.format(Locale.US, "%.4f  %.4f", value, truth)
+                }
+            }
+        }
+        fun assertOnTime() = assertEquals(TimerLogic.fractionRemaining(state, clock), shown, 0.004f)
+
+        frames(1_000)
+        assertOnTime()
+        change("+15 s") { TimerLogic.adjust(it, clock, 15_000) }
+        frames(1_000, glide = true)
+        assertOnTime()
+        change("pause") { TimerLogic.pause(it, clock) }
+        frames(300)
+        clock += 120_000
+        change("reprise 2 min plus tard") { TimerLogic.resume(it, clock) }
+        frames(1_000)
+        assertOnTime()
+        change("arrêt") { TimerState.Idle }
+        frames(1_000, glide = true)
+        assertOnTime()
+        println("MOTION Anneau du minuteur\n" + rows.joinToString("\n"))
+        // Outside of the glides, the ring moves by less than a pixel per frame.
+        assertTrue("step of $biggestStep", biggestStep < 0.002f)
+    }
+
+    private companion object {
+        const val FRAME_MS = 16L
     }
 }

@@ -51,6 +51,7 @@ fun MiniTimerBar(
 ) {
     if (state is TimerState.Idle) return
     val finished = state is TimerState.Finished
+    val progress = rememberRestProgress(state, now)
     Surface(
         onClick = onOpen,
         color = if (finished) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
@@ -60,7 +61,7 @@ fun MiniTimerBar(
         Column(if (applyNavigationBarInsets) Modifier.windowInsetsPadding(WindowInsets.navigationBars) else Modifier) {
             if (!finished) {
                 LinearProgressIndicator(
-                    progress = { TimerLogic.fractionRemaining(state, now) },
+                    progress = progress,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp),

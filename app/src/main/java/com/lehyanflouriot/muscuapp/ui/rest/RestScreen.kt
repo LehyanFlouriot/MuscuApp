@@ -6,8 +6,6 @@ import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutBack
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -233,13 +231,7 @@ fun TimerDial(
 ) {
     val colors = MaterialTheme.colorScheme
     val success = MuscuTheme.extendedColors.success
-    // A finished rest closes the ring, in green.
-    val fraction = if (state is TimerState.Finished) 1f else TimerLogic.fractionRemaining(state, now)
-    val animatedFraction by animateFloatAsState(
-        targetValue = fraction,
-        animationSpec = tween(durationMillis = 250, easing = LinearEasing),
-        label = "rest-progress",
-    )
+    val progress = rememberRestProgress(state, now)
     val arcColor by animateColorAsState(
         targetValue = when (state) {
             is TimerState.Finished -> success
@@ -250,29 +242,24 @@ fun TimerDial(
         animationSpec = tween(400),
         label = "rest-color",
     )
-    // The ring fills up when the screen opens, when a rest starts and when it ends.
-    val phase = when (state) {
-        TimerState.Idle -> 0
-        is TimerState.Running, is TimerState.Paused -> 1
-        is TimerState.Finished -> 2
-    }
-    val sweep = remember { Animatable(0f) }
-    LaunchedEffect(phase) {
-        sweep.snapTo(0f)
-        sweep.animateTo(1f, tween(900, easing = Motion.EaseOut))
-    }
+    // Once the rest is over, the empty ring lies on a green track.
+    val finished = state is TimerState.Finished
+    val trackColor by animateColorAsState(
+        targetValue = if (finished) success.copy(alpha = 0.3f) else colors.surfaceContainerHighest,
+        animationSpec = tween(400),
+        label = "rest-track",
+    )
     // The end of the rest pulses a few times to catch the eye.
     val pulse = remember { Animatable(1f) }
-    LaunchedEffect(phase) {
+    LaunchedEffect(finished) {
         pulse.snapTo(1f)
-        if (state is TimerState.Finished) {
+        if (finished) {
             repeat(3) {
                 pulse.animateTo(1.04f, tween(420, easing = Motion.EaseInOut))
                 pulse.animateTo(1f, tween(420, easing = Motion.EaseInOut))
             }
         }
     }
-    val trackColor = colors.surfaceContainerHighest
     val timeText = when (state) {
         TimerState.Idle -> Fmt.clockMillis(idleDurationMs)
         is TimerState.Finished -> Fmt.clock(0)
@@ -310,7 +297,7 @@ fun TimerDial(
                 size = arcSize,
                 style = Stroke(width = stroke),
             )
-            val shown = animatedFraction * sweep.value
+            val shown = progress()
             if (shown > 0f) {
                 drawArc(
                     color = arcColor,
