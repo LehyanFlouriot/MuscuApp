@@ -1,11 +1,14 @@
 package com.lehyanflouriot.muscuapp.ui.weight
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +19,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.lehyanflouriot.muscuapp.core.domain.WeightPoint
 import com.lehyanflouriot.muscuapp.core.format.Fmt
+import com.lehyanflouriot.muscuapp.ui.common.Motion
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
@@ -58,13 +63,17 @@ private class WeightAxis(val min: Double, val max: Double, step: Double) {
 private class TimeScale(private val start: LocalDate, end: LocalDate, private val left: Float, private val right: Float) {
     private val days = ChronoUnit.DAYS.between(start, end).toFloat()
 
+    /** Where [date] is between the first and the last day, from 0 to 1; a single day counts as the end. */
+    fun fraction(date: LocalDate): Float = if (days <= 0f) 1f else ChronoUnit.DAYS.between(start, date) / days
+
     fun x(date: LocalDate): Float =
-        if (days <= 0f) (left + right) / 2 else left + ChronoUnit.DAYS.between(start, date) / days * (right - left)
+        if (days <= 0f) (left + right) / 2 else left + fraction(date) * (right - left)
 }
 
 /**
- * Weight curve from [start] to [end]: a dot for each weight noted and the [trend] as a line.
- * Tapping the chart shows the closest weight; the last one is shown by default.
+ * Weight curve from [start] to [end]: a dot for each weight noted and the [trend] as a line,
+ * drawn from left to right when it appears or when the period changes. Tapping the chart shows
+ * the closest weight; the last one is shown by default.
  */
 @Composable
 fun WeightChart(
@@ -99,6 +108,10 @@ fun WeightChart(
     val gutter = tickLabels.maxOf { it.size.width } + with(density) { 8.dp.toPx() }
     val inset = with(density) { 8.dp.toPx() }
     fun scale(width: Float) = TimeScale(start, end, gutter + inset, width - inset)
+    val drawn = remember(start, end) { Animatable(0f) }
+    LaunchedEffect(drawn) { drawn.animateTo(1f, tween(1_200, easing = Motion.EaseOut)) }
+    val measure = remember { PathMeasure() }
+    val segment = remember { Path() }
 
     Canvas(
         modifier = modifier
@@ -116,12 +129,20 @@ fun WeightChart(
         val bottom = size.height - 24.dp.toPx()
         val timeScale = scale(size.width)
         fun y(weight: Double): Float = (bottom - (weight - axis.min) / (axis.max - axis.min) * (bottom - top)).toFloat()
+        val progress = drawn.value
+        // The grid shows up first, the selected weight last, once the line has reached it.
+        val gridAlpha = (progress * 4).coerceAtMost(1f)
+        val markerAlpha = ((progress - 0.8f) / 0.2f).coerceIn(0f, 1f)
 
         axis.ticks.forEachIndexed { index, tick ->
             val tickY = y(tick)
-            drawLine(gridColor, Offset(gutter, tickY), Offset(size.width, tickY), strokeWidth = 1.dp.toPx())
+            drawLine(gridColor, Offset(gutter, tickY), Offset(size.width, tickY), strokeWidth = 1.dp.toPx(), alpha = gridAlpha)
             val label = tickLabels[index]
-            drawText(label, topLeft = Offset(gutter - 6.dp.toPx() - label.size.width, tickY - label.size.height / 2f))
+            drawText(
+                label,
+                topLeft = Offset(gutter - 6.dp.toPx() - label.size.width, tickY - label.size.height / 2f),
+                alpha = gridAlpha,
+            )
         }
 
         // Dates under the curve: the first and the last day, and the middle one when there is room.
@@ -129,19 +150,19 @@ fun WeightChart(
         val labelTop = bottom + 6.dp.toPx()
         val startLabel = textMeasurer.measure(Fmt.dayMonth(start, withYear), style = axisStyle)
         if (start == end) {
-            drawText(startLabel, topLeft = Offset(timeScale.x(start) - startLabel.size.width / 2f, labelTop))
+            drawText(startLabel, topLeft = Offset(timeScale.x(start) - startLabel.size.width / 2f, labelTop), alpha = gridAlpha)
         } else {
             val endLabel = textMeasurer.measure(Fmt.dayMonth(end, withYear), style = axisStyle)
             val startX = gutter + inset
             val endX = size.width - inset - endLabel.size.width
-            drawText(startLabel, topLeft = Offset(startX, labelTop))
-            drawText(endLabel, topLeft = Offset(endX, labelTop))
+            drawText(startLabel, topLeft = Offset(startX, labelTop), alpha = gridAlpha)
+            drawText(endLabel, topLeft = Offset(endX, labelTop), alpha = gridAlpha)
             val middle = start.plusDays(ChronoUnit.DAYS.between(start, end) / 2)
             val middleLabel = textMeasurer.measure(Fmt.dayMonth(middle, withYear), style = axisStyle)
             val middleX = timeScale.x(middle) - middleLabel.size.width / 2f
             val gap = 12.dp.toPx()
             if (middleX > startX + startLabel.size.width + gap && middleX + middleLabel.size.width + gap < endX) {
-                drawText(middleLabel, topLeft = Offset(middleX, labelTop))
+                drawText(middleLabel, topLeft = Offset(middleX, labelTop), alpha = gridAlpha)
             }
         }
 
@@ -152,25 +173,39 @@ fun WeightChart(
             textMeasurer.measure("${Fmt.bodyWeightKg(it.weight)} · ${Fmt.dayMonth(it.date)}", style = valueStyle)
         }
         val boxHeight = (valueLabel?.size?.height ?: 0) + padY * 2
-        if (point != null) {
+        if (point != null && markerAlpha > 0f) {
             val x = timeScale.x(point.date)
-            drawLine(gridColor, Offset(x, boxHeight), Offset(x, bottom), strokeWidth = 1.dp.toPx())
+            drawLine(gridColor, Offset(x, boxHeight), Offset(x, bottom), strokeWidth = 1.dp.toPx(), alpha = markerAlpha)
         }
 
-        weights.forEach { drawCircle(dotColor, radius = 3.5.dp.toPx(), center = Offset(timeScale.x(it.date), y(it.weight))) }
+        // Each dot appears when the line passes by.
+        weights.forEach {
+            val shown = ((progress * 1.1f - timeScale.fraction(it.date)) / 0.1f).coerceIn(0f, 1f)
+            if (shown > 0f) {
+                drawCircle(
+                    dotColor,
+                    radius = 3.5.dp.toPx() * (0.5f + 0.5f * shown),
+                    center = Offset(timeScale.x(it.date), y(it.weight)),
+                    alpha = dotColor.alpha * shown,
+                )
+            }
+        }
         if (trend.size > 1) {
             val path = Path()
             trend.forEachIndexed { index, trendPoint ->
                 val x = timeScale.x(trendPoint.date)
                 if (index == 0) path.moveTo(x, y(trendPoint.weight)) else path.lineTo(x, y(trendPoint.weight))
             }
-            drawPath(path, lineColor, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+            measure.setPath(path, false)
+            segment.reset()
+            measure.getSegment(0f, measure.length * progress, segment, true)
+            drawPath(segment, lineColor, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
 
-        if (point != null && valueLabel != null) {
+        if (point != null && valueLabel != null && markerAlpha > 0f) {
             val center = Offset(timeScale.x(point.date), y(point.weight))
-            drawCircle(backgroundColor, radius = 7.dp.toPx(), center = center)
-            drawCircle(lineColor, radius = 5.dp.toPx(), center = center)
+            drawCircle(backgroundColor, radius = 7.dp.toPx() * markerAlpha, center = center)
+            drawCircle(lineColor, radius = 5.dp.toPx() * markerAlpha, center = center)
             val boxWidth = valueLabel.size.width + padX * 2
             val left = (center.x - boxWidth / 2).coerceAtMost(size.width - boxWidth).coerceAtLeast(0f)
             drawRoundRect(
@@ -178,8 +213,9 @@ fun WeightChart(
                 topLeft = Offset(left, 0f),
                 size = Size(boxWidth, boxHeight),
                 cornerRadius = CornerRadius(boxHeight / 2, boxHeight / 2),
+                alpha = markerAlpha,
             )
-            drawText(valueLabel, topLeft = Offset(left + padX, padY))
+            drawText(valueLabel, topLeft = Offset(left + padX, padY), alpha = markerAlpha)
         }
     }
 }

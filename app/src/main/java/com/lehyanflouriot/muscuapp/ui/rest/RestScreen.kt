@@ -1,8 +1,21 @@
 package com.lehyanflouriot.muscuapp.ui.rest
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -38,6 +51,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
@@ -45,9 +59,11 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,6 +75,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -70,7 +88,12 @@ import com.lehyanflouriot.muscuapp.core.model.RestPreset
 import com.lehyanflouriot.muscuapp.core.timer.TimerLogic
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
+import com.lehyanflouriot.muscuapp.ui.common.Motion
+import com.lehyanflouriot.muscuapp.ui.common.RevealState
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
+import com.lehyanflouriot.muscuapp.ui.common.rememberPressFeedback
+import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
+import com.lehyanflouriot.muscuapp.ui.common.reveal
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 
 /** Step of the -/+ buttons of the timer. */
@@ -93,8 +116,13 @@ fun RestScreen(
     onEnableNotifications: () -> Unit,
     onEditIdleDuration: () -> Unit,
 ) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val reveal = rememberRevealState()
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.rest_title)) }) },
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeTopAppBar(title = { Text(stringResource(R.string.rest_title)) }, scrollBehavior = scrollBehavior)
+        },
         snackbarHost = { SnackbarHost(LocalSnackbarHostState.current) },
     ) { padding ->
         Column(
@@ -107,8 +135,12 @@ fun RestScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            if (!notificationsEnabled) {
-                NotificationsBanner(onEnable = onEnableNotifications)
+            AnimatedVisibility(
+                visible = !notificationsEnabled,
+                enter = expandVertically(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) + fadeIn(),
+                exit = shrinkVertically(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) + fadeOut(),
+            ) {
+                NotificationsBanner(onEnable = onEnableNotifications, modifier = Modifier.reveal(reveal, "banner"))
             }
             TimerDial(
                 state = state,
@@ -124,7 +156,8 @@ fun RestScreen(
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .widthIn(max = 340.dp)
-                    .fillMaxWidth(0.82f),
+                    .fillMaxWidth(0.82f)
+                    .reveal(reveal, "dial"),
             )
             TimerControls(
                 state = state,
@@ -132,17 +165,21 @@ fun RestScreen(
                 onAdjust = onAdjust,
                 onStop = onStop,
                 onRestart = onRestart,
+                modifier = Modifier.reveal(reveal, "controls"),
             )
             PresetsSection(
                 presets = presets,
                 activeTotalMs = if (state is TimerState.Idle) null else TimerLogic.total(state),
+                reveal = reveal,
                 onStart = onStartPreset,
                 onAdd = onAddPreset,
                 onEdit = onEditPreset,
             )
             Row(
                 verticalAlignment = Alignment.Top,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .reveal(reveal, "tip"),
             ) {
                 Icon(
                     Icons.Rounded.Lightbulb,
@@ -162,12 +199,12 @@ fun RestScreen(
 }
 
 @Composable
-private fun NotificationsBanner(onEnable: () -> Unit) {
+private fun NotificationsBanner(onEnable: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
         shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
@@ -196,17 +233,44 @@ fun TimerDial(
 ) {
     val colors = MaterialTheme.colorScheme
     val success = MuscuTheme.extendedColors.success
-    val fraction = TimerLogic.fractionRemaining(state, now)
+    // A finished rest closes the ring, in green.
+    val fraction = if (state is TimerState.Finished) 1f else TimerLogic.fractionRemaining(state, now)
     val animatedFraction by animateFloatAsState(
         targetValue = fraction,
         animationSpec = tween(durationMillis = 250, easing = LinearEasing),
         label = "rest-progress",
     )
-    val arcColor = when (state) {
-        is TimerState.Finished -> success
-        is TimerState.Paused -> colors.outline
-        TimerState.Idle -> colors.primary.copy(alpha = 0.35f)
-        is TimerState.Running -> colors.primary
+    val arcColor by animateColorAsState(
+        targetValue = when (state) {
+            is TimerState.Finished -> success
+            is TimerState.Paused -> colors.outline
+            TimerState.Idle -> colors.primary.copy(alpha = 0.35f)
+            is TimerState.Running -> colors.primary
+        },
+        animationSpec = tween(400),
+        label = "rest-color",
+    )
+    // The ring fills up when the screen opens, when a rest starts and when it ends.
+    val phase = when (state) {
+        TimerState.Idle -> 0
+        is TimerState.Running, is TimerState.Paused -> 1
+        is TimerState.Finished -> 2
+    }
+    val sweep = remember { Animatable(0f) }
+    LaunchedEffect(phase) {
+        sweep.snapTo(0f)
+        sweep.animateTo(1f, tween(900, easing = Motion.EaseOut))
+    }
+    // The end of the rest pulses a few times to catch the eye.
+    val pulse = remember { Animatable(1f) }
+    LaunchedEffect(phase) {
+        pulse.snapTo(1f)
+        if (state is TimerState.Finished) {
+            repeat(3) {
+                pulse.animateTo(1.04f, tween(420, easing = Motion.EaseInOut))
+                pulse.animateTo(1f, tween(420, easing = Motion.EaseInOut))
+            }
+        }
     }
     val trackColor = colors.surfaceContainerHighest
     val timeText = when (state) {
@@ -225,6 +289,10 @@ fun TimerDial(
     Box(
         modifier = modifier
             .aspectRatio(1f)
+            .graphicsLayer {
+                scaleX = pulse.value
+                scaleY = pulse.value
+            }
             .clip(CircleShape)
             .clickable(onClickLabel = stringResource(R.string.rest_dial_action), onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -242,11 +310,12 @@ fun TimerDial(
                 size = arcSize,
                 style = Stroke(width = stroke),
             )
-            if (animatedFraction > 0f) {
+            val shown = animatedFraction * sweep.value
+            if (shown > 0f) {
                 drawArc(
                     color = arcColor,
                     startAngle = -90f,
-                    sweepAngle = 360f * animatedFraction,
+                    sweepAngle = 360f * shown,
                     useCenter = false,
                     topLeft = Offset(inset, inset),
                     size = arcSize,
@@ -307,62 +376,101 @@ private fun TimerControls(
     onAdjust: (Long) -> Unit,
     onStop: () -> Unit,
     onRestart: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        if (state is TimerState.Finished) {
-            FilledTonalButton(
-                onClick = onRestart,
-                modifier = Modifier.height(64.dp),
-                shape = CircleShape,
-            ) {
-                Icon(Icons.Rounded.Replay, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.rest_restart, Fmt.clockMillis(state.total)),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            TextButton(onClick = onStop) { Text(stringResource(R.string.rest_finish)) }
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-            ) {
-                FilledTonalButton(onClick = { onAdjust(-ADJUST_STEP_MS) }, modifier = Modifier.width(96.dp)) {
-                    Text(stringResource(R.string.rest_minus_15))
-                }
-                val running = state is TimerState.Running
-                FilledIconButton(
-                    onClick = onToggle,
-                    modifier = Modifier.size(84.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(),
+    AnimatedContent(
+        targetState = state,
+        contentKey = { it is TimerState.Finished },
+        transitionSpec = {
+            (fadeIn(tween(250, delayMillis = 90)) + scaleIn(tween(350, delayMillis = 90, easing = Motion.EaseOut), initialScale = 0.9f))
+                .togetherWith(fadeOut(tween(90)))
+                .using(SizeTransform(clip = false))
+        },
+        contentAlignment = Alignment.Center,
+        modifier = modifier,
+        label = "rest-controls",
+    ) { shown ->
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (shown is TimerState.Finished) {
+                val press = rememberPressFeedback()
+                FilledTonalButton(
+                    onClick = onRestart,
+                    interactionSource = press.interactionSource,
+                    modifier = press.modifier.height(64.dp),
+                    shape = CircleShape,
                 ) {
-                    Icon(
-                        imageVector = if (running) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = stringResource(
-                            when (state) {
+                    Icon(Icons.Rounded.Replay, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.rest_restart, Fmt.clockMillis(shown.total)),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+                TextButton(onClick = onStop) { Text(stringResource(R.string.rest_finish)) }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    AdjustButton(text = stringResource(R.string.rest_minus_15), onClick = { onAdjust(-ADJUST_STEP_MS) })
+                    val running = shown is TimerState.Running
+                    val press = rememberPressFeedback(pressedScale = 0.9f)
+                    FilledIconButton(
+                        onClick = onToggle,
+                        interactionSource = press.interactionSource,
+                        modifier = press.modifier.size(84.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(),
+                    ) {
+                        val description = stringResource(
+                            when (shown) {
                                 is TimerState.Running -> R.string.rest_pause
                                 is TimerState.Paused -> R.string.rest_resume
                                 else -> R.string.rest_start
                             },
-                        ),
-                        modifier = Modifier.size(44.dp),
-                    )
+                        )
+                        AnimatedContent(
+                            targetState = running,
+                            transitionSpec = {
+                                (scaleIn(tween(300, easing = EaseOutBack), initialScale = 0.5f) + fadeIn(tween(150)))
+                                    .togetherWith(scaleOut(tween(150), targetScale = 0.5f) + fadeOut(tween(150)))
+                            },
+                            label = "play-pause",
+                        ) { isRunning ->
+                            Icon(
+                                imageVector = if (isRunning) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                contentDescription = description,
+                                modifier = Modifier.size(44.dp),
+                            )
+                        }
+                    }
+                    AdjustButton(text = stringResource(R.string.rest_plus_15), onClick = { onAdjust(ADJUST_STEP_MS) })
                 }
-                FilledTonalButton(onClick = { onAdjust(ADJUST_STEP_MS) }, modifier = Modifier.width(96.dp)) {
-                    Text(stringResource(R.string.rest_plus_15))
+                AnimatedVisibility(
+                    visible = shown is TimerState.Running || shown is TimerState.Paused,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    TextButton(onClick = onStop) {
+                        Icon(Icons.Rounded.Stop, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.rest_stop))
+                    }
                 }
-            }
-            if (state is TimerState.Running || state is TimerState.Paused) {
-                TextButton(onClick = onStop) {
-                    Icon(Icons.Rounded.Stop, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.rest_stop))
-                }
-            } else {
-                Spacer(Modifier.height(48.dp))
+                if (shown is TimerState.Idle) Spacer(Modifier.height(48.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun AdjustButton(text: String, onClick: () -> Unit) {
+    val press = rememberPressFeedback(pressedScale = 0.92f)
+    FilledTonalButton(
+        onClick = onClick,
+        interactionSource = press.interactionSource,
+        modifier = press.modifier.width(96.dp),
+    ) {
+        Text(text)
     }
 }
 
@@ -370,6 +478,7 @@ private fun TimerControls(
 private fun PresetsSection(
     presets: List<RestPreset>,
     activeTotalMs: Long?,
+    reveal: RevealState,
     onStart: (RestPreset) -> Unit,
     onAdd: () -> Unit,
     onEdit: (RestPreset) -> Unit,
@@ -378,6 +487,7 @@ private fun PresetsSection(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader(
             text = stringResource(R.string.rest_presets_title),
+            modifier = Modifier.reveal(reveal, "presets-title"),
             action = {
                 if (presets.isNotEmpty()) {
                     TextButton(onClick = { editing = !editing }) {
@@ -396,15 +506,24 @@ private fun PresetsSection(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { preset ->
                     if (preset == null) {
-                        AddPresetTile(onClick = onAdd, modifier = Modifier.weight(1f))
-                    } else {
-                        PresetTile(
-                            preset = preset,
-                            active = activeTotalMs == preset.seconds * 1_000L,
-                            editing = editing,
-                            onClick = { if (editing) onEdit(preset) else onStart(preset) },
-                            modifier = Modifier.weight(1f),
+                        AddPresetTile(
+                            onClick = onAdd,
+                            modifier = Modifier
+                                .weight(1f)
+                                .reveal(reveal, "preset-add"),
                         )
+                    } else {
+                        key(preset.id) {
+                            PresetTile(
+                                preset = preset,
+                                active = activeTotalMs == preset.seconds * 1_000L,
+                                editing = editing,
+                                onClick = { if (editing) onEdit(preset) else onStart(preset) },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .reveal(reveal, preset.id),
+                            )
+                        }
                     }
                 }
                 repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -422,13 +541,16 @@ private fun PresetTile(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
+    val press = rememberPressFeedback(pressedScale = 0.94f)
+    val container by animateColorAsState(if (active) colors.primaryContainer else colors.surfaceContainerHigh, tween(300), label = "preset")
+    val content by animateColorAsState(if (active) colors.onPrimaryContainer else colors.onSurface, tween(300), label = "preset-text")
     Card(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 76.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (active) colors.primaryContainer else colors.surfaceContainerHigh,
-            contentColor = if (active) colors.onPrimaryContainer else colors.onSurface,
-        ),
+        interactionSource = press.interactionSource,
+        modifier = modifier
+            .then(press.modifier)
+            .heightIn(min = 76.dp),
+        colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
     ) {
         Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp)) {
             Column(
@@ -464,9 +586,13 @@ private fun PresetTile(
 
 @Composable
 private fun AddPresetTile(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val press = rememberPressFeedback(pressedScale = 0.94f)
     OutlinedCard(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 76.dp),
+        interactionSource = press.interactionSource,
+        modifier = modifier
+            .then(press.modifier)
+            .heightIn(min = 76.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent),
     ) {

@@ -1,10 +1,19 @@
 package com.lehyanflouriot.muscuapp.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -27,12 +36,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -47,6 +61,7 @@ import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
 import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
+import com.lehyanflouriot.muscuapp.ui.common.Motion
 import com.lehyanflouriot.muscuapp.ui.common.SnackbarMessenger
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailRoute
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressRoute
@@ -80,6 +95,22 @@ private val tabs = listOf(
     Tab(Routes.WEIGHT, R.string.tab_weight, Icons.Rounded.MonitorWeight),
     Tab(Routes.REST, R.string.tab_rest, Icons.Rounded.Timer),
 )
+
+private val tabRoutes: Set<String> = tabs.mapTo(HashSet()) { it.route }
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch(): Boolean =
+    initialState.destination.route in tabRoutes && targetState.destination.route in tabRoutes
+
+// Another tab: the current screen fades out quickly and the new one fades in while settling.
+private val tabEnter: EnterTransition =
+    fadeIn(tween(240, delayMillis = 70)) + scaleIn(tween(360, delayMillis = 70, easing = Motion.EaseOut), initialScale = 0.96f)
+private val tabExit: ExitTransition = fadeOut(tween(90))
+
+// A detail screen slides over the current one, which moves back a little; going back undoes it.
+private val pushEnter: EnterTransition = slideInHorizontally(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) { it }
+private val pushExit: ExitTransition = slideOutHorizontally(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) { -it / 4 }
+private val popEnter: EnterTransition = slideInHorizontally(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) { -it / 4 }
+private val popExit: ExitTransition = slideOutHorizontally(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) { it }
 
 private fun NavHostController.navigateToTab(route: String) {
     navigate(route) {
@@ -141,8 +172,10 @@ fun MuscuApp(
                 modifier = Modifier
                     .padding(padding)
                     .consumeWindowInsets(padding),
-                enterTransition = { fadeIn(tween(200)) },
-                exitTransition = { fadeOut(tween(200)) },
+                enterTransition = { if (isTabSwitch()) tabEnter else pushEnter },
+                exitTransition = { if (isTabSwitch()) tabExit else pushExit },
+                popEnterTransition = { if (isTabSwitch()) tabEnter else popEnter },
+                popExitTransition = { if (isTabSwitch()) tabExit else popExit },
             ) {
                 composable(Routes.WEEK) {
                     WeekRoute(
@@ -203,8 +236,12 @@ fun MuscuScaffold(
     onTimerStop: () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    val showNavigationBar = currentRoute == null || tabs.any { it.route == currentRoute }
+    val showNavigationBar = currentRoute == null || currentRoute in tabRoutes
     val showMiniTimer = timerState !is TimerState.Idle && currentRoute != Routes.REST
+    // While the bar slides away under a detail screen, it keeps showing the tab it came from.
+    var lastTab by remember { mutableStateOf(Routes.WEEK) }
+    val selectedTab = currentRoute?.takeIf { it in tabRoutes } ?: lastTab
+    LaunchedEffect(selectedTab) { lastTab = selectedTab }
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
@@ -221,18 +258,23 @@ fun MuscuScaffold(
                         applyNavigationBarInsets = !showNavigationBar,
                     )
                 }
-                if (showNavigationBar) {
+                AnimatedVisibility(
+                    visible = showNavigationBar,
+                    enter = expandVertically(tween(Motion.SCREEN_MS, easing = Motion.EaseOut), expandFrom = Alignment.Top),
+                    exit = shrinkVertically(tween(Motion.SCREEN_MS, easing = Motion.EaseOut), shrinkTowards = Alignment.Top),
+                ) {
                     NavigationBar {
                         tabs.forEach { tab ->
+                            val selected = selectedTab == tab.route
                             NavigationBarItem(
-                                selected = currentRoute == tab.route,
+                                selected = selected,
                                 onClick = { onNavigate(tab.route) },
                                 icon = {
-                                    if (tab.route == Routes.REST && timerState is TimerState.Running) {
-                                        BadgedBox(badge = { Badge() }) { Icon(tab.icon, contentDescription = null) }
-                                    } else {
-                                        Icon(tab.icon, contentDescription = null)
-                                    }
+                                    TabIcon(
+                                        icon = tab.icon,
+                                        selected = selected,
+                                        badge = tab.route == Routes.REST && timerState is TimerState.Running,
+                                    )
                                 },
                                 label = { Text(stringResource(tab.label)) },
                             )
@@ -243,4 +285,25 @@ fun MuscuScaffold(
         },
         content = content,
     )
+}
+
+/** Icon of a tab, which gives a little bounce when the tab gets selected. */
+@Composable
+private fun TabIcon(icon: ImageVector, selected: Boolean, badge: Boolean) {
+    val scale = remember { Animatable(1f) }
+    LaunchedEffect(selected) {
+        if (selected) {
+            scale.snapTo(0.8f)
+            scale.animateTo(1f, Motion.bounce())
+        }
+    }
+    val modifier = Modifier.graphicsLayer {
+        scaleX = scale.value
+        scaleY = scale.value
+    }
+    if (badge) {
+        BadgedBox(badge = { Badge() }, modifier = modifier) { Icon(icon, contentDescription = null) }
+    } else {
+        Icon(icon, contentDescription = null, modifier = modifier)
+    }
 }

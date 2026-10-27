@@ -1,5 +1,8 @@
 package com.lehyanflouriot.muscuapp.ui.progress
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,22 +27,25 @@ import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
@@ -58,8 +64,12 @@ import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
 import com.lehyanflouriot.muscuapp.ui.common.Sparkline
 import com.lehyanflouriot.muscuapp.ui.common.WeeklyBarChart
+import com.lehyanflouriot.muscuapp.ui.common.countUp
 import com.lehyanflouriot.muscuapp.ui.common.relativeDay
+import com.lehyanflouriot.muscuapp.ui.common.rememberPressFeedback
+import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.repsTotal
+import com.lehyanflouriot.muscuapp.ui.common.reveal
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import java.time.LocalDate
 
@@ -72,7 +82,7 @@ fun ProgressScreen(
     today: LocalDate,
     onOpenExercise: (Exercise) -> Unit,
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val hasData = items.any { it.lastDate != null }
     val active = items.filterNot { it.exercise.archived }
     val archived = items.filter { it.exercise.archived }
@@ -81,7 +91,7 @@ fun ProgressScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
                 title = { Text(stringResource(R.string.progress_title)) },
                 scrollBehavior = scrollBehavior,
             )
@@ -131,6 +141,7 @@ private fun ProgressList(
     today: LocalDate,
     onOpenExercise: (Exercise) -> Unit,
 ) {
+    val reveal = rememberRevealState()
     LazyColumn(
         modifier = Modifier
             .padding(padding)
@@ -138,16 +149,33 @@ private fun ProgressList(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item(key = "streak") { StreakCard(streak = streak, trainedThisWeek = trainedThisWeek) }
-        item(key = "activity") { ActivityCard(activity = activity) }
-        item(key = "exercises-title") { SectionHeader(text = stringResource(R.string.progress_exercises)) }
+        item(key = "streak") {
+            StreakCard(streak = streak, trainedThisWeek = trainedThisWeek, modifier = Modifier.reveal(reveal, "streak"))
+        }
+        item(key = "activity") { ActivityCard(activity = activity, modifier = Modifier.reveal(reveal, "activity")) }
+        item(key = "exercises-title") {
+            SectionHeader(
+                text = stringResource(R.string.progress_exercises),
+                modifier = Modifier.reveal(reveal, "exercises-title"),
+            )
+        }
         items(active, key = { it.exercise.id }) { item ->
-            ProgressRow(item = item, today = today, onClick = { onOpenExercise(item.exercise) })
+            ProgressRow(
+                item = item,
+                today = today,
+                onClick = { onOpenExercise(item.exercise) },
+                modifier = Modifier
+                    .animateItem(fadeInSpec = null)
+                    .reveal(reveal, item.exercise.id),
+            )
         }
         if (archived.isNotEmpty()) {
             item(key = "archived-title") {
                 SectionHeader(
                     text = stringResource(R.string.progress_archived, archived.size),
+                    modifier = Modifier
+                        .animateItem(fadeInSpec = null)
+                        .reveal(reveal, "archived-title"),
                     action = {
                         TextButton(onClick = onToggleArchived) {
                             Text(stringResource(if (showArchived) R.string.action_hide else R.string.action_show))
@@ -161,7 +189,9 @@ private fun ProgressList(
                         item = item,
                         today = today,
                         onClick = { onOpenExercise(item.exercise) },
-                        modifier = Modifier.alpha(0.7f),
+                        modifier = Modifier
+                            .animateItem()
+                            .alpha(0.7f),
                     )
                 }
             }
@@ -170,13 +200,16 @@ private fun ProgressList(
 }
 
 @Composable
-private fun StreakCard(streak: Int, trainedThisWeek: Boolean) {
+private fun StreakCard(streak: Int, trainedThisWeek: Boolean, modifier: Modifier = Modifier) {
+    // The flame lights up with a bounce.
+    val flame = remember { Animatable(0.4f) }
+    LaunchedEffect(flame) { flame.animateTo(1f, tween(500, delayMillis = 250, easing = EaseOutBack)) }
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(
@@ -186,14 +219,24 @@ private fun StreakCard(streak: Int, trainedThisWeek: Boolean) {
                 modifier = Modifier.size(56.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.LocalFireDepartment, contentDescription = null, modifier = Modifier.size(32.dp))
+                    Icon(
+                        Icons.Rounded.LocalFireDepartment,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .graphicsLayer {
+                                scaleX = flame.value
+                                scaleY = flame.value
+                                alpha = flame.value.coerceAtMost(1f)
+                            },
+                    )
                 }
             }
             Spacer(Modifier.width(16.dp))
             Column {
                 Text(
                     text = if (streak > 0) {
-                        pluralStringResource(R.plurals.streak_weeks, streak, streak)
+                        pluralStringResource(R.plurals.streak_weeks, streak, countUp(streak, delayMillis = 150))
                     } else {
                         stringResource(R.string.streak_none)
                     },
@@ -215,13 +258,13 @@ private fun StreakCard(streak: Int, trainedThisWeek: Boolean) {
 }
 
 @Composable
-private fun ActivityCard(activity: List<WeekPoint>) {
+private fun ActivityCard(activity: List<WeekPoint>, modifier: Modifier = Modifier) {
     val resources = LocalResources.current
     val weeksWithData = activity.filter { it.value > 0 }
     val average = if (weeksWithData.isEmpty()) 0.0 else weeksWithData.sumOf { it.value } / weeksWithData.size
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.progress_activity_title), style = MaterialTheme.typography.titleMedium)
@@ -250,10 +293,14 @@ private fun ProgressRow(
     modifier: Modifier = Modifier,
 ) {
     val exercise = item.exercise
+    val press = rememberPressFeedback(pressedScale = 0.98f)
     Card(
         onClick = onClick,
+        interactionSource = press.interactionSource,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .then(press.modifier)
+            .fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),

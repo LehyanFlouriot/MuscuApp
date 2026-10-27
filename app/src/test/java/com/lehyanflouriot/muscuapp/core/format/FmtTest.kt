@@ -43,6 +43,8 @@ class FmtTest {
         assertEquals("+12 %", Fmt.signedPercent(0.123).plain())
         assertEquals("−5 %", Fmt.signedPercent(-0.05).plain())
         assertEquals("0 %", Fmt.signedPercent(0.0).plain())
+        assertEquals("77 %", Fmt.percent(0.7692).plain())
+        assertEquals("123 %", Fmt.percent(1.23).plain())
         assertEquals("+2,5", Fmt.signed(2.5))
         assertEquals("−3", Fmt.signed(-3.0))
     }

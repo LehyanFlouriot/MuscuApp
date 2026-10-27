@@ -74,15 +74,23 @@ import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
 import com.lehyanflouriot.muscuapp.ui.common.WeeklyBarChart
+import com.lehyanflouriot.muscuapp.ui.common.countUp
 import com.lehyanflouriot.muscuapp.ui.common.describe
 import com.lehyanflouriot.muscuapp.ui.common.icon
 import com.lehyanflouriot.muscuapp.ui.common.labelRes
 import com.lehyanflouriot.muscuapp.ui.common.relativeDay
+import com.lehyanflouriot.muscuapp.ui.common.rememberPressFeedback
+import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.repsTotal
+import com.lehyanflouriot.muscuapp.ui.common.reveal
 import com.lehyanflouriot.muscuapp.ui.common.setsCount
 import com.lehyanflouriot.muscuapp.ui.common.weekShortLabel
 import com.lehyanflouriot.muscuapp.ui.common.weekTitle
 import java.time.LocalDate
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 @Composable
 fun ExerciseDetailScreen(
@@ -104,6 +112,7 @@ fun ExerciseDetailScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     var menuOpen by remember { mutableStateOf(false) }
+    val reveal = rememberRevealState()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -158,13 +167,15 @@ fun ExerciseDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item(key = "header") {
-                Header(exercise = exercise, onUnarchive = onToggleArchive)
+                Header(exercise = exercise, onUnarchive = onToggleArchive, modifier = Modifier.reveal(reveal, "header"))
             }
             item(key = "actions") {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.reveal(reveal, "actions")) {
+                    val logPress = rememberPressFeedback()
                     Button(
                         onClick = onLog,
-                        modifier = Modifier
+                        interactionSource = logPress.interactionSource,
+                        modifier = logPress.modifier
                             .weight(1f)
                             .height(52.dp),
                     ) {
@@ -172,7 +183,12 @@ fun ExerciseDetailScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.detail_log))
                     }
-                    FilledTonalButton(onClick = onStartRest, modifier = Modifier.height(52.dp)) {
+                    val restPress = rememberPressFeedback()
+                    FilledTonalButton(
+                        onClick = onStartRest,
+                        interactionSource = restPress.interactionSource,
+                        modifier = restPress.modifier.height(52.dp),
+                    ) {
                         Icon(Icons.Rounded.Timer, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(restLabel)
@@ -189,17 +205,43 @@ fun ExerciseDetailScreen(
                     )
                 }
             } else {
-                item(key = "records") { RecordsCard(exercise = exercise, records = records) }
-                item(key = "chart") {
-                    ChartCard(exercise = exercise, metric = metric, series = series, onMetricChange = onMetricChange)
+                item(key = "records") {
+                    RecordsCard(exercise = exercise, records = records, modifier = Modifier.reveal(reveal, "records"))
                 }
-                item(key = "history-title") { SectionHeader(text = stringResource(R.string.detail_history)) }
+                item(key = "chart") {
+                    ChartCard(
+                        exercise = exercise,
+                        metric = metric,
+                        series = series,
+                        onMetricChange = onMetricChange,
+                        modifier = Modifier.reveal(reveal, "chart"),
+                    )
+                }
+                item(key = "history-title") {
+                    SectionHeader(text = stringResource(R.string.detail_history), modifier = Modifier.reveal(reveal, "history-title"))
+                }
                 weeks.forEach { week ->
-                    item(key = "week-${week.weekStart}") {
-                        WeekHeader(exercise = exercise, week = week, today = today)
+                    val weekKey = "week-${week.weekStart}"
+                    item(key = weekKey) {
+                        WeekHeader(
+                            exercise = exercise,
+                            week = week,
+                            today = today,
+                            modifier = Modifier
+                                .animateItem(fadeInSpec = null)
+                                .reveal(reveal, weekKey),
+                        )
                     }
                     items(week.entries, key = { it.id }) { entry ->
-                        HistoryEntry(exercise = exercise, entry = entry, today = today, onClick = { onEditEntry(entry) })
+                        HistoryEntry(
+                            exercise = exercise,
+                            entry = entry,
+                            today = today,
+                            onClick = { onEditEntry(entry) },
+                            modifier = Modifier
+                                .animateItem(fadeInSpec = null)
+                                .reveal(reveal, entry.id),
+                        )
                     }
                 }
             }
@@ -208,8 +250,8 @@ fun ExerciseDetailScreen(
 }
 
 @Composable
-private fun Header(exercise: Exercise, onUnarchive: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun Header(exercise: Exercise, onUnarchive: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AssistChip(onClick = {}, label = { Text(stringResource(exercise.muscleGroup.labelRes)) })
             AssistChip(
@@ -276,33 +318,44 @@ private fun Header(exercise: Exercise, onUnarchive: () -> Unit) {
     }
 }
 
+/** A record: its value counts up when the card appears, then shows exactly. */
+private class RecordTile(
+    val label: String,
+    val value: Double,
+    val format: @Composable (Double) -> String,
+    val caption: String,
+)
+
 @Composable
-private fun RecordsCard(exercise: Exercise, records: ExerciseRecords) {
+private fun RecordsCard(exercise: Exercise, records: ExerciseRecords, modifier: Modifier = Modifier) {
     val tiles = buildList {
         records.heaviest?.let { best ->
             add(
-                Triple(
-                    stringResource(R.string.record_heaviest),
-                    Fmt.kg(best.set.weight),
-                    stringResource(R.string.record_heaviest_caption, best.set.reps, Fmt.day(best.date)),
+                RecordTile(
+                    label = stringResource(R.string.record_heaviest),
+                    value = best.set.weight,
+                    format = { Fmt.kg(it) },
+                    caption = stringResource(R.string.record_heaviest_caption, best.set.reps, Fmt.day(best.date)),
                 ),
             )
         }
         records.estimatedOneRepMax?.let { oneRepMax ->
             add(
-                Triple(
-                    stringResource(R.string.record_one_rep_max),
-                    "≈ ${Fmt.kg(oneRepMax.toLong().toDouble())}",
-                    stringResource(R.string.record_one_rep_max_caption),
+                RecordTile(
+                    label = stringResource(R.string.record_one_rep_max),
+                    value = oneRepMax.toLong().toDouble(),
+                    format = { "≈ ${Fmt.kg(it)}" },
+                    caption = stringResource(R.string.record_one_rep_max_caption),
                 ),
             )
         }
         records.mostReps?.let { best ->
             add(
-                Triple(
-                    stringResource(if (exercise.measure == Measure.SECONDS) R.string.record_longest else R.string.record_most_reps),
-                    Fmt.reps(best.set.reps, exercise.measure),
-                    if (exercise.usesWeight && best.set.weight > 0) {
+                RecordTile(
+                    label = stringResource(if (exercise.measure == Measure.SECONDS) R.string.record_longest else R.string.record_most_reps),
+                    value = best.set.reps.toDouble(),
+                    format = { Fmt.reps(it.roundToInt(), exercise.measure) },
+                    caption = if (exercise.usesWeight && best.set.weight > 0) {
                         stringResource(R.string.record_at_weight, Fmt.kg(best.set.weight))
                     } else {
                         Fmt.day(best.date)
@@ -312,29 +365,27 @@ private fun RecordsCard(exercise: Exercise, records: ExerciseRecords) {
         }
         records.bestWeek?.let { week ->
             add(
-                Triple(
-                    stringResource(R.string.record_best_week),
-                    if (records.bestWeekByVolume) {
-                        Fmt.volume(week.value)
-                    } else {
-                        repsTotal(week.value.toInt(), exercise.measure)
-                    },
-                    weekShortLabel(week.weekStart),
+                RecordTile(
+                    label = stringResource(R.string.record_best_week),
+                    value = week.value,
+                    format = { if (records.bestWeekByVolume) Fmt.volume(it) else repsTotal(it.roundToInt(), exercise.measure) },
+                    caption = weekShortLabel(week.weekStart),
                 ),
             )
         }
         add(
-            Triple(
-                stringResource(R.string.record_sessions),
-                Fmt.number(records.sessions),
-                stringResource(R.string.record_sessions_caption),
+            RecordTile(
+                label = stringResource(R.string.record_sessions),
+                value = records.sessions.toDouble(),
+                format = { Fmt.number(it.roundToInt()) },
+                caption = stringResource(R.string.record_sessions_caption),
             ),
         )
     }.take(4)
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -342,19 +393,22 @@ private fun RecordsCard(exercise: Exercise, records: ExerciseRecords) {
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.record_title), style = MaterialTheme.typography.titleMedium)
             }
-            tiles.chunked(2).forEach { row ->
+            tiles.chunked(2).forEachIndexed { rowIndex, row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    row.forEach { (label, value, caption) ->
+                    row.forEachIndexed { columnIndex, tile ->
                         Column(Modifier.weight(1f)) {
-                            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(tile.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val shown = countUp(tile.value, delayMillis = (rowIndex * 2 + columnIndex) * 90)
+                            // Whole numbers while counting, the exact record at the end.
+                            val settled = abs(shown - tile.value) <= max(0.001, abs(tile.value) * 1e-6)
                             Text(
-                                text = value,
+                                text = tile.format(if (settled) tile.value else shown.roundToLong().toDouble()),
                                 style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            Text(caption, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(tile.caption, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     if (row.size == 1) Spacer(Modifier.weight(1f))
@@ -370,12 +424,13 @@ private fun ChartCard(
     metric: ChartMetric,
     series: List<WeekPoint>,
     onMetricChange: (ChartMetric) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val metrics = chartMetrics(exercise)
     val unitSeconds = stringResource(R.string.unit_seconds)
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.chart_title), style = MaterialTheme.typography.titleMedium)
@@ -423,8 +478,8 @@ private fun metricLabel(metric: ChartMetric, measure: Measure): String = stringR
 )
 
 @Composable
-private fun WeekHeader(exercise: Exercise, week: HistoryWeek, today: LocalDate) {
-    Column(Modifier.padding(top = 8.dp)) {
+private fun WeekHeader(exercise: Exercise, week: HistoryWeek, today: LocalDate, modifier: Modifier = Modifier) {
+    Column(modifier.padding(top = 8.dp)) {
         HorizontalDivider()
         Row(
             modifier = Modifier.padding(top = 12.dp),
@@ -448,9 +503,15 @@ private fun WeekHeader(exercise: Exercise, week: HistoryWeek, today: LocalDate) 
 }
 
 @Composable
-private fun HistoryEntry(exercise: Exercise, entry: WorkoutEntry, today: LocalDate, onClick: () -> Unit) {
+private fun HistoryEntry(
+    exercise: Exercise,
+    entry: WorkoutEntry,
+    today: LocalDate,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClickLabel = stringResource(R.string.week_edit_entry), onClick = onClick)
             .padding(vertical = 6.dp),

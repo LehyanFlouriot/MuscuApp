@@ -36,7 +36,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -84,7 +83,7 @@ fun NumberStepper(
             contentAlignment = Alignment.Center,
         ) {
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(
+                RollingText(
                     text = value,
                     style = MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"),
                     fontWeight = FontWeight.Bold,
@@ -131,17 +130,19 @@ fun CompactStepper(
             onStep = onDecrement,
             size = 36.dp,
         )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-            textAlign = TextAlign.Center,
-            maxLines = 1,
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .weight(1f)
                 .clip(MaterialTheme.shapes.small)
                 .clickable(onClickLabel = stringResource(R.string.cd_type_value), onClick = onValueClick)
                 .padding(vertical = 8.dp),
-        )
+        ) {
+            RollingText(
+                text = value,
+                style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+            )
+        }
         StepButton(
             icon = Icons.Rounded.Add,
             contentDescription = stringResource(R.string.cd_increase, description),
@@ -152,7 +153,7 @@ fun CompactStepper(
     }
 }
 
-/** Round tonal button that repeats its action while it is held down. */
+/** Round tonal button that repeats its action while it is held down, and gives under the finger. */
 @Composable
 fun StepButton(
     icon: ImageVector,
@@ -185,6 +186,7 @@ fun StepButton(
         contentColor = if (enabled) colors.onSecondaryContainer else colors.onSurface.copy(alpha = 0.38f),
         modifier = Modifier
             .size(size)
+            .pressScale(interactionSource, pressedScale = 0.86f)
             .clip(CircleShape)
             .combinedClickable(
                 interactionSource = interactionSource,

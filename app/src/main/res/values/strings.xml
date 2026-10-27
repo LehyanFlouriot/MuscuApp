@@ -63,6 +63,7 @@
     <string name="week_empty_past">Aucune séance notée cette semaine-là.</string>
     <string name="week_volume">Volume soulevé\u00A0: %1$s</string>
     <string name="week_previous_summary">Semaine précédente\u00A0: %1$s · %2$s</string>
+    <string name="week_progress_cd">Séries\u00A0: %1$s de la semaine précédente</string>
     <string name="week_tip">Après ton exercice, touche + pour noter tes séries, tes répétitions et ta charge.</string>
     <string name="week_not_done">Pas encore fait cette semaine</string>
     <string name="week_done_cd">Fait cette semaine</string>

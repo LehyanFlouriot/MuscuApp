@@ -27,7 +27,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = commitCount
-        versionName = "1.1.0"
+        versionName = "1.2.0"
     }
 
     signingConfigs {
@@ -79,7 +79,7 @@ android {
                 test.systemProperty("roborazzi.test.record", "true")
                 test.maxHeapSize = "2g"
                 test.testLogging {
-                    events("failed")
+                    events("failed", "standard_out")
                     exceptionFormat = TestExceptionFormat.FULL
                 }
             }

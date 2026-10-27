@@ -78,6 +78,8 @@ class ScreenshotTest {
             }
         }
         before()
+        // Let the entrance animations finish: the images show the screens at rest.
+        composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 

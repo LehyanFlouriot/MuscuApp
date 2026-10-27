@@ -45,6 +45,8 @@ import com.lehyanflouriot.muscuapp.core.model.Settings
 import com.lehyanflouriot.muscuapp.core.model.ThemeMode
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
+import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
+import com.lehyanflouriot.muscuapp.ui.common.reveal
 
 private val WEIGHT_STEPS = listOf(0.5, 1.0, 1.25, 2.0, 2.5, 5.0)
 
@@ -64,6 +66,7 @@ fun SettingsScreen(
     onExport: () -> Unit,
     onImport: () -> Unit,
 ) {
+    val reveal = rememberRevealState()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -86,113 +89,123 @@ fun SettingsScreen(
                 .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            SectionHeader(text = stringResource(R.string.settings_logging))
-            Text(stringResource(R.string.settings_weight_step), style = MaterialTheme.typography.titleSmall)
-            Text(
-                text = stringResource(R.string.settings_weight_step_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                WEIGHT_STEPS.forEach { step ->
-                    FilterChip(
-                        selected = settings.weightStep == step,
-                        onClick = { onWeightStepChange(step) },
-                        label = { Text(Fmt.kg(step)) },
-                    )
+            Column(Modifier.reveal(reveal, "logging"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(text = stringResource(R.string.settings_logging))
+                Text(stringResource(R.string.settings_weight_step), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    text = stringResource(R.string.settings_weight_step_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    WEIGHT_STEPS.forEach { step ->
+                        FilterChip(
+                            selected = settings.weightStep == step,
+                            onClick = { onWeightStepChange(step) },
+                            label = { Text(Fmt.kg(step)) },
+                        )
+                    }
                 }
             }
 
-            SectionHeader(text = stringResource(R.string.settings_appearance))
-            Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall)
-            val modes = ThemeMode.entries
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                modes.forEachIndexed { index, mode ->
-                    SegmentedButton(
-                        selected = settings.themeMode == mode,
-                        onClick = { onThemeChange(mode) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
+            Column(Modifier.reveal(reveal, "appearance"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(text = stringResource(R.string.settings_appearance))
+                Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall)
+                val modes = ThemeMode.entries
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    modes.forEachIndexed { index, mode ->
+                        SegmentedButton(
+                            selected = settings.themeMode == mode,
+                            onClick = { onThemeChange(mode) },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = modes.size),
+                        ) {
+                            Text(
+                                stringResource(
+                                    when (mode) {
+                                        ThemeMode.SYSTEM -> R.string.settings_theme_system
+                                        ThemeMode.LIGHT -> R.string.settings_theme_light
+                                        ThemeMode.DARK -> R.string.settings_theme_dark
+                                    },
+                                ),
+                            )
+                        }
+                    }
+                }
+                if (dynamicColorAvailable) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
                     ) {
-                        Text(
-                            stringResource(
-                                when (mode) {
-                                    ThemeMode.SYSTEM -> R.string.settings_theme_system
-                                    ThemeMode.LIGHT -> R.string.settings_theme_light
-                                    ThemeMode.DARK -> R.string.settings_theme_dark
-                                },
-                            ),
-                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.settings_dynamic_color), style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                text = stringResource(R.string.settings_dynamic_color_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Switch(checked = settings.dynamicColor, onCheckedChange = onDynamicColorChange)
                     }
                 }
             }
-            if (dynamicColorAvailable) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.settings_dynamic_color), style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            text = stringResource(R.string.settings_dynamic_color_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Switch(checked = settings.dynamicColor, onCheckedChange = onDynamicColorChange)
-                }
+
+            Column(Modifier.reveal(reveal, "timer"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(text = stringResource(R.string.settings_timer))
+                SettingsItem(
+                    icon = Icons.Rounded.Notifications,
+                    title = stringResource(R.string.settings_notifications),
+                    subtitle = stringResource(R.string.settings_notifications_hint),
+                    onClick = onOpenNotifications,
+                )
+                SettingsItem(
+                    icon = Icons.Rounded.Vibration,
+                    title = stringResource(R.string.settings_alert),
+                    subtitle = stringResource(R.string.settings_alert_hint),
+                    onClick = onOpenAlertSettings,
+                )
             }
 
-            SectionHeader(text = stringResource(R.string.settings_timer))
-            SettingsItem(
-                icon = Icons.Rounded.Notifications,
-                title = stringResource(R.string.settings_notifications),
-                subtitle = stringResource(R.string.settings_notifications_hint),
-                onClick = onOpenNotifications,
-            )
-            SettingsItem(
-                icon = Icons.Rounded.Vibration,
-                title = stringResource(R.string.settings_alert),
-                subtitle = stringResource(R.string.settings_alert_hint),
-                onClick = onOpenAlertSettings,
-            )
+            Column(Modifier.reveal(reveal, "data"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(text = stringResource(R.string.settings_data))
+                Text(
+                    text = stringResource(
+                        R.string.settings_data_summary,
+                        pluralStringResource(R.plurals.exercises_count, exerciseCount, exerciseCount),
+                        pluralStringResource(R.plurals.sessions_count, entryCount, entryCount),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                SettingsItem(
+                    icon = Icons.Rounded.Upload,
+                    title = stringResource(R.string.settings_export),
+                    subtitle = stringResource(R.string.settings_export_hint),
+                    onClick = onExport,
+                )
+                SettingsItem(
+                    icon = Icons.Rounded.Download,
+                    title = stringResource(R.string.settings_import),
+                    subtitle = stringResource(R.string.settings_import_hint),
+                    onClick = onImport,
+                )
+                Text(
+                    text = stringResource(R.string.settings_data_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
-            SectionHeader(text = stringResource(R.string.settings_data))
-            Text(
-                text = stringResource(
-                    R.string.settings_data_summary,
-                    pluralStringResource(R.plurals.exercises_count, exerciseCount, exerciseCount),
-                    pluralStringResource(R.plurals.sessions_count, entryCount, entryCount),
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            SettingsItem(
-                icon = Icons.Rounded.Upload,
-                title = stringResource(R.string.settings_export),
-                subtitle = stringResource(R.string.settings_export_hint),
-                onClick = onExport,
-            )
-            SettingsItem(
-                icon = Icons.Rounded.Download,
-                title = stringResource(R.string.settings_import),
-                subtitle = stringResource(R.string.settings_import_hint),
-                onClick = onImport,
-            )
-            Text(
-                text = stringResource(R.string.settings_data_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            SectionHeader(text = stringResource(R.string.settings_about))
-            SettingsItem(
-                icon = Icons.Rounded.Info,
-                title = stringResource(R.string.settings_version, versionName),
-                subtitle = stringResource(R.string.settings_about_text),
-                onClick = null,
-            )
+            Column(Modifier.reveal(reveal, "about"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(text = stringResource(R.string.settings_about))
+                SettingsItem(
+                    icon = Icons.Rounded.Info,
+                    title = stringResource(R.string.settings_version, versionName),
+                    subtitle = stringResource(R.string.settings_about_text),
+                    onClick = null,
+                )
+            }
         }
     }
 }

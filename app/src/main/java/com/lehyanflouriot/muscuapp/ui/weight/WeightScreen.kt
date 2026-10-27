@@ -1,6 +1,13 @@
 package com.lehyanflouriot.muscuapp.ui.weight
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +40,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -42,7 +50,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -77,10 +84,15 @@ import com.lehyanflouriot.muscuapp.ui.common.EmptyState
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.NumberInputDialog
 import com.lehyanflouriot.muscuapp.ui.common.PastDatePickerDialog
+import com.lehyanflouriot.muscuapp.ui.common.RollingText
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
 import com.lehyanflouriot.muscuapp.ui.common.StatTile
 import com.lehyanflouriot.muscuapp.ui.common.StepButton
+import com.lehyanflouriot.muscuapp.ui.common.countUp
 import com.lehyanflouriot.muscuapp.ui.common.relativeDay
+import com.lehyanflouriot.muscuapp.ui.common.rememberPressFeedback
+import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
+import com.lehyanflouriot.muscuapp.ui.common.reveal
 import java.time.LocalDate
 
 /** Increment of the +/- buttons, in kg. */
@@ -121,18 +133,18 @@ fun WeightScreen(
     onUpdate: (BodyWeightEntry, Double) -> Unit,
     onDelete: (BodyWeightEntry) -> Unit,
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val reveal = rememberRevealState()
     var typing by remember { mutableStateOf(false) }
     var pickingDate by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<BodyWeightEntry?>(null) }
     val summary = remember(weights) { weightSummary(weights) }
     val history = remember(weights) { weights.sortedByDescending { it.date } }
-    val spaced = Modifier.padding(bottom = 12.dp)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
                 title = { Text(stringResource(R.string.weight_title)) },
                 scrollBehavior = scrollBehavior,
             )
@@ -154,7 +166,9 @@ fun WeightScreen(
                     onPickDate = { pickingDate = true },
                     onType = { typing = true },
                     onSave = onSave,
-                    modifier = spaced,
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .reveal(reveal, "weigh-in"),
                 )
             }
             when {
@@ -163,30 +177,62 @@ fun WeightScreen(
                         icon = Icons.Rounded.MonitorWeight,
                         title = stringResource(R.string.weight_intro_title),
                         text = stringResource(R.string.weight_intro_text),
+                        modifier = Modifier
+                            .animateItem(fadeInSpec = null)
+                            .reveal(reveal, "intro"),
                     )
                 }
-                weights.size == 1 -> item(key = "one") { OneWeightCard(modifier = spaced) }
+                weights.size == 1 -> item(key = "one") {
+                    OneWeightCard(
+                        modifier = Modifier
+                            .animateItem(fadeInSpec = null)
+                            .padding(bottom = 12.dp)
+                            .reveal(reveal, "one"),
+                    )
+                }
                 else -> {
-                    item(key = "summary") { SummaryCard(summary = summary, today = today, modifier = spaced) }
+                    item(key = "summary") {
+                        SummaryCard(
+                            summary = summary,
+                            today = today,
+                            modifier = Modifier
+                                .animateItem(fadeInSpec = null)
+                                .padding(bottom = 12.dp)
+                                .reveal(reveal, "summary"),
+                        )
+                    }
                     item(key = "chart") {
                         ChartCard(
                             weights = weights,
                             today = today,
                             period = period,
                             onPeriodChange = onPeriodChange,
-                            modifier = spaced,
+                            modifier = Modifier
+                                .animateItem(fadeInSpec = null)
+                                .padding(bottom = 12.dp)
+                                .reveal(reveal, "chart"),
                         )
                     }
                 }
             }
             if (history.isNotEmpty()) {
-                item(key = "history-title") { SectionHeader(text = stringResource(R.string.weight_history)) }
+                item(key = "history-title") {
+                    SectionHeader(
+                        text = stringResource(R.string.weight_history),
+                        modifier = Modifier
+                            .animateItem(fadeInSpec = null)
+                            .reveal(reveal, "history-title"),
+                    )
+                }
                 itemsIndexed(history, key = { _, entry -> entry.date.toEpochDay() }) { index, entry ->
                     HistoryRow(
                         entry = entry,
                         previous = history.getOrNull(index + 1),
                         today = today,
                         onClick = { editing = entry },
+                        modifier = Modifier
+                            .animateItem(fadeInSpec = null)
+                            .reveal(reveal, entry.date),
                     )
                 }
             }
@@ -256,11 +302,10 @@ private fun WeightStepper(
             contentAlignment = Alignment.Center,
         ) {
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(
+                RollingText(
                     text = Fmt.bodyWeight(weight),
                     style = numberStyle.copy(fontFeatureSettings = "tnum"),
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
                 )
                 Text(
                     text = " " + stringResource(R.string.unit_kg),
@@ -322,29 +367,38 @@ private fun WeighInCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            val press = rememberPressFeedback()
             Button(
                 onClick = onSave,
                 enabled = !upToDate,
-                modifier = Modifier
+                interactionSource = press.interactionSource,
+                modifier = press.modifier
                     .fillMaxWidth()
                     .height(56.dp),
             ) {
-                Icon(
-                    if (upToDate) Icons.Rounded.CheckCircle else Icons.Rounded.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(
-                        when {
-                            upToDate -> R.string.weight_saved_state
-                            saved != null -> R.string.log_update
-                            else -> R.string.action_save
-                        },
-                    ),
-                    style = MaterialTheme.typography.titleSmall,
-                )
+                val label = when {
+                    upToDate -> R.string.weight_saved_state
+                    saved != null -> R.string.log_update
+                    else -> R.string.action_save
+                }
+                AnimatedContent(
+                    targetState = label,
+                    transitionSpec = {
+                        (fadeIn(tween(200, delayMillis = 60)) + scaleIn(tween(350, delayMillis = 60, easing = EaseOutBack), initialScale = 0.8f))
+                            .togetherWith(fadeOut(tween(100)))
+                    },
+                    label = "save-label",
+                ) { shown ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (shown == R.string.weight_saved_state) Icons.Rounded.CheckCircle else Icons.Rounded.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = stringResource(shown), style = MaterialTheme.typography.titleSmall)
+                    }
+                }
             }
         }
     }
@@ -384,12 +438,12 @@ private fun SummaryCard(summary: WeightSummary, today: LocalDate, modifier: Modi
                     modifier = Modifier.weight(1f),
                 )
                 StatTile(
-                    value = Fmt.signedKg(summary.change),
+                    value = Fmt.signedKg(countUp(summary.change, delayMillis = 80)),
                     label = stringResource(R.string.weight_since_start),
                     modifier = Modifier.weight(1f),
                 )
                 StatTile(
-                    value = rate?.let { Fmt.signedKg(it) } ?: "–",
+                    value = rate?.let { Fmt.signedKg(countUp(it, delayMillis = 160)) } ?: "–",
                     label = stringResource(R.string.weight_per_week),
                     modifier = Modifier.weight(1f),
                 )
@@ -510,8 +564,14 @@ private fun LegendItem(text: String, mark: @Composable () -> Unit) {
 }
 
 @Composable
-private fun HistoryRow(entry: BodyWeightEntry, previous: BodyWeightEntry?, today: LocalDate, onClick: () -> Unit) {
-    Column {
+private fun HistoryRow(
+    entry: BodyWeightEntry,
+    previous: BodyWeightEntry?,
+    today: LocalDate,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

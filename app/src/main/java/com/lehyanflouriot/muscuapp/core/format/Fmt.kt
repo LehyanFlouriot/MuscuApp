@@ -81,6 +81,9 @@ object Fmt {
         }
     }
 
+    /** "77 %" */
+    fun percent(ratio: Double): String = "${(ratio * 100).roundToLong()}$NNBSP%"
+
     /** "+12 %", "−5 %" */
     fun signedPercent(ratio: Double): String {
         val percent = (ratio * 100).roundToLong()

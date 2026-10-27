@@ -1,5 +1,13 @@
 package com.lehyanflouriot.muscuapp.ui.log
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,14 +66,17 @@ import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.ui.common.CompactStepper
 import com.lehyanflouriot.muscuapp.ui.common.DateChips
 import com.lehyanflouriot.muscuapp.ui.common.ExerciseAvatar
+import com.lehyanflouriot.muscuapp.ui.common.Motion
 import com.lehyanflouriot.muscuapp.ui.common.NumberInputDialog
 import com.lehyanflouriot.muscuapp.ui.common.NumberStepper
 import com.lehyanflouriot.muscuapp.ui.common.PastDatePickerDialog
 import com.lehyanflouriot.muscuapp.ui.common.describe
 import com.lehyanflouriot.muscuapp.ui.common.labelRes
 import com.lehyanflouriot.muscuapp.ui.common.relativeDay
+import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.repsLabel
 import com.lehyanflouriot.muscuapp.ui.common.repsTotal
+import com.lehyanflouriot.muscuapp.ui.common.reveal
 import com.lehyanflouriot.muscuapp.ui.common.setsCount
 import java.time.LocalDate
 import kotlin.math.roundToLong
@@ -197,46 +208,34 @@ fun LogEntryForm(
             onPickDate = { pickingDate = true },
         )
 
-        if (!state.detailed) {
-            NumberStepper(
-                label = stringResource(R.string.field_sets),
-                value = state.setCount.toString(),
-                onDecrement = { state.setCount = (state.setCount - 1).coerceAtLeast(1) },
-                onIncrement = { state.setCount = (state.setCount + 1).coerceAtMost(MAX_SETS) },
-                onValueClick = { editing = EditTarget.SetCount },
-                canDecrement = state.setCount > 1,
-                canIncrement = state.setCount < MAX_SETS,
-            )
-            NumberStepper(
-                label = repsName,
-                value = state.reps.toString(),
-                unit = if (exercise.measure == Measure.SECONDS) unitSeconds else null,
-                onDecrement = { state.reps = (state.reps - state.repStep).coerceAtLeast(1) },
-                onIncrement = { state.reps = (state.reps + state.repStep).coerceAtMost(MAX_REPS) },
-                onValueClick = { editing = EditTarget.Reps },
-                canDecrement = state.reps > 1,
-                canIncrement = state.reps < MAX_REPS,
-            )
-            if (exercise.usesWeight) {
-                NumberStepper(
-                    label = stringResource(R.string.field_weight),
-                    value = Fmt.weight(state.weight),
-                    unit = unitKg,
-                    onDecrement = { state.weight = roundWeight(state.weight - weightStep) },
-                    onIncrement = { state.weight = roundWeight(state.weight + weightStep) },
-                    onValueClick = { editing = EditTarget.Weight },
-                    canDecrement = state.weight > 0.0,
-                    canIncrement = state.weight < MAX_WEIGHT,
+        AnimatedContent(
+            targetState = state.detailed,
+            transitionSpec = {
+                (fadeIn(tween(250, delayMillis = 80)) + slideInVertically(tween(350, easing = Motion.EaseOut)) { it / 10 })
+                    .togetherWith(fadeOut(tween(120)))
+                    .using(SizeTransform(clip = false))
+            },
+            label = "log-mode",
+        ) { detailed ->
+            if (!detailed) {
+                SimpleSets(
+                    exercise = exercise,
+                    state = state,
+                    repsName = repsName,
+                    unitSeconds = unitSeconds,
+                    unitKg = unitKg,
+                    weightStep = weightStep,
+                    onEdit = { editing = it },
+                )
+            } else {
+                DetailedSets(
+                    exercise = exercise,
+                    state = state,
+                    repsName = repsName,
+                    weightStep = weightStep,
+                    onEdit = { editing = it },
                 )
             }
-        } else {
-            DetailedSets(
-                exercise = exercise,
-                state = state,
-                repsName = repsName,
-                weightStep = weightStep,
-                onEdit = { editing = it },
-            )
         }
 
         if (previous == null && !isEdit) {
@@ -361,6 +360,51 @@ fun LogEntryForm(
 }
 
 @Composable
+private fun SimpleSets(
+    exercise: Exercise,
+    state: LogFormState,
+    repsName: String,
+    unitSeconds: String,
+    unitKg: String,
+    weightStep: Double,
+    onEdit: (EditTarget) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        NumberStepper(
+            label = stringResource(R.string.field_sets),
+            value = state.setCount.toString(),
+            onDecrement = { state.setCount = (state.setCount - 1).coerceAtLeast(1) },
+            onIncrement = { state.setCount = (state.setCount + 1).coerceAtMost(MAX_SETS) },
+            onValueClick = { onEdit(EditTarget.SetCount) },
+            canDecrement = state.setCount > 1,
+            canIncrement = state.setCount < MAX_SETS,
+        )
+        NumberStepper(
+            label = repsName,
+            value = state.reps.toString(),
+            unit = if (exercise.measure == Measure.SECONDS) unitSeconds else null,
+            onDecrement = { state.reps = (state.reps - state.repStep).coerceAtLeast(1) },
+            onIncrement = { state.reps = (state.reps + state.repStep).coerceAtMost(MAX_REPS) },
+            onValueClick = { onEdit(EditTarget.Reps) },
+            canDecrement = state.reps > 1,
+            canIncrement = state.reps < MAX_REPS,
+        )
+        if (exercise.usesWeight) {
+            NumberStepper(
+                label = stringResource(R.string.field_weight),
+                value = Fmt.weight(state.weight),
+                unit = unitKg,
+                onDecrement = { state.weight = roundWeight(state.weight - weightStep) },
+                onIncrement = { state.weight = roundWeight(state.weight + weightStep) },
+                onValueClick = { onEdit(EditTarget.Weight) },
+                canDecrement = state.weight > 0.0,
+                canIncrement = state.weight < MAX_WEIGHT,
+            )
+        }
+    }
+}
+
+@Composable
 private fun DetailedSets(
     exercise: Exercise,
     state: LogFormState,
@@ -369,7 +413,12 @@ private fun DetailedSets(
     onEdit: (EditTarget) -> Unit,
 ) {
     val weightName = stringResource(R.string.field_weight)
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    // Sets glide in one after the other, and the ones added later too.
+    val reveal = rememberRevealState()
+    Column(
+        modifier = Modifier.animateContentSize(tween(300, easing = Motion.EaseOut)),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(R.string.log_set_header),
@@ -397,7 +446,7 @@ private fun DetailedSets(
             Spacer(Modifier.width(40.dp))
         }
         state.rows.forEachIndexed { index, set ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.reveal(reveal, index)) {
                 Text(
                     text = (index + 1).toString(),
                     style = MaterialTheme.typography.titleMedium,

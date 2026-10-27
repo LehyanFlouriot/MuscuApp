@@ -1,5 +1,18 @@
 package com.lehyanflouriot.muscuapp.ui.week
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -30,16 +43,18 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -52,6 +67,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -68,18 +85,26 @@ import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.ui.common.EmptyState
+import com.lehyanflouriot.muscuapp.ui.common.FillBar
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
+import com.lehyanflouriot.muscuapp.ui.common.Motion
+import com.lehyanflouriot.muscuapp.ui.common.RevealState
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
 import com.lehyanflouriot.muscuapp.ui.common.StatTile
 import com.lehyanflouriot.muscuapp.ui.common.TrendBadge
+import com.lehyanflouriot.muscuapp.ui.common.countUp
 import com.lehyanflouriot.muscuapp.ui.common.describe
 import com.lehyanflouriot.muscuapp.ui.common.labelRes
+import com.lehyanflouriot.muscuapp.ui.common.rememberPressFeedback
+import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.repsTotal
+import com.lehyanflouriot.muscuapp.ui.common.reveal
 import com.lehyanflouriot.muscuapp.ui.common.setsCount
 import com.lehyanflouriot.muscuapp.ui.common.weekTitle
 import com.lehyanflouriot.muscuapp.ui.common.weeksAgoLabel
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 @Composable
 fun WeekScreen(
@@ -97,17 +122,20 @@ fun WeekScreen(
     onQuickAdd: (ExerciseSuggestion) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val isCurrentWeek = overview.weekStart == today.startOfWeek()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val reveal = rememberRevealState()
     val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
     val previousWeek by rememberUpdatedState(onPreviousWeek)
     val nextWeek by rememberUpdatedState(onNextWeek)
-    val canGoNext by rememberUpdatedState(!isCurrentWeek)
+    val canGoNext by rememberUpdatedState(overview.weekStart != today.startOfWeek())
+    // The button pops in once the screen has appeared.
+    val fabState = remember { MutableTransitionState(false) }
+    fabState.targetState = overview.items.isNotEmpty()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
                 title = { Text(stringResource(R.string.week_screen_title)) },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
@@ -118,18 +146,38 @@ fun WeekScreen(
             )
         },
         floatingActionButton = {
-            if (overview.items.isNotEmpty()) {
+            AnimatedVisibility(
+                visibleState = fabState,
+                enter = scaleIn(tween(450, delayMillis = 300, easing = EaseOutBack)) + fadeIn(tween(200, delayMillis = 300)),
+                exit = scaleOut(tween(200)) + fadeOut(tween(200)),
+            ) {
+                val press = rememberPressFeedback()
                 ExtendedFloatingActionButton(
                     onClick = onAddExercise,
                     icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                     text = { Text(stringResource(R.string.week_add_exercise)) },
+                    interactionSource = press.interactionSource,
+                    modifier = press.modifier,
                 )
             }
         },
         snackbarHost = { SnackbarHost(LocalSnackbarHostState.current) },
     ) { padding ->
         var dragTotal by remember { mutableFloatStateOf(0f) }
-        LazyColumn(
+        AnimatedContent(
+            targetState = overview,
+            contentKey = { it.weekStart },
+            transitionSpec = {
+                // Earlier weeks come from the left and later ones from the right, as when swiping.
+                val direction = if (targetState.weekStart > initialState.weekStart) 1 else -1
+                (
+                    slideInHorizontally(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) { it * direction / 3 } +
+                        fadeIn(tween(250, delayMillis = 60))
+                    ).togetherWith(
+                    slideOutHorizontally(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) { -it * direction / 3 } +
+                        fadeOut(tween(150)),
+                )
+            },
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
@@ -149,56 +197,118 @@ fun WeekScreen(
                         },
                     )
                 },
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item(key = "selector") {
-                WeekSelector(
-                    weekStart = overview.weekStart,
-                    today = today,
-                    isCurrentWeek = isCurrentWeek,
-                    onPrevious = onPreviousWeek,
-                    onNext = onNextWeek,
-                    onThisWeek = onThisWeek,
+            label = "week",
+        ) { shown ->
+            WeekList(
+                overview = shown,
+                today = today,
+                hasAnyEntry = hasAnyEntry,
+                suggestions = suggestions,
+                reveal = reveal,
+                onPreviousWeek = onPreviousWeek,
+                onNextWeek = onNextWeek,
+                onThisWeek = onThisWeek,
+                onLog = onLog,
+                onEditEntry = onEditEntry,
+                onOpenExercise = onOpenExercise,
+                onAddExercise = onAddExercise,
+                onQuickAdd = onQuickAdd,
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeekList(
+    overview: WeekOverview,
+    today: LocalDate,
+    hasAnyEntry: Boolean,
+    suggestions: List<ExerciseSuggestion>,
+    reveal: RevealState,
+    onPreviousWeek: () -> Unit,
+    onNextWeek: () -> Unit,
+    onThisWeek: () -> Unit,
+    onLog: (Exercise) -> Unit,
+    onEditEntry: (WorkoutEntry) -> Unit,
+    onOpenExercise: (Exercise) -> Unit,
+    onAddExercise: () -> Unit,
+    onQuickAdd: (ExerciseSuggestion) -> Unit,
+) {
+    val isCurrentWeek = overview.weekStart == today.startOfWeek()
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item(key = "selector") {
+            WeekSelector(
+                weekStart = overview.weekStart,
+                today = today,
+                isCurrentWeek = isCurrentWeek,
+                onPrevious = onPreviousWeek,
+                onNext = onNextWeek,
+                onThisWeek = onThisWeek,
+                modifier = Modifier.reveal(reveal, "selector"),
+            )
+        }
+        if (overview.items.isEmpty()) {
+            item(key = "empty") {
+                WelcomeCard(
+                    suggestions = suggestions,
+                    onAddExercise = onAddExercise,
+                    onQuickAdd = onQuickAdd,
+                    modifier = Modifier.reveal(reveal, "empty"),
                 )
             }
-            if (overview.items.isEmpty()) {
-                item(key = "empty") {
-                    WelcomeCard(
+        } else {
+            item(key = "summary") {
+                WeekSummaryCard(
+                    summary = overview.summary,
+                    previous = overview.previousSummary,
+                    isCurrentWeek = isCurrentWeek,
+                    modifier = Modifier.reveal(reveal, "summary"),
+                )
+            }
+            if (!hasAnyEntry) {
+                item(key = "tip") {
+                    TipCard(
+                        modifier = Modifier
+                            .animateItem(fadeInSpec = null)
+                            .reveal(reveal, "tip"),
+                    )
+                }
+            }
+            overview.items.groupBy { it.exercise.muscleGroup }.forEach { (group, groupItems) ->
+                item(key = "group-$group") {
+                    SectionHeader(
+                        text = stringResource(group.labelRes),
+                        modifier = Modifier
+                            .animateItem(fadeInSpec = null)
+                            .reveal(reveal, "group-$group"),
+                    )
+                }
+                items(groupItems, key = { it.exercise.id }) { item ->
+                    ExerciseWeekCard(
+                        item = item,
+                        onLog = { onLog(item.exercise) },
+                        onEditEntry = onEditEntry,
+                        onOpen = { onOpenExercise(item.exercise) },
+                        modifier = Modifier
+                            .animateItem(fadeInSpec = null)
+                            .reveal(reveal, item.exercise.id),
+                    )
+                }
+            }
+            // While getting started, more exercises can still be added in one tap.
+            if (!hasAnyEntry && suggestions.isNotEmpty()) {
+                item(key = "quick-add") {
+                    QuickAdd(
                         suggestions = suggestions,
-                        onAddExercise = onAddExercise,
                         onQuickAdd = onQuickAdd,
+                        modifier = Modifier
+                            .animateItem(fadeInSpec = null)
+                            .reveal(reveal, "quick-add"),
                     )
-                }
-            } else {
-                item(key = "summary") {
-                    WeekSummaryCard(
-                        summary = overview.summary,
-                        previous = overview.previousSummary,
-                        isCurrentWeek = isCurrentWeek,
-                    )
-                }
-                if (!hasAnyEntry) {
-                    item(key = "tip") { TipCard() }
-                }
-                overview.items.groupBy { it.exercise.muscleGroup }.forEach { (group, groupItems) ->
-                    item(key = "group-$group") {
-                        SectionHeader(text = stringResource(group.labelRes))
-                    }
-                    items(groupItems, key = { it.exercise.id }) { item ->
-                        ExerciseWeekCard(
-                            item = item,
-                            onLog = { onLog(item.exercise) },
-                            onEditEntry = onEditEntry,
-                            onOpen = { onOpenExercise(item.exercise) },
-                        )
-                    }
-                }
-                // While getting started, more exercises can still be added in one tap.
-                if (!hasAnyEntry && suggestions.isNotEmpty()) {
-                    item(key = "quick-add") {
-                        QuickAdd(suggestions = suggestions, onQuickAdd = onQuickAdd)
-                    }
                 }
             }
         }
@@ -213,11 +323,12 @@ private fun WeekSelector(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onThisWeek: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.padding(4.dp),
@@ -265,41 +376,52 @@ private fun WeekSelector(
 }
 
 @Composable
-private fun WeekSummaryCard(summary: WeekSummary, previous: WeekSummary, isCurrentWeek: Boolean) {
+private fun WeekSummaryCard(
+    summary: WeekSummary,
+    previous: WeekSummary,
+    isCurrentWeek: Boolean,
+    modifier: Modifier = Modifier,
+) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .animateContentSize(tween(350, easing = Motion.EaseOut)),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             if (summary.isEmpty) {
                 Text(
                     text = stringResource(if (isCurrentWeek) R.string.week_empty_current else R.string.week_empty_past),
                     style = MaterialTheme.typography.titleMedium,
                 )
             } else {
+                // The numbers count up, one after the other.
                 Row(Modifier.fillMaxWidth()) {
                     StatTile(
-                        value = Fmt.number(summary.activeDays),
+                        value = Fmt.number(countUp(summary.activeDays)),
                         label = pluralStringResource(R.plurals.sessions_label, summary.activeDays),
                         modifier = Modifier.weight(1f),
                     )
                     StatTile(
-                        value = Fmt.number(summary.sets),
+                        value = Fmt.number(countUp(summary.sets, delayMillis = 80)),
                         label = pluralStringResource(R.plurals.sets_label, summary.sets),
                         modifier = Modifier.weight(1f),
                     )
                     StatTile(
-                        value = Fmt.number(summary.reps),
+                        value = Fmt.number(countUp(summary.reps, delayMillis = 160)),
                         label = pluralStringResource(R.plurals.reps_label, summary.reps),
                         modifier = Modifier.weight(1f),
                     )
                 }
                 if (summary.volume > 0) {
                     Text(
-                        text = stringResource(R.string.week_volume, Fmt.volume(summary.volume)),
+                        text = stringResource(R.string.week_volume, Fmt.volume(countUp(summary.volume, delayMillis = 240))),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -309,17 +431,44 @@ private fun WeekSummaryCard(summary: WeekSummary, previous: WeekSummary, isCurre
                     text = stringResource(R.string.week_previous_summary, setsCount(previous.sets), repsTotal(previous.reps, Measure.REPS)),
                     style = MaterialTheme.typography.bodySmall,
                 )
+                WeekProgress(sets = summary.sets, previousSets = previous.sets)
             }
         }
     }
 }
 
+/** How far this week's sets are from the previous week's: a bar that fills up, and the percentage. */
 @Composable
-private fun TipCard() {
+private fun WeekProgress(sets: Int, previousSets: Int) {
+    val ratio = sets.toDouble() / previousSets
+    val description = stringResource(R.string.week_progress_cd, Fmt.percent(ratio))
+    val color = LocalContentColor.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clearAndSetSemantics { contentDescription = description },
+    ) {
+        FillBar(
+            fraction = ratio.toFloat(),
+            color = color,
+            trackColor = color.copy(alpha = 0.15f),
+            delayMillis = 250,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = Fmt.percent(countUp((ratio * 100).roundToInt(), delayMillis = 250) / 100.0),
+            style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"),
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun TipCard(modifier: Modifier = Modifier) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.TipsAndUpdates, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -335,18 +484,28 @@ private fun ExerciseWeekCard(
     onLog: () -> Unit,
     onEditEntry: (WorkoutEntry) -> Unit,
     onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val exercise = item.exercise
+    val press = rememberPressFeedback(pressedScale = 0.98f)
     Card(
         onClick = onOpen,
+        interactionSource = press.interactionSource,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .then(press.modifier)
+            .fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .animateContentSize(tween(350, easing = Motion.EaseOut)),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = exercise.name,
@@ -355,14 +514,21 @@ private fun ExerciseWeekCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    if (item.done) {
-                        Spacer(Modifier.width(6.dp))
-                        Icon(
-                            Icons.Rounded.CheckCircle,
-                            contentDescription = stringResource(R.string.week_done_cd),
-                            tint = MuscuTheme.extendedColors.success,
-                            modifier = Modifier.size(18.dp),
-                        )
+                    // Pops in when the exercise gets done.
+                    AnimatedVisibility(
+                        visible = item.done,
+                        enter = scaleIn(tween(400, easing = EaseOutBack)) + fadeIn(),
+                        exit = scaleOut() + fadeOut(),
+                    ) {
+                        Row {
+                            Spacer(Modifier.width(6.dp))
+                            Icon(
+                                Icons.Rounded.CheckCircle,
+                                contentDescription = stringResource(R.string.week_done_cd),
+                                tint = MuscuTheme.extendedColors.success,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                 }
                 if (item.entries.isEmpty()) {
@@ -381,7 +547,12 @@ private fun ExerciseWeekCard(
                 }
             }
             Spacer(Modifier.width(8.dp))
-            FilledTonalIconButton(onClick = onLog, modifier = Modifier.size(52.dp)) {
+            val addPress = rememberPressFeedback(pressedScale = 0.88f)
+            FilledTonalIconButton(
+                onClick = onLog,
+                interactionSource = addPress.interactionSource,
+                modifier = addPress.modifier.size(52.dp),
+            ) {
                 Icon(
                     Icons.Rounded.Add,
                     contentDescription = stringResource(R.string.week_log_cd, exercise.name),
@@ -453,14 +624,16 @@ private fun WelcomeCard(
     suggestions: List<ExerciseSuggestion>,
     onAddExercise: () -> Unit,
     onQuickAdd: (ExerciseSuggestion) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         EmptyState(
             icon = Icons.Rounded.FitnessCenter,
             title = stringResource(R.string.welcome_title),
             text = stringResource(R.string.welcome_text),
             action = {
-                Button(onClick = onAddExercise) {
+                val press = rememberPressFeedback()
+                Button(onClick = onAddExercise, interactionSource = press.interactionSource, modifier = press.modifier) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.welcome_add))
@@ -474,8 +647,12 @@ private fun WelcomeCard(
 }
 
 @Composable
-private fun QuickAdd(suggestions: List<ExerciseSuggestion>, onQuickAdd: (ExerciseSuggestion) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun QuickAdd(
+    suggestions: List<ExerciseSuggestion>,
+    onQuickAdd: (ExerciseSuggestion) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(text = stringResource(R.string.welcome_quick_add))
         Text(
             text = stringResource(R.string.welcome_quick_add_hint),
@@ -484,11 +661,16 @@ private fun QuickAdd(suggestions: List<ExerciseSuggestion>, onQuickAdd: (Exercis
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             suggestions.forEach { suggestion ->
-                SuggestionChip(
-                    onClick = { onQuickAdd(suggestion) },
-                    label = { Text(suggestion.name) },
-                    icon = { Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                )
+                key(suggestion.name) {
+                    val press = rememberPressFeedback(pressedScale = 0.92f)
+                    SuggestionChip(
+                        onClick = { onQuickAdd(suggestion) },
+                        label = { Text(suggestion.name) },
+                        icon = { Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        interactionSource = press.interactionSource,
+                        modifier = press.modifier,
+                    )
+                }
             }
         }
     }
