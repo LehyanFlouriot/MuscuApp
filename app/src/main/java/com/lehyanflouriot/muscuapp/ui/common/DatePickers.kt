@@ -97,3 +97,37 @@ fun PastDatePickerDialog(
         DatePicker(state = pickerState)
     }
 }
+
+/** Calendar where only today and the days after can be chosen. */
+@Composable
+fun FutureDatePickerDialog(
+    initialDate: LocalDate,
+    today: LocalDate,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalDate) -> Unit,
+) {
+    val todayMillis = today.toUtcMillis()
+    val pickerState = rememberDatePickerState(
+        initialSelectedDateMillis = maxOf(initialDate, today).toUtcMillis(),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= todayMillis
+            override fun isSelectableYear(year: Int): Boolean = year >= today.year
+        },
+    )
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selected = pickerState.selectedDateMillis
+                    if (selected != null) onConfirm(utcMillisToLocalDate(selected)) else onDismiss()
+                },
+            ) { Text(stringResource(R.string.action_ok)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    ) {
+        DatePicker(state = pickerState)
+    }
+}

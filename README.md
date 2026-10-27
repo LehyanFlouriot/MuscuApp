@@ -1,10 +1,10 @@
 # MuscuApp 💪
 
-Application Android pour suivre ses séances de musculation **semaine après semaine** : tes exercices, tes séries, tes répétitions (et ta charge), **ton poids jour après jour** pour suivre ta prise de masse, et un **minuteur de repos** qui sonne même écran éteint.
+Application Android pour suivre ses séances de musculation **semaine après semaine** : tes exercices, tes séries, tes répétitions (et ta charge), **ton plan alimentaire** au jour le jour, **ton poids** pour suivre ta prise de masse, et un **minuteur de repos** qui sonne même écran éteint.
 
-| Ma semaine | Saisie d'une séance | Mon poids | Repos | Progrès |
-|:---:|:---:|:---:|:---:|:---:|
-| ![Semaine](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/1-semaine.png) | ![Saisie](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/2-saisie.png) | ![Poids](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/8-poids.png) | ![Repos](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/3-repos.png) | ![Progrès](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/4-progres.png) |
+| Ma semaine | Nutrition | Saisie d'une séance | Mon poids | Repos | Progrès |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| ![Semaine](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/1-semaine.png) | ![Nutrition](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/9-nutrition.png) | ![Saisie](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/2-saisie.png) | ![Poids](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/8-poids.png) | ![Repos](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/3-repos.png) | ![Progrès](https://github.com/LehyanFlouriot/MuscuApp/releases/latest/download/4-progres.png) |
 
 ## Installer l'app sur ton téléphone
 
@@ -29,6 +29,16 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - Exercices au poids du corps (pompes, tractions…) et exercices en durée (gainage…).
 - Date en un geste : *Aujourd'hui*, *Hier* ou un autre jour.
 - Un bouton **Repos** lance le minuteur directement depuis la saisie, entre deux séries.
+
+### 🍽️ Nutrition
+- Ton **plan alimentaire** jour par jour, déjà rempli avec ta semaine type (prise de masse 66 → 75 kg) : les 5 repas avec leurs quantités, l'eau et les conseils du plan.
+- **Coche ce que tu manges** : aliment par aliment, ou tout un repas d'un coup. Un repas terminé se replie et le prochain est mis en avant.
+- Trois **anneaux** pour la journée : calories, protéines et verres d'eau (estimés d'après ce que tu as coché).
+- Pas de riz sous la main ? **⇄ Remplace** un aliment juste pour ce jour, avec des idées tirées des équivalences du plan (riz ↔ pâtes ↔ semoule…). Ton programme ne change pas.
+- **Pilotage du poids** : avec tes pesées, l'app compare ton rythme des 2 dernières semaines à la cible du plan (+0,1 à +0,4 kg par semaine) et te rappelle quoi faire (+ 200 kcal de féculents si ça stagne, − 150 kcal si ça monte trop vite).
+- La semaine en haut de l'écran montre où tu en es chaque jour ; glisse à gauche / à droite pour changer de jour, et regarde les jours à venir pour préparer tes repas.
+- **Modifier le programme** : change un aliment ou une quantité, ajoute ou supprime un repas, copie un jour vers d'autres, ajuste l'eau, les objectifs et les conseils. Les changements s'appliquent dès aujourd'hui ; les jours passés gardent ce qui était prévu.
+- **Mes programmes** : dans quelques mois, crée un **nouveau programme** (vide ou à partir de l'actuel) et choisis le jour où il commence : aujourd'hui, lundi prochain ou une autre date. L'ancien reste dans ton historique.
 
 ### ⏱️ Repos
 - Grand minuteur circulaire : démarrer, pause, **−15 s / +15 s**.
@@ -61,7 +71,7 @@ Projet Android natif en **Kotlin** avec **Jetpack Compose** et **Material 3**.
 ./gradlew assembleRelease     # APK signé : app/build/outputs/apk/release/app-release.apk
 ```
 
-- `app/src/main/java/.../core` : logique sans dépendance Android (modèle, statistiques, semaines, poids, minuteur), testée par des tests unitaires.
+- `app/src/main/java/.../core` : logique sans dépendance Android (modèle, statistiques, semaines, poids, plan alimentaire, minuteur), testée par des tests unitaires.
 - `app/src/main/java/.../ui` : écrans Compose. `.../timer` : minuteur (alarme exacte + notifications).
 - À chaque push sur la branche principale, GitHub Actions construit l'APK et le publie dans les **Releases** (avec les captures d'écran).
 

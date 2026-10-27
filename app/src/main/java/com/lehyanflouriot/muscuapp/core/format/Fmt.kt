@@ -84,6 +84,35 @@ object Fmt {
     /** "77 %" */
     fun percent(ratio: Double): String = "${(ratio * 100).roundToLong()}$NNBSP%"
 
+    /** "3,25 L" */
+    fun liters(ml: Int): String = "${number(ml / 1000.0)}${NBSP}L"
+
+    /** "2 550 kcal" */
+    fun kcal(kcal: Int): String = "${number(kcal)}${NBSP}kcal"
+
+    /** Grams of protein: "155 g". */
+    fun grams(grams: Int): String = "$grams${NBSP}g"
+
+    /** A quantity never split over two lines: "1,5 c. à s.". */
+    fun quantity(text: String): String = text.trim().replace(' ', NBSP)
+
+    private val spaceBeforePunctuation = Regex(" ([:;!?»])")
+    private val spaceAfterQuote = Regex("« ")
+    private val spaceBeforePercent = Regex(" %")
+    private val signAndNumber = Regex("([+−]) (?=\\d)")
+    private val numberAndUnit = Regex("(\\d) (?=(?:g|kg|mg|ml|cl|L|h|min|s|kcal)(?![\\p{L}\\d]))")
+
+    /**
+     * French typography for free text: no line break before ":", "!", "?" or "%", nor between a
+     * number and its unit ("150 g") or its sign ("− 150 kcal").
+     */
+    fun typography(text: String): String = text
+        .replace(spaceBeforePunctuation, "$NBSP$1")
+        .replace(spaceAfterQuote, "«$NBSP")
+        .replace(spaceBeforePercent, "$NNBSP%")
+        .replace(signAndNumber, "$1$NBSP")
+        .replace(numberAndUnit, "$1$NBSP")
+
     /** "+12 %", "−5 %" */
     fun signedPercent(ratio: Double): String {
         val percent = (ratio * 100).roundToLong()

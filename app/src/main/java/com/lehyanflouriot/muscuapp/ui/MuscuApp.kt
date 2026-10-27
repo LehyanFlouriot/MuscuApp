@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.MonitorWeight
+import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -64,6 +65,8 @@ import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.Motion
 import com.lehyanflouriot.muscuapp.ui.common.SnackbarMessenger
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailRoute
+import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionRoute
+import com.lehyanflouriot.muscuapp.ui.nutrition.PlanEditorRoute
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressRoute
 import com.lehyanflouriot.muscuapp.ui.rest.ADJUST_STEP_MS
 import com.lehyanflouriot.muscuapp.ui.rest.MiniTimerBar
@@ -75,22 +78,28 @@ import com.lehyanflouriot.muscuapp.ui.week.WeekRoute
 import com.lehyanflouriot.muscuapp.ui.weight.WeightRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
+import java.time.DayOfWeek
 
 object Routes {
     const val WEEK = "week"
+    const val NUTRITION = "nutrition"
     const val PROGRESS = "progress"
     const val WEIGHT = "weight"
     const val REST = "rest"
     const val SETTINGS = "settings"
     const val EXERCISE = "exercise/{id}"
+    const val PLAN = "plan/{id}?day={day}"
 
     fun exercise(id: String) = "exercise/$id"
+
+    fun plan(id: String, day: DayOfWeek) = "plan/$id?day=${day.value}"
 }
 
 private class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector)
 
 private val tabs = listOf(
     Tab(Routes.WEEK, R.string.tab_week, Icons.Rounded.FitnessCenter),
+    Tab(Routes.NUTRITION, R.string.tab_nutrition, Icons.Rounded.Restaurant),
     Tab(Routes.PROGRESS, R.string.tab_progress, Icons.Rounded.Insights),
     Tab(Routes.WEIGHT, R.string.tab_weight, Icons.Rounded.MonitorWeight),
     Tab(Routes.REST, R.string.tab_rest, Icons.Rounded.Timer),
@@ -186,6 +195,14 @@ fun MuscuApp(
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     )
                 }
+                composable(Routes.NUTRITION) {
+                    NutritionRoute(
+                        data = data,
+                        repository = repository,
+                        onEditPlan = { id, day -> navController.navigate(Routes.plan(id, day)) },
+                        onOpenWeight = { navController.navigateToTab(Routes.WEIGHT) },
+                    )
+                }
                 composable(Routes.PROGRESS) {
                     ProgressRoute(
                         data = data,
@@ -208,6 +225,24 @@ fun MuscuApp(
                         repository = repository,
                         timer = timer,
                         // Popping this precise destination makes repeated calls harmless.
+                        onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
+                    )
+                }
+                composable(
+                    route = Routes.PLAN,
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.StringType },
+                        navArgument("day") {
+                            type = NavType.IntType
+                            defaultValue = DayOfWeek.MONDAY.value
+                        },
+                    ),
+                ) { entry ->
+                    PlanEditorRoute(
+                        planId = entry.arguments?.getString("id").orEmpty(),
+                        initialDay = DayOfWeek.of((entry.arguments?.getInt("day") ?: 1).coerceIn(1, 7)),
+                        data = data,
+                        repository = repository,
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
                     )
                 }

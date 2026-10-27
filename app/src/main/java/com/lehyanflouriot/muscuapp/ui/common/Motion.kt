@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -245,6 +246,20 @@ fun countUp(target: Double, delayMillis: Int = 0): Double {
 @Composable
 fun countUp(target: Int, delayMillis: Int = 0): Int = countUp(target.toDouble(), delayMillis).roundToInt()
 
+/**
+ * A share from 0 to 1 that fills up from zero when it first appears, then follows [fraction]
+ * smoothly. Read it while drawing, so that only the drawing is redone at each frame.
+ */
+@Composable
+fun animateFillAsState(fraction: Float, delayMillis: Int = 0): State<Float> {
+    val fill = remember { Animatable(0f) }
+    val firstRun = remember { FirstRun() }
+    LaunchedEffect(fraction) {
+        fill.animateTo(fraction.coerceIn(0f, 1f), tween(Motion.FILL_MS, firstRun.delay(delayMillis), Motion.EaseOut))
+    }
+    return fill.asState()
+}
+
 /** Rounded bar that fills up from the left when it appears, then follows [fraction] smoothly. */
 @Composable
 fun FillBar(
@@ -255,11 +270,7 @@ fun FillBar(
     height: Dp = 8.dp,
     delayMillis: Int = 0,
 ) {
-    val fill = remember { Animatable(0f) }
-    val firstRun = remember { FirstRun() }
-    LaunchedEffect(fraction) {
-        fill.animateTo(fraction.coerceIn(0f, 1f), tween(Motion.FILL_MS, firstRun.delay(delayMillis), Motion.EaseOut))
-    }
+    val fill = animateFillAsState(fraction, delayMillis)
     Canvas(
         modifier
             .fillMaxWidth()

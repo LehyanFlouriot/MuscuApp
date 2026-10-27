@@ -26,6 +26,8 @@ import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
 import com.lehyanflouriot.muscuapp.core.timer.TimerLogic
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
+import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionActions
+import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionScreen
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressScreen
 import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
 import com.lehyanflouriot.muscuapp.ui.rest.rememberRestProgress
@@ -208,6 +210,36 @@ class MotionTest {
             onPeriodChange = {},
             onUpdate = { _, _ -> },
             onDelete = {},
+        )
+    }
+
+    @Test
+    fun nutrition() = follow(
+        "Nutrition",
+        listOf(
+            Tracked("week", hasText("Cette semaine")),
+            Tracked("summary", hasText("Aujourd'hui")),
+            Tracked("guidance", hasText("Pilotage du poids")),
+            Tracked("first meal", hasText("Matin")),
+            Tracked("kcal text", hasText("kcal", substring = true), readText = true),
+        ),
+    ) {
+        NutritionScreen(
+            nutrition = SampleData.nutrition(today),
+            weights = SampleData.bulkWeights(today),
+            today = today,
+            date = today,
+            actions = NutritionActions(
+                onSelectDate = {},
+                onToggleFood = { _, _ -> },
+                onToggleMeal = { _, _ -> },
+                onWaterChange = { _, _ -> },
+                onSwap = { _, _ -> },
+                onEditPlan = { _, _ -> },
+                onOpenPrograms = {},
+                onCreateProgram = {},
+                onOpenWeight = {},
+            ),
         )
     }
 

@@ -86,6 +86,7 @@ data class AppData(
     val bodyWeights: List<BodyWeightEntry> = emptyList(),
     val restPresets: List<RestPreset> = emptyList(),
     val settings: Settings = Settings(),
+    val nutrition: Nutrition = Nutrition(),
 ) {
     fun exercise(id: String): Exercise? = exercises.firstOrNull { it.id == id }
 

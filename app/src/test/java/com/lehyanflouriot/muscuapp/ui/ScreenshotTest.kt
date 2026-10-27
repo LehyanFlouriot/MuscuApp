@@ -35,6 +35,9 @@ import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseEditorForm
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseFormState
 import com.lehyanflouriot.muscuapp.ui.log.LogEntryForm
 import com.lehyanflouriot.muscuapp.ui.log.LogFormState
+import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionActions
+import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionScreen
+import com.lehyanflouriot.muscuapp.ui.nutrition.PlanEditorScreen
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressScreen
 import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
@@ -48,6 +51,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
@@ -151,6 +155,96 @@ class ScreenshotTest {
                 )
             }
         }
+    }
+
+    private val nutrition = SampleData.nutrition(today)
+
+    @Composable
+    private fun Nutrition(date: LocalDate) {
+        MuscuScaffold(
+            currentRoute = Routes.NUTRITION,
+            timerState = TimerState.Idle,
+            now = now,
+            onNavigate = {},
+            onTimerToggle = {},
+            onTimerAdd = {},
+            onTimerRestart = {},
+            onTimerStop = {},
+        ) { padding ->
+            Surface(
+                Modifier
+                    .padding(padding)
+                    .consumeWindowInsets(padding),
+            ) {
+                NutritionScreen(
+                    nutrition = nutrition,
+                    weights = SampleData.bulkWeights(today),
+                    today = today,
+                    date = date,
+                    actions = NutritionActions(
+                        onSelectDate = {},
+                        onToggleFood = { _, _ -> },
+                        onToggleMeal = { _, _ -> },
+                        onWaterChange = { _, _ -> },
+                        onSwap = { _, _ -> },
+                        onEditPlan = { _, _ -> },
+                        onOpenPrograms = {},
+                        onCreateProgram = {},
+                        onOpenWeight = {},
+                    ),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun nutrition() = capture("9-nutrition") { Nutrition(today) }
+
+    @Test
+    fun nutritionMeals() = capture(
+        "9-nutrition-repas",
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(2) },
+    ) { Nutrition(today) }
+
+    @Test
+    fun nutritionPerfectDay() = capture("9-nutrition-journee-parfaite", darkTheme = true) { Nutrition(today.minusDays(2)) }
+
+    @Test
+    fun nutritionTomorrow() = capture(
+        "9-nutrition-demain",
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(2) },
+    ) { Nutrition(today.plusDays(1)) }
+
+    @Test
+    fun planEditor() = capture("10-programme") {
+        PlanEditorScreen(
+            plan = nutrition.plans.single(),
+            day = DayOfWeek.WEDNESDAY,
+            keepsHistory = true,
+            onDayChange = {},
+            onOpen = {},
+            onTrainingChange = {},
+            onWaterChange = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun planEditorSettings() = capture(
+        "10-programme-reglages",
+        darkTheme = true,
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(8) },
+    ) {
+        PlanEditorScreen(
+            plan = nutrition.plans.single(),
+            day = DayOfWeek.WEDNESDAY,
+            keepsHistory = true,
+            onDayChange = {},
+            onOpen = {},
+            onTrainingChange = {},
+            onWaterChange = {},
+            onBack = {},
+        )
     }
 
     @Test

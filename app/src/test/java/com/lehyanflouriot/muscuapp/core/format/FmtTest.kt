@@ -104,4 +104,19 @@ class FmtTest {
         assertEquals("20 – 26 oct. 2025", Fmt.weekRange(LocalDate.of(2025, 10, 20), today))
         assertEquals("29 déc. 2025 – 4 janv. 2026", Fmt.weekRange(LocalDate.of(2025, 12, 29), today))
     }
+
+    @Test
+    fun freeTextKeepsFrenchTypography() {
+        fun String.marked() = replace('\u00A0', '_').replace('\u202F', '^')
+        assertEquals(
+            "Le moment importe peu_: 5_g par jour, −_150_kcal, bœuf 5^%",
+            Fmt.typography("Le moment importe peu : 5 g par jour, − 150 kcal, bœuf 5 %").marked(),
+        )
+        assertEquals("2 grammes", Fmt.typography("2 grammes"))
+        assertEquals("1,5_c._à_s.", Fmt.quantity(" 1,5 c. à s. ").marked())
+        assertEquals("3,25 L", Fmt.liters(3_250).plain())
+        assertEquals("2,5 L", Fmt.liters(2_500).plain())
+        assertEquals("2 550 kcal", Fmt.kcal(2_550).plain())
+        assertEquals("155 g", Fmt.grams(155).plain())
+    }
 }
