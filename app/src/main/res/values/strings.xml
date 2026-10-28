@@ -382,7 +382,6 @@
     <string name="nutrition_swapped_from">Au lieu de %1$s</string>
     <string name="nutrition_future_hint">Tu pourras cocher ce que tu as mangé le jour même.</string>
     <string name="nutrition_water_liters">%1$s sur %2$s</string>
-    <string name="nutrition_water_add">Un verre</string>
     <string name="nutrition_water_remove">Retirer un verre</string>
     <string name="nutrition_water_add_cd">Ajouter un verre</string>
     <string name="nutrition_menu_for_rest">Séance prévue ce jour-là, mais le menu est celui d\'un jour de repos.</string>
