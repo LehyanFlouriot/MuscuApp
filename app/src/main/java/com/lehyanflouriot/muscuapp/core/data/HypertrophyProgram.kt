@@ -123,7 +123,7 @@ object HypertrophyProgram {
     private fun rest(day: DayOfWeek, note: String) = TrainingDay(day, "Repos", "Récup.", note = note)
 
     /** The program, made of the exercises of [exercises]. */
-    fun create(): TrainingProgram = TrainingProgram(
+    fun create(createdAt: Long = 0L): TrainingProgram = TrainingProgram(
         id = ID,
         name = "Hypertrophie au poids du corps",
         info = "5 séances full body · 2 jours de repos · 45 à 60 min par séance. L'exercice d'emphase de chaque " +
@@ -218,5 +218,6 @@ object HypertrophyProgram {
                 "Toutes les 6 à 8 semaines : une semaine avec moitié moins de séries, en RIR 3-4.",
             ),
         ),
+        createdAt = createdAt,
     )
 }

@@ -4,12 +4,31 @@ import com.lehyanflouriot.muscuapp.core.domain.shoppingKey
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.FoodItem
 import com.lehyanflouriot.muscuapp.core.model.MealPlan
+import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
+import java.time.LocalDate
 
 /** Brings data saved by an older version of the app up to date. */
 internal fun migrate(data: AppData): AppData {
     var migrated = data
     if (migrated.schemaVersion < 2) migrated = oneNamePerFood(migrated)
+    if (migrated.training.legacyProgram != null) migrated = programsOverTime(migrated)
     return migrated
+}
+
+/** Monday of the week the training program came, with 1.7.0: it is followed from then on. */
+private val FIRST_PROGRAM_WEEK: LocalDate = LocalDate.of(2026, 10, 26)
+
+/** The single training program of 1.7.0 becomes the first of the programs, followed since it came. */
+private fun programsOverTime(data: AppData): AppData {
+    val training = data.training
+    val program = training.legacyProgram ?: return data
+    return data.copy(
+        training = training.copy(
+            programs = if (training.program(program.id) == null) training.programs + program else training.programs,
+            schedule = training.schedule.ifEmpty { listOf(PlanPeriod(program.id, FIRST_PROGRAM_WEEK)) },
+            legacyProgram = null,
+        ),
+    )
 }
 
 /**

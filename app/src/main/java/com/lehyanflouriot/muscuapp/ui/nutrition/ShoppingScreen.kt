@@ -106,6 +106,7 @@ import com.lehyanflouriot.muscuapp.ui.common.countUp
 import com.lehyanflouriot.muscuapp.ui.common.rememberPressFeedback
 import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.reveal
+import com.lehyanflouriot.muscuapp.ui.common.shortName
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import kotlinx.coroutines.delay
 import java.time.LocalDate

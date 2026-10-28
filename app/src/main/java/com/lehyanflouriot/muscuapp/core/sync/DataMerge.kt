@@ -24,5 +24,5 @@ internal fun AppData.isPristine(): Boolean {
         nutrition.shopping.isEmpty() &&
         nutrition.plans.all { it.copy(createdAt = 0L) == DefaultMealPlan.create() } &&
         exercises.all { it.copy(createdAt = 0L) == programExercises[it.id] } &&
-        training.program.let { it == null || it == HypertrophyProgram.create() }
+        training.programs.all { it.copy(createdAt = 0L) == HypertrophyProgram.create() }
 }

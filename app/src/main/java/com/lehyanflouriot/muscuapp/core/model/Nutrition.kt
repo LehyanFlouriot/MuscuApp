@@ -85,8 +85,8 @@ data class WeightGoal(
 /** A week of meals, repeated until another plan takes over. */
 @Serializable
 data class MealPlan(
-    val id: String,
-    val name: String,
+    override val id: String,
+    override val name: String,
     /** Free description: targets, how to weigh the food... */
     val info: String = "",
     val slots: List<MealSlot> = emptyList(),
@@ -99,13 +99,9 @@ data class MealPlan(
     val substitutions: List<List<String>> = emptyList(),
     val notes: List<PlanNote> = emptyList(),
     val weightGoal: WeightGoal? = null,
-    /**
-     * Set on the copies keeping what a plan was on the days already lived, when it is changed
-     * afterwards: the id of the plan they come from. Such copies never change.
-     */
-    val versionOf: String? = null,
+    override val versionOf: String? = null,
     val createdAt: Long = 0L,
-) {
+) : Program {
     fun day(day: DayOfWeek): DayPlan = days.firstOrNull { it.day == day } ?: DayPlan(day)
 
     fun slot(id: String): MealSlot? = slots.firstOrNull { it.id == id }
@@ -118,14 +114,6 @@ data class MealPlan(
         const val DEFAULT_GLASS_ML = 250
     }
 }
-
-/** The plan followed from [from] on, until the next period starts. */
-@Serializable
-data class PlanPeriod(
-    val planId: String,
-    @Serializable(with = LocalDateIsoSerializer::class)
-    val from: LocalDate,
-)
 
 /** A food replaced by another one for a single day. */
 @Serializable

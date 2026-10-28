@@ -75,7 +75,7 @@ import com.lehyanflouriot.muscuapp.ui.rest.RestRoute
 import com.lehyanflouriot.muscuapp.ui.rest.displayed
 import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsRoute
-import com.lehyanflouriot.muscuapp.ui.week.ProgramRoute
+import com.lehyanflouriot.muscuapp.ui.week.TrainingEditorRoute
 import com.lehyanflouriot.muscuapp.ui.week.WeekRoute
 import com.lehyanflouriot.muscuapp.ui.weight.WeightRoute
 import kotlinx.coroutines.delay
@@ -90,7 +90,7 @@ object Routes {
     const val WEIGHT = "weight"
     const val REST = "rest"
     const val SETTINGS = "settings"
-    const val PROGRAM = "program"
+    const val PROGRAM = "program/{id}?day={day}"
     const val EXERCISE = "exercise/{id}"
     const val PLAN = "plan/{id}?day={day}"
     const val SHOPPING = "shopping?week={week}"
@@ -98,6 +98,8 @@ object Routes {
     fun exercise(id: String) = "exercise/$id"
 
     fun plan(id: String, day: DayOfWeek) = "plan/$id?day=${day.value}"
+
+    fun program(id: String, day: DayOfWeek) = "program/$id?day=${day.value}"
 
     /** The shopping list of the week starting [weekStart], or of the week to shop for. */
     fun shopping(weekStart: LocalDate?) = "shopping?week=${weekStart?.toEpochDay() ?: -1}"
@@ -201,7 +203,7 @@ fun MuscuApp(
                         timer = timer,
                         onOpenExercise = { navController.navigate(Routes.exercise(it)) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                        onOpenProgram = { navController.navigate(Routes.PROGRAM) },
+                        onOpenProgram = { id, day -> navController.navigate(Routes.program(id, day)) },
                     )
                 }
                 composable(Routes.NUTRITION) {
@@ -272,9 +274,21 @@ fun MuscuApp(
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
                     )
                 }
-                composable(Routes.PROGRAM) { entry ->
-                    ProgramRoute(
+                composable(
+                    route = Routes.PROGRAM,
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.StringType },
+                        navArgument("day") {
+                            type = NavType.IntType
+                            defaultValue = DayOfWeek.MONDAY.value
+                        },
+                    ),
+                ) { entry ->
+                    TrainingEditorRoute(
+                        initialProgramId = entry.arguments?.getString("id").orEmpty(),
+                        initialDay = DayOfWeek.of((entry.arguments?.getInt("day") ?: 1).coerceIn(1, 7)),
                         data = data,
+                        repository = repository,
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
                     )
                 }

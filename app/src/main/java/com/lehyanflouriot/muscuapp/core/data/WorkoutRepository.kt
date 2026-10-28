@@ -6,6 +6,7 @@ import com.lehyanflouriot.muscuapp.core.domain.hasHistory
 import com.lehyanflouriot.muscuapp.core.domain.periodAt
 import com.lehyanflouriot.muscuapp.core.domain.planAt
 import com.lehyanflouriot.muscuapp.core.domain.roundBodyWeight
+import com.lehyanflouriot.muscuapp.core.domain.trainingHistory
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.BodyWeightEntry
 import com.lehyanflouriot.muscuapp.core.model.Exercise
@@ -19,9 +20,13 @@ import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.core.model.Nutrition
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.RestPreset
+import com.lehyanflouriot.muscuapp.core.model.SessionExercise
+import com.lehyanflouriot.muscuapp.core.model.SetTarget
+import com.lehyanflouriot.muscuapp.core.model.Settings
 import com.lehyanflouriot.muscuapp.core.model.ShoppingExtra
 import com.lehyanflouriot.muscuapp.core.model.ShoppingWeek
-import com.lehyanflouriot.muscuapp.core.model.Settings
+import com.lehyanflouriot.muscuapp.core.model.Training
+import com.lehyanflouriot.muscuapp.core.model.TrainingProgram
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.core.sync.mergeData
@@ -119,7 +124,7 @@ class WorkoutRepository(
     /** Adds what the app comes with and was never added yet: the meal plan, the training program. */
     private fun withDefaults(data: AppData): AppData {
         val withPlan = if (data.nutrition.seeded) data else data.copy(nutrition = data.nutrition.withDefaultPlan(today(), clock()))
-        return if (seedProgram) withPlan.withDefaultProgram(clock()) else withPlan
+        return if (seedProgram) withPlan.withDefaultProgram(today(), clock()) else withPlan
     }
 
     // region Exercises
@@ -498,6 +503,139 @@ class WorkoutRepository(
             nutrition.copy(
                 plans = nutrition.plans.filterNot { it.id == planId },
                 schedule = nutrition.schedule.filterNot { it.planId == planId }.merged(),
+            )
+        }
+        return deleted
+    }
+
+    // endregion
+
+    // region Training program
+
+    private fun mutateTraining(transform: (Training) -> Training) {
+        mutate { data -> data.copy(training = transform(data.training)) }
+    }
+
+    /** Changes a training program from today on: the days already lived keep what was planned for them. */
+    fun updateTrainingProgram(programId: String, transform: (TrainingProgram) -> TrainingProgram) {
+        mutate { it.changeTrainingProgram(programId, today(), newId, transform) }
+    }
+
+    /** Adds [exerciseId] at the end of the session of [day], asking for [target]. */
+    fun addSessionExercise(
+        programId: String,
+        day: DayOfWeek,
+        exerciseId: String,
+        target: SetTarget,
+        emphasis: Boolean = false,
+        note: String = "",
+        restSeconds: Int? = null,
+    ) {
+        val line = SessionExercise(
+            id = newId(),
+            exerciseId = exerciseId,
+            target = target.sanitized(),
+            emphasis = emphasis,
+            note = note.trim(),
+            restSeconds = restSeconds?.coerceIn(MIN_REST, MAX_REST),
+        )
+        mutate { data ->
+            if (data.exercise(exerciseId) == null) {
+                data
+            } else {
+                data.changeTrainingProgram(programId, today(), newId) { program ->
+                    program.updateDay(day) { it.copy(exercises = it.exercises + line) }
+                }
+            }
+        }
+    }
+
+    /** Changes what the session asks for one of its exercises. */
+    fun updateSessionExercise(
+        programId: String,
+        lineId: String,
+        target: SetTarget,
+        emphasis: Boolean,
+        note: String,
+        restSeconds: Int?,
+    ) {
+        updateTrainingProgram(programId) { program ->
+            program.updateLine(lineId) {
+                it.copy(
+                    target = target.sanitized(),
+                    emphasis = emphasis,
+                    note = note.trim(),
+                    restSeconds = restSeconds?.coerceIn(MIN_REST, MAX_REST),
+                )
+            }
+        }
+    }
+
+    /** Does [exerciseId] instead of the exercise of a session, for instance a harder variant, with the same target. */
+    fun replaceSessionExercise(programId: String, lineId: String, exerciseId: String) {
+        mutate { data ->
+            if (data.exercise(exerciseId) == null) {
+                data
+            } else {
+                data.changeTrainingProgram(programId, today(), newId) { program ->
+                    program.updateLine(lineId) { it.copy(exerciseId = exerciseId) }
+                }
+            }
+        }
+    }
+
+    /** Copies the session of [from] to the days [to], replacing what they had. */
+    fun copyTrainingDay(programId: String, from: DayOfWeek, to: Collection<DayOfWeek>) {
+        updateTrainingProgram(programId) { it.copyDay(from, to, newId) }
+    }
+
+    fun addTrainingNote(programId: String, title: String, text: String) {
+        if (title.isBlank() && text.isBlank()) return
+        val note = PlanNote(id = newId(), title = title.trim(), text = text.trim())
+        updateTrainingProgram(programId) { it.copy(notes = it.notes + note) }
+    }
+
+    /** Creates a training program, empty or copied from [copyOf], followed from [start] when given. Returns its id. */
+    fun createTrainingProgram(name: String, copyOf: String?, start: LocalDate?): String {
+        val id = newId()
+        val cleanName = name.trim().ifEmpty { "Programme" }
+        mutateTraining { training ->
+            val source = copyOf?.let(training::program)
+            val program = if (source != null) {
+                copiedProgram(source, id, cleanName, clock())
+            } else {
+                blankProgram(id, cleanName, clock())
+            }
+            val added = training.copy(programs = training.programs + program)
+            if (start == null) added else added.startProgram(id, maxOf(start, today()))
+        }
+        return id
+    }
+
+    /** Follows a training program from [from] on (today at the earliest), until the next start already planned. */
+    fun startTrainingProgram(programId: String, from: LocalDate) {
+        mutateTraining { it.startProgram(programId, maxOf(from, today())) }
+    }
+
+    fun cancelTrainingProgramStart(programId: String, from: LocalDate) {
+        mutateTraining { it.cancelStart(programId, from, today()) }
+    }
+
+    /** Deletes a training program that is not followed today and was never followed on a day where a workout was noted. */
+    fun deleteTrainingProgram(programId: String): Boolean {
+        var deleted = false
+        mutate { data ->
+            deleted = false
+            val training = data.training
+            val program = training.program(programId)
+            if (program == null || program.versionOf != null) return@mutate data
+            if (training.schedule.periodAt(today())?.planId == programId || data.trainingHistory(programId)) return@mutate data
+            deleted = true
+            data.copy(
+                training = training.copy(
+                    programs = training.programs.filterNot { it.id == programId },
+                    schedule = training.schedule.filterNot { it.planId == programId }.merged(),
+                ),
             )
         }
         return deleted

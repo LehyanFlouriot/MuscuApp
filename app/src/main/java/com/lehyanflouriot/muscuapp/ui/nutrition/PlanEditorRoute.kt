@@ -37,8 +37,15 @@ import com.lehyanflouriot.muscuapp.core.model.MealSlot
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.WeightGoal
 import com.lehyanflouriot.muscuapp.ui.common.ConfirmDialog
+import com.lehyanflouriot.muscuapp.ui.common.CopyDayDialog
+import com.lehyanflouriot.muscuapp.ui.common.DialogAction
+import com.lehyanflouriot.muscuapp.ui.common.FormDialog
+import com.lehyanflouriot.muscuapp.ui.common.FormField
 import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
 import com.lehyanflouriot.muscuapp.ui.common.NumberInputDialog
+import com.lehyanflouriot.muscuapp.ui.common.fullName
+import com.lehyanflouriot.muscuapp.ui.common.parseDecimal
+import com.lehyanflouriot.muscuapp.ui.common.parseWholeNumber
 import com.lehyanflouriot.muscuapp.ui.common.show
 import java.time.DayOfWeek
 import java.time.format.TextStyle
@@ -146,6 +153,8 @@ fun PlanEditorRoute(
         )
         PlanEdit.CopyDay -> CopyDayDialog(
             from = day,
+            title = stringResource(R.string.plan_copy_day_title, dayName),
+            text = stringResource(R.string.plan_copy_day_text, dayName),
             onDismiss = close,
             onCopy = { targets ->
                 repository.copyDay(planId, day, targets)

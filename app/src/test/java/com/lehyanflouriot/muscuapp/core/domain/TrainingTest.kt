@@ -1,11 +1,16 @@
 package com.lehyanflouriot.muscuapp.core.domain
 
 import com.lehyanflouriot.muscuapp.core.data.HypertrophyProgram
+import com.lehyanflouriot.muscuapp.core.data.updateDay
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
+import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
+import com.lehyanflouriot.muscuapp.core.model.SessionExercise
 import com.lehyanflouriot.muscuapp.core.model.SetTarget
 import com.lehyanflouriot.muscuapp.core.model.Training
+import com.lehyanflouriot.muscuapp.core.model.TrainingProgram
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import org.junit.Assert.assertEquals
@@ -22,6 +27,16 @@ class TrainingTest {
 
     // Tuesday 27 October 2026.
     private val tuesday = LocalDate.of(2026, 10, 27)
+    private val monday = tuesday.minusDays(1)
+
+    private infix fun TrainingProgram.from(date: LocalDate) = this to date
+
+    /** The programs followed one after the other, each from its day. */
+    private fun followed(vararg periods: Pair<TrainingProgram, LocalDate>) = Training(
+        programs = periods.map { it.first }.distinctBy { it.id },
+        schedule = periods.map { (program, from) -> PlanPeriod(program.id, from) },
+        seeded = true,
+    )
 
     private fun String.plain() = replace(' ', ' ')
 
@@ -78,6 +93,14 @@ class TrainingTest {
     }
 
     @Test
+    fun anAddedExerciseAsksWhatItAsksElsewhere() {
+        val byId = exercises.associateBy { it.id }
+        assertEquals(SetTarget(3, 12, 20, rir = 1), defaultTarget(program, byId.getValue("ex-mollets-unilateraux")))
+        assertEquals(SetTarget(3, 8, 12, rir = 2), defaultTarget(program, Exercise("x", "Dips")))
+        assertEquals(SetTarget(3, 30, 45), defaultTarget(program, Exercise("y", "Planche", measure = Measure.SECONDS)))
+    }
+
+    @Test
     fun theGoalIsOneMoreRepOnEachSet() {
         val target = SetTarget(4, 6, 12, rir = 1)
         // The first time, the bottom of the range.
@@ -104,7 +127,7 @@ class TrainingTest {
         val lastWednesday = wednesday.minusWeeks(1)
         val data = AppData(
             exercises = exercises,
-            training = Training(program = program, seeded = true),
+            training = followed(program from monday),
             entries = listOf(
                 entry("a", "ex-tractions-pronation", tuesday.minusWeeks(1), 7, 7, 6, 5),
                 entry("b", "ex-tractions-pronation", tuesday, 8, 7, 7, 6),
@@ -136,5 +159,60 @@ class TrainingTest {
         val withoutNordic = data.copy(exercises = exercises.filterNot { it.id == "ex-nordic-curl" })
         assertEquals(4, buildSession(withoutNordic, tuesday.plusDays(4))!!.items.size)
         assertNull(buildSession(data.copy(training = Training()), tuesday))
+    }
+
+    @Test
+    fun eachDayFollowsTheProgramOfItsTime() {
+        val strength = program.copy(id = "force", name = "Force").updateDay(DayOfWeek.THURSDAY) { day ->
+            day.copy(title = "Tractions", exercises = listOf(SessionExercise("thu-1", "ex-tractions-pronation", SetTarget(5, 3, 5))))
+        }
+        val wednesday = monday.plusDays(2)
+        val data = AppData(exercises = exercises, training = followed(program from wednesday, strength from monday.plusDays(3)))
+
+        // Before the first program, there is no session; the week it starts, its first days have none.
+        assertNull(buildWeekSessions(data, monday.minusWeeks(1)))
+        val week = buildWeekSessions(data, monday)!!
+        assertEquals(DayOfWeek.entries, week.map { it.date.dayOfWeek })
+        assertEquals(listOf(null, null, program.id, "force", "force", "force", "force"), week.map { it.program?.id })
+        assertTrue(week[0].isRest)
+        assertEquals("Quadriceps", week[2].day.title)
+        // The Thursday rest of the first program became a session in the second one.
+        assertEquals("Tractions", week[3].day.title)
+        assertEquals(listOf("ex-tractions-pronation"), week[3].items.map { it.exercise.id })
+        assertEquals("force", buildSession(data, monday.plusWeeks(5))!!.program!!.id)
+
+        val infos = data.training.programInfos(tuesday).associateBy { it.plan.id }
+        assertEquals(ProgramStatus.PLANNED, infos.getValue(program.id).status)
+        assertEquals(wednesday, infos.getValue(program.id).date)
+        assertEquals(ProgramStatus.PLANNED, infos.getValue("force").status)
+        val later = data.training.programInfos(monday.plusWeeks(1)).associateBy { it.plan.id }
+        assertEquals(ProgramStatus.ACTIVE, later.getValue("force").status)
+        assertEquals(ProgramStatus.PAST, later.getValue(program.id).status)
+        assertEquals(wednesday, later.getValue(program.id).date)
+    }
+
+    @Test
+    fun theCopiesKeptForThePastShowAsTheirProgram() {
+        val kept = program.copy(id = "kept", versionOf = program.id)
+        val changed = program.updateDay(DayOfWeek.MONDAY) { it.copy(title = "Pecs") }
+        val training = Training(
+            programs = listOf(changed, kept),
+            schedule = listOf(PlanPeriod("kept", monday), PlanPeriod(program.id, tuesday)),
+            seeded = true,
+        )
+        assertEquals("Pectoraux", training.planAt(monday)!!.day(DayOfWeek.MONDAY).title)
+        assertEquals("Pecs", training.planAt(monday.plusWeeks(1))!!.day(DayOfWeek.MONDAY).title)
+        assertEquals(program.id, training.programAt(monday)!!.id)
+        // Only the program is shown, followed since the first of its days.
+        val info = training.programInfos(tuesday).single()
+        assertEquals(program.id, info.plan.id)
+        assertEquals(ProgramStatus.ACTIVE, info.status)
+        assertEquals(monday, info.date)
+
+        val data = AppData(exercises = exercises, training = training)
+        assertFalse(data.trainingHistory(program.id))
+        val trained = data.copy(entries = listOf(entry("a", "ex-pompes-deficit", monday, 8)))
+        assertTrue(trained.trainingHistory(program.id))
+        assertFalse(trained.trainingHistory("kept"))
     }
 }

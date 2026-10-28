@@ -23,7 +23,7 @@ const val GUIDANCE_DAYS = 14
 // region Plans over time
 
 /** The period of the plan followed on [date], null before the first plan started. */
-fun Nutrition.periodAt(date: LocalDate): PlanPeriod? = schedule.lastOrNull { it.from <= date }
+fun Nutrition.periodAt(date: LocalDate): PlanPeriod? = schedule.periodAt(date)
 
 /** The plan followed on [date], as it was that day. */
 fun Nutrition.planAt(date: LocalDate): MealPlan? = periodAt(date)?.let { plan(it.planId) }
@@ -41,40 +41,8 @@ fun Nutrition.hasHistory(planId: String): Boolean = days.any { day ->
     !day.isEmpty && planAt(day.date)?.let { programOf(it).id } == planId
 }
 
-enum class ProgramStatus { ACTIVE, PLANNED, PAST, UNUSED }
-
-data class ProgramInfo(
-    val plan: MealPlan,
-    val status: ProgramStatus,
-    /** Since when it is followed when active, when it starts when planned, when it ended when past. */
-    val date: LocalDate?,
-)
-
 /** Where each program stands on [today]: the current one first, then the planned ones, then the others. */
-fun Nutrition.programInfos(today: LocalDate): List<ProgramInfo> {
-    val current = periodAt(today)
-    val currentProgram = current?.let { plan(it.planId) }?.let(::programOf)
-    return programs.map { program ->
-        fun followed(period: PlanPeriod) = plan(period.planId)?.let(::programOf)?.id == program.id
-        when {
-            currentProgram?.id == program.id -> {
-                // Since the first day of the uninterrupted run of periods of this program.
-                val index = schedule.indexOf(current)
-                var first = index
-                while (first > 0 && followed(schedule[first - 1])) first--
-                ProgramInfo(program, ProgramStatus.ACTIVE, schedule[first].from)
-            }
-            schedule.any { it.from > today && followed(it) } ->
-                ProgramInfo(program, ProgramStatus.PLANNED, schedule.filter { it.from > today && followed(it) }.minOf { it.from })
-            schedule.any { it.from <= today && followed(it) } -> {
-                val last = schedule.indexOfLast { it.from <= today && followed(it) }
-                val end = schedule.getOrNull(last + 1)?.from?.minusDays(1)
-                ProgramInfo(program, ProgramStatus.PAST, end)
-            }
-            else -> ProgramInfo(program, ProgramStatus.UNUSED, null)
-        }
-    }.sortedBy { it.status.ordinal }
-}
+fun Nutrition.programInfos(today: LocalDate): List<ProgramInfo<MealPlan>> = programInfos(plans, schedule, today)
 
 // endregion
 

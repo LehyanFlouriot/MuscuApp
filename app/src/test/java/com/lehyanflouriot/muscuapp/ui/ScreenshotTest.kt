@@ -8,6 +8,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -15,7 +16,9 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollToIndex
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
+import com.lehyanflouriot.muscuapp.core.data.HypertrophyProgram
 import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
 import com.lehyanflouriot.muscuapp.core.domain.DEFAULT_BODY_WEIGHT
 import com.lehyanflouriot.muscuapp.core.domain.WeightPeriod
@@ -26,6 +29,7 @@ import com.lehyanflouriot.muscuapp.core.domain.buildWeekSessions
 import com.lehyanflouriot.muscuapp.core.domain.history
 import com.lehyanflouriot.muscuapp.core.domain.lastEntry
 import com.lehyanflouriot.muscuapp.core.domain.metricValue
+import com.lehyanflouriot.muscuapp.core.domain.programInfos
 import com.lehyanflouriot.muscuapp.core.domain.records
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.domain.suggestedWeight
@@ -33,11 +37,14 @@ import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.Measure
+import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.sync.RemoteDocument
 import com.lehyanflouriot.muscuapp.core.sync.SyncProblem
 import com.lehyanflouriot.muscuapp.core.sync.SyncStatus
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
+import com.lehyanflouriot.muscuapp.ui.common.ProgramsSheet
+import com.lehyanflouriot.muscuapp.ui.common.programStatusText
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailScreen
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseEditorForm
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseFormState
@@ -54,8 +61,10 @@ import com.lehyanflouriot.muscuapp.ui.settings.FirstSyncDialog
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
 import com.lehyanflouriot.muscuapp.ui.settings.SyncActions
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
-import com.lehyanflouriot.muscuapp.ui.week.ProgramScreen
+import com.lehyanflouriot.muscuapp.ui.week.ExercisePickerSheet
 import com.lehyanflouriot.muscuapp.ui.week.SessionActions
+import com.lehyanflouriot.muscuapp.ui.week.SessionLineDialog
+import com.lehyanflouriot.muscuapp.ui.week.TrainingEditorScreen
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
 import com.lehyanflouriot.muscuapp.ui.weight.WeightScreen
@@ -335,30 +344,101 @@ class ScreenshotTest {
         before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(3) },
     ) { Week(SampleData.withProgram(today)) }
 
-    @Test
-    fun program() = capture("12-programme") {
-        val appData = SampleData.withProgram(today)
-        ProgramScreen(
-            program = appData.training.program!!,
+    @Composable
+    private fun TrainingEditor(appData: AppData, initialDay: DayOfWeek = DayOfWeek.MONDAY) {
+        TrainingEditorScreen(
+            program = appData.training.programs.first(),
             exercises = appData.exercises.associateBy { it.id },
+            status = programStatusText(appData.training.programInfos(today).first(), today),
+            keepsHistory = true,
             today = today.dayOfWeek,
+            initialDay = initialDay,
+            onOpen = {},
+            onOpenPrograms = {},
             onBack = {},
         )
+    }
+
+    /** The program of the app, a stronger one starting next week, and a week of deload never followed. */
+    private fun withPrograms(): AppData {
+        val appData = SampleData.withProgram(today)
+        val program = appData.training.programs.single()
+        return appData.copy(
+            training = appData.training.copy(
+                programs = listOf(
+                    program,
+                    program.copy(id = "force", name = "Force, cycle 2"),
+                    program.copy(id = "decharge", name = "Semaine de décharge"),
+                ),
+                schedule = appData.training.schedule + PlanPeriod("force", today.startOfWeek().plusWeeks(1)),
+            ),
+        )
+    }
+
+    @Test
+    fun program() = capture("12-programme") { TrainingEditor(SampleData.withProgram(today)) }
+
+    @Test
+    fun programToday() = capture("12-programme-mercredi", darkTheme = true) {
+        TrainingEditor(SampleData.withProgram(today), initialDay = DayOfWeek.WEDNESDAY)
     }
 
     @Test
     fun programTips() = capture(
         "12-programme-conseils",
-        darkTheme = true,
-        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(9) },
-    ) {
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(8) },
+    ) { TrainingEditor(SampleData.withProgram(today)) }
+
+    @Test
+    fun programLine() = capture("13-programme-exercice", dialog = true) {
         val appData = SampleData.withProgram(today)
-        ProgramScreen(
-            program = appData.training.program!!,
-            exercises = appData.exercises.associateBy { it.id },
-            today = today.dayOfWeek,
-            onBack = {},
+        val line = appData.training.programs.single().day(DayOfWeek.WEDNESDAY).exercises.first()
+        SessionLineDialog(
+            exercise = appData.exercise(line.exerciseId)!!,
+            dayName = "mercredi",
+            line = line,
+            initialTarget = line.target,
+            onDismiss = {},
+            onSave = { _, _, _, _ -> },
+            onMove = {},
+            onReplace = {},
+            onRemove = {},
         )
+    }
+
+    @Test
+    fun programPicker() = capture("13-programme-ajout", dialog = true) {
+        val appData = SampleData.withProgram(today)
+        ExercisePickerSheet(
+            title = stringResource(R.string.training_add_exercise),
+            exercises = appData.exercises,
+            inSession = appData.training.programs.single().day(DayOfWeek.WEDNESDAY).exercises.map { it.exerciseId }.toSet(),
+            onDismiss = {},
+            onPick = {},
+            onPickSuggestion = {},
+            onCreate = {},
+        )
+    }
+
+    @Test
+    fun programs() = capture("13-programmes", dialog = true) {
+        ProgramsSheet(
+            infos = withPrograms().training.programInfos(today),
+            today = today,
+            onDismiss = {},
+            onEdit = {},
+            onStart = {},
+            onCancelStart = {},
+            onDelete = {},
+            onNew = {},
+        )
+    }
+
+    @Test
+    fun weekBeforeTheProgram() = capture("1-semaine-avant-programme") {
+        val appData = SampleData.withProgram(today)
+        val training = appData.training.copy(schedule = listOf(PlanPeriod(HypertrophyProgram.ID, today.plusDays(1))))
+        Week(appData.copy(entries = emptyList(), training = training))
     }
 
     @Test

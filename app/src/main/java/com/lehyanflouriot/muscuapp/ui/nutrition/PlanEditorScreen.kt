@@ -28,7 +28,6 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Tune
@@ -42,7 +41,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,14 +51,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.lehyanflouriot.muscuapp.R
@@ -73,13 +69,16 @@ import com.lehyanflouriot.muscuapp.core.model.MealSlot
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.PlannedMeal
 import com.lehyanflouriot.muscuapp.ui.common.CompactStepper
+import com.lehyanflouriot.muscuapp.ui.common.EditorRow
+import com.lehyanflouriot.muscuapp.ui.common.EditorSection
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.Motion
-import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
+import com.lehyanflouriot.muscuapp.ui.common.ProgramHeader
+import com.lehyanflouriot.muscuapp.ui.common.fullName
 import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.reveal
+import com.lehyanflouriot.muscuapp.ui.common.shortName
 import java.time.DayOfWeek
-import java.time.format.TextStyle
 
 /** What the user opens from the plan editor. */
 sealed interface PlanEdit {
@@ -95,12 +94,6 @@ sealed interface PlanEdit {
     data class Substitution(val index: Int?) : PlanEdit
     data class Note(val note: PlanNote?) : PlanEdit
 }
-
-/** "Lun", "Mar"... */
-fun DayOfWeek.shortName(): String =
-    getDisplayName(TextStyle.SHORT, Fmt.locale).removeSuffix(".").replaceFirstChar { it.titlecase(Fmt.locale) }
-
-fun DayOfWeek.fullName(): String = getDisplayName(TextStyle.FULL, Fmt.locale).replaceFirstChar { it.titlecase(Fmt.locale) }
 
 /**
  * The whole program on one screen: the meals of each day of the week, then what is the same
@@ -145,7 +138,8 @@ fun PlanEditorScreen(
         ) {
             item(key = "program") {
                 ProgramHeader(
-                    plan = plan,
+                    name = plan.name,
+                    info = plan.info,
                     keepsHistory = keepsHistory,
                     onEdit = { onOpen(PlanEdit.Program) },
                     modifier = Modifier.reveal(reveal, "program"),
@@ -269,41 +263,6 @@ fun PlanEditorScreen(
                             onClick = { onOpen(PlanEdit.Note(note)) },
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProgramHeader(plan: MealPlan, keepsHistory: Boolean, onEdit: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onEdit,
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = plan.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.action_edit))
-            }
-            Text(
-                text = plan.info.ifBlank { stringResource(R.string.plan_info_empty) },
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            if (keepsHistory) {
-                Row(Modifier.padding(top = 4.dp)) {
-                    Icon(
-                        Icons.Rounded.Info,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .padding(top = 2.dp)
-                            .size(16.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(text = stringResource(R.string.plan_editor_hint), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -537,77 +496,6 @@ private fun MealEditor(
                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.plan_add_food))
-            }
-        }
-    }
-}
-
-/** A titled group of rows, with an optional button to add one more. */
-@Composable
-private fun EditorSection(
-    title: String,
-    modifier: Modifier = Modifier,
-    hint: String? = null,
-    addLabel: String? = null,
-    onAdd: () -> Unit = {},
-    content: @Composable () -> Unit,
-) {
-    Column(modifier.fillMaxWidth()) {
-        SectionHeader(text = title)
-        if (hint != null) {
-            Text(
-                text = hint,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp, bottom = 4.dp),
-            )
-        }
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
-        ) {
-            Column(Modifier.padding(vertical = 4.dp)) {
-                content()
-                if (addLabel != null) {
-                    TextButton(
-                        onClick = onAdd,
-                        contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                    ) {
-                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(addLabel)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EditorRow(icon: ImageVector, title: String, onClick: () -> Unit, subtitle: String = "") {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .heightIn(min = 56.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) {
-            Text(text = Fmt.typography(title), style = MaterialTheme.typography.bodyLarge)
-            if (subtitle.isNotBlank()) {
-                Text(
-                    text = Fmt.typography(subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
             }
         }
     }

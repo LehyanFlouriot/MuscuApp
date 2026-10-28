@@ -72,7 +72,8 @@ class SyncEngine(
             val saved = runCatching { storage.read()?.let { AppJson.json.decodeFromString(SyncState.serializer(), it) } }
                 .getOrNull() ?: SyncState()
             state = saved
-            base = saved.base?.let { runCatching { AppJson.fromTree(it) }.getOrNull() }
+            // Brought up to date like the data of both sides, so that only what they changed differs.
+            base = saved.base?.let { runCatching { WorkoutRepository.sanitize(AppJson.fromTree(it)) }.getOrNull() }
             _status.value = SyncStatus(account = saved.account, lastSync = saved.lastSync)
             loaded.complete(Unit)
         }

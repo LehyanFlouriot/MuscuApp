@@ -25,6 +25,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -93,7 +94,7 @@ fun SessionCard(
             SessionHeader(session = session, today = today, onOpenProgram = actions.onOpenProgram)
             SessionDays(week = week, selected = selected, today = today, onSelect = actions.onSelectDay)
             if (session.isRest) {
-                RestDay(session)
+                RestDay(session, week)
             } else {
                 Column(Modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     session.items.forEach { item ->
@@ -134,7 +135,7 @@ private fun SessionHeader(session: SessionView, today: LocalDate, onOpenProgram:
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = session.day.title,
+                text = sessionTitle(session),
                 style = MaterialTheme.typography.headlineSmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -176,10 +177,10 @@ private fun SessionDays(week: List<SessionView>, selected: LocalDate, today: Loc
             val isSelected = date == selected
             val isToday = date == today
             val dayName = Fmt.longDay(date)
-            val description = if (session.isRest) {
-                stringResource(R.string.session_rest_day_cd, dayName)
-            } else {
-                stringResource(R.string.session_day_cd, dayName, session.day.title, session.doneCount, session.items.size)
+            val description = when {
+                session.program == null -> stringResource(R.string.session_no_program_cd, dayName)
+                session.isRest -> stringResource(R.string.session_rest_day_cd, dayName)
+                else -> stringResource(R.string.session_day_cd, dayName, sessionTitle(session), session.doneCount, session.items.size)
             }
             val disc = animateColorAsState(if (isSelected) colors.primary else Color.Transparent, tween(250), label = "session-day")
             Column(
@@ -232,16 +233,32 @@ private fun SessionDays(week: List<SessionView>, selected: LocalDate, today: Loc
     }
 }
 
+/** "Pectoraux", "Repos", or no program yet that day. */
 @Composable
-private fun RestDay(session: SessionView) {
+private fun sessionTitle(session: SessionView): String =
+    if (session.program == null) stringResource(R.string.session_no_program) else dayTitle(session.day)
+
+@Composable
+private fun RestDay(session: SessionView, week: List<SessionView>) {
+    // Without a program that day, the program starts later in the week.
+    val start = week.firstOrNull { it.program != null }?.date
+    val text = when {
+        session.program == null && start != null -> stringResource(R.string.session_no_program_before, Fmt.longDay(start))
+        session.day.note.isNotBlank() -> session.day.note
+        else -> stringResource(R.string.session_rest_text)
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        Icon(Icons.Rounded.SelfImprovement, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Icon(
+            imageVector = if (session.program == null) Icons.Rounded.EventRepeat else Icons.Rounded.SelfImprovement,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+        )
         Spacer(Modifier.width(12.dp))
         Text(
-            text = Fmt.typography(session.day.note),
+            text = Fmt.typography(text),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -282,15 +299,7 @@ private fun SessionRow(item: SessionItem, onLog: () -> Unit, onEdit: (WorkoutEnt
                 )
                 if (item.line.emphasis) {
                     Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.session_emphasis),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = colors.onPrimary,
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .background(colors.primary)
-                            .padding(horizontal = 6.dp, vertical = 1.dp),
-                    )
+                    EmphasisBadge()
                 }
             }
             Text(

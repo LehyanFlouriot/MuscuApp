@@ -1,5 +1,6 @@
 package com.lehyanflouriot.muscuapp.core.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
 
@@ -47,25 +48,35 @@ data class TrainingDay(
     val isRest: Boolean get() = exercises.isEmpty()
 }
 
-/** The sessions of a typical week, done again week after week. */
+/** The sessions of a typical week, done again week after week until another program takes over. */
 @Serializable
 data class TrainingProgram(
-    val id: String,
-    val name: String,
+    override val id: String,
+    override val name: String,
     /** "5 séances full body · 2 jours de repos". */
     val info: String = "",
     /** One per day of the week, from Monday to Sunday. */
     val days: List<TrainingDay> = emptyList(),
     /** How to follow the program: warm-up, rests, progression... */
     val notes: List<PlanNote> = emptyList(),
-) {
+    override val versionOf: String? = null,
+    val createdAt: Long = 0L,
+) : Program {
     fun day(day: DayOfWeek): TrainingDay = days.firstOrNull { it.day == day } ?: TrainingDay(day)
+
+    fun line(id: String): SessionExercise? = days.firstNotNullOfOrNull { day -> day.exercises.firstOrNull { it.id == id } }
 }
 
 @Serializable
 data class Training(
-    /** The program followed, if any. */
-    val program: TrainingProgram? = null,
+    val programs: List<TrainingProgram> = emptyList(),
+    /** Sorted by date. */
+    val schedule: List<PlanPeriod> = emptyList(),
     /** Whether the program the app comes with was already added: it is never added again. */
     val seeded: Boolean = false,
-)
+    /** The single program the app had before programs could follow one another: moved to [programs] when read. */
+    @SerialName("program")
+    val legacyProgram: TrainingProgram? = null,
+) {
+    fun program(id: String): TrainingProgram? = programs.firstOrNull { it.id == id }
+}

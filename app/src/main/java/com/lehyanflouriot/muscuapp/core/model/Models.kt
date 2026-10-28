@@ -94,8 +94,11 @@ data class AppData(
     fun entriesOf(exerciseId: String): List<WorkoutEntry> = entries.filter { it.exerciseId == exerciseId }
 
     companion object {
-        /** 2: each food of the plan of the app has a single name. */
-        const val CURRENT_SCHEMA_VERSION = 2
+        /**
+         * 2: each food of the plan of the app has a single name.
+         * 3: training programs follow one another, like the meal plans.
+         */
+        const val CURRENT_SCHEMA_VERSION = 3
 
         val DEFAULT_REST_PRESETS = listOf(
             RestPreset(id = "preset-45", seconds = 45, label = "Court"),

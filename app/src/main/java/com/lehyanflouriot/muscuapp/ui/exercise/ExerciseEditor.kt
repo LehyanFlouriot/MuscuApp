@@ -60,8 +60,8 @@ import kotlinx.coroutines.launch
 private const val DEFAULT_REST_SECONDS = 90
 
 @Stable
-class ExerciseFormState(initial: Exercise?) {
-    var name by mutableStateOf(initial?.name.orEmpty())
+class ExerciseFormState(initial: Exercise?, initialName: String = "") {
+    var name by mutableStateOf(initial?.name ?: initialName)
     var muscleGroup by mutableStateOf(initial?.muscleGroup ?: MuscleGroup.OTHER)
     var usesWeight by mutableStateOf(initial?.usesWeight ?: true)
     var measure by mutableStateOf(initial?.measure ?: Measure.REPS)
@@ -93,8 +93,10 @@ fun ExerciseEditorSheet(
     restPresets: List<RestPreset>,
     onDismiss: () -> Unit,
     onSave: (ExerciseDraft) -> Unit,
+    /** The name a new exercise starts with. */
+    initialName: String = "",
 ) {
-    val state = remember(initial?.id) { ExerciseFormState(initial) }
+    val state = remember(initial?.id) { ExerciseFormState(initial, initialName) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val close: () -> Unit = {

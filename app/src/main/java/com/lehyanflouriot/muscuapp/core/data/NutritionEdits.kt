@@ -1,7 +1,6 @@
 package com.lehyanflouriot.muscuapp.core.data
 
 import com.lehyanflouriot.muscuapp.core.domain.MAX_WATER_GLASSES
-import com.lehyanflouriot.muscuapp.core.domain.periodAt
 import com.lehyanflouriot.muscuapp.core.domain.planAt
 import com.lehyanflouriot.muscuapp.core.domain.shoppingKey
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
@@ -103,12 +102,6 @@ fun MealPlan.moveSlot(slotId: String, delta: Int): MealPlan {
 
 // region Plans over time
 
-/** Sorted by date, without a period that only goes on with the plan of the one before. */
-internal fun List<PlanPeriod>.merged(): List<PlanPeriod> {
-    val sorted = sortedBy { it.from }
-    return sorted.filterIndexed { index, period -> index == 0 || sorted[index - 1].planId != period.planId }
-}
-
 /** Adds the plan the app comes with, followed from the start of the current week. Done only once. */
 internal fun Nutrition.withDefaultPlan(today: LocalDate, createdAt: Long): Nutrition {
     if (seeded) return this
@@ -135,39 +128,24 @@ internal fun Nutrition.changePlan(
     val plan = plan(planId)?.takeIf { it.versionOf == null } ?: return this
     val changed = transform(plan)
     if (changed == plan) return this
-    val lived = schedule.indices.filter { index ->
-        val period = schedule[index]
-        if (period.planId != planId || period.from >= today) return@filter false
-        val end = minOf(schedule.getOrNull(index + 1)?.from ?: today, today)
-        days.any { !it.isEmpty && it.date >= period.from && it.date < end }
+    val lived = schedule.livedPeriods(planId, today) { from, until ->
+        days.any { !it.isEmpty && it.date >= from && it.date < until }
     }
     val newPlans = plans.map { if (it.id == planId) changed else it }
     if (lived.isEmpty()) return copy(plans = newPlans)
     val kept = plan.copy(id = newId(), versionOf = planId)
-    val newSchedule = buildList {
-        schedule.forEachIndexed { index, period ->
-            if (index in lived) {
-                add(period.copy(planId = kept.id))
-                val next = schedule.getOrNull(index + 1)?.from
-                if (next == null || next > today) add(PlanPeriod(planId, today))
-            } else {
-                add(period)
-            }
-        }
-    }
-    return copy(plans = newPlans + kept, schedule = newSchedule.sortedBy { it.from })
+    return copy(plans = newPlans + kept, schedule = schedule.keptAs(lived, planId, kept.id, today))
 }
 
 /** Follows [planId] from [from] on, until the next period already planned. */
 internal fun Nutrition.startPlan(planId: String, from: LocalDate): Nutrition {
     if (plan(planId)?.versionOf != null || plan(planId) == null) return this
-    if (periodAt(from)?.planId == planId) return this
-    return copy(schedule = (schedule.filterNot { it.from == from } + PlanPeriod(planId, from)).merged())
+    return copy(schedule = schedule.starting(planId, from))
 }
 
 /** Cancels a start planned after [today]. */
 internal fun Nutrition.cancelStart(planId: String, from: LocalDate, today: LocalDate): Nutrition =
-    if (from <= today) this else copy(schedule = schedule.filterNot { it.planId == planId && it.from == from }.merged())
+    copy(schedule = schedule.withoutStart(planId, from, today))
 
 /** Changes the shopping list of the week of [weekStart], forgetting the lists of long ago. */
 internal fun Nutrition.updateShoppingWeek(weekStart: LocalDate, transform: (ShoppingWeek) -> ShoppingWeek): Nutrition {

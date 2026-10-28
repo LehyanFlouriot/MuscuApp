@@ -3,9 +3,14 @@ package com.lehyanflouriot.muscuapp.core.sync
 import com.lehyanflouriot.muscuapp.core.data.AppJson
 import com.lehyanflouriot.muscuapp.core.data.DataStorage
 import com.lehyanflouriot.muscuapp.core.data.ExerciseDraft
+import com.lehyanflouriot.muscuapp.core.data.HypertrophyProgram
 import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
+import com.lehyanflouriot.muscuapp.core.data.removeLine
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.BodyWeightEntry
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
+import com.lehyanflouriot.muscuapp.core.model.Nutrition
+import com.lehyanflouriot.muscuapp.core.model.Training
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -17,6 +22,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.UUID
 
@@ -393,6 +399,33 @@ class SyncEngineTest {
         assertEquals(phone.data.entries, tablet.data.entries)
         assertEquals(phone.data.training, tablet.data.training)
         assertEquals(phone.data.exercises.map { it.id }, tablet.data.exercises.map { it.id })
+    }
+
+    @Test
+    fun aDeviceUpdatedFromTheSingleProgramKeepsMergingWhatChanged() = runTest {
+        // A phone on 1.7.0 synced the single training program of that version.
+        val legacy = AppData(
+            schemaVersion = 2,
+            exercises = HypertrophyProgram.exercises(),
+            nutrition = Nutrition(seeded = true),
+            training = Training(legacyProgram = HypertrophyProgram.create(), seeded = true),
+        )
+        val state = SyncState(account = ACCOUNT, documentId = "doc", revision = "r1", base = AppJson.tree(legacy), lastSync = 1L)
+        val syncStorage = MemoryStorage(AppJson.json.encodeToString(SyncState.serializer(), state))
+        // Meanwhile, a tablet still on 1.7.0 noted a weight.
+        remote.content = AppJson.encode(legacy.copy(bodyWeights = listOf(BodyWeightEntry(today, 71.0))))
+        remote.document = RemoteDocument(id = "doc", revision = "r2", appVersion = 17)
+
+        // Once updated, the phone has nothing new to send.
+        val phone = device(syncStorage, MemoryStorage(AppJson.encode(legacy)), seedProgram = true)
+        assertFalse(phone.engine.hasChanges(phone.data))
+
+        // It takes an exercise out of Monday's session, then syncs: both changes are kept.
+        phone.repository.updateTrainingProgram(HypertrophyProgram.ID) { it.removeLine("mon-6") }
+        assertNull(phone.engine.sync())
+        assertEquals(5, phone.data.training.programs.single().day(DayOfWeek.MONDAY).exercises.size)
+        assertEquals(71.0, phone.data.bodyWeights.single().weight, 0.0)
+        assertEquals(phone.data, remote.data())
     }
 
     private companion object {

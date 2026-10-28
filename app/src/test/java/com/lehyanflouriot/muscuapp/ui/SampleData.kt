@@ -106,7 +106,11 @@ object SampleData {
         return AppData.initial().copy(
             exercises = HypertrophyProgram.exercises(),
             entries = entries,
-            training = Training(program = HypertrophyProgram.create(), seeded = true),
+            training = Training(
+                programs = listOf(HypertrophyProgram.create()),
+                schedule = listOf(PlanPeriod(HypertrophyProgram.ID, today.startOfWeek().minusWeeks(1))),
+                seeded = true,
+            ),
         )
     }
 

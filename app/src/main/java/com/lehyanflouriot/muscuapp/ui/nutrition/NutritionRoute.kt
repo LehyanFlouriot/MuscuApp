@@ -1,6 +1,5 @@
 package com.lehyanflouriot.muscuapp.ui.nutrition
 
-import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.runtime.Composable
@@ -29,7 +28,10 @@ import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.MealPlan
 import com.lehyanflouriot.muscuapp.ui.common.ConfirmDialog
 import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
-import com.lehyanflouriot.muscuapp.ui.common.Messenger
+import com.lehyanflouriot.muscuapp.ui.common.NewProgramDialog
+import com.lehyanflouriot.muscuapp.ui.common.ProgramsSheet
+import com.lehyanflouriot.muscuapp.ui.common.StartProgramDialog
+import com.lehyanflouriot.muscuapp.ui.common.announceStart
 import com.lehyanflouriot.muscuapp.ui.common.rememberToday
 import com.lehyanflouriot.muscuapp.ui.common.show
 import java.time.DayOfWeek
@@ -201,19 +203,4 @@ fun NutritionRoute(
             onDismiss = { deleting = null },
         )
     }
-}
-
-private fun announceStart(
-    messenger: Messenger,
-    context: Context,
-    name: String,
-    start: LocalDate,
-    today: LocalDate,
-) {
-    val text = if (start <= today) {
-        context.getString(R.string.program_started_today, name)
-    } else {
-        context.getString(R.string.program_started_on, name, Fmt.longDay(start))
-    }
-    messenger.show(text)
 }

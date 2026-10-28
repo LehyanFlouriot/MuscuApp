@@ -28,6 +28,8 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - En haut de **Ma semaine**, la **séance du jour** : les exercices dans l'ordre, l'exercice d'emphase mis en avant, et ton **objectif** calculé avec la règle du programme (+1 rep par série chaque semaine, dans la fourchette). Quand tu atteins le haut de la fourchette partout, l'app te propose de passer à une variante plus dure.
 - Touche un exercice : la saisie s'ouvre **pré-remplie avec l'objectif**, et le bouton Repos lance le bon temps (3 min sur l'exercice d'emphase, 1 min 30 sur les autres).
 - Les jours de la semaine montrent où tu en es de chaque séance, et **Programme** affiche toute la semaine et les conseils (échauffement, RIR, repos, progression, décharge).
+- **Tout se modifie** depuis **Programme** : le nom et le thème de chaque séance, les exercices (ajouter, retirer, remonter, remplacer par une variante plus dure), et pour chacun les séries, la fourchette de répétitions, le RIR, le repos, la consigne et l'exercice d'emphase. Un jour de repos devient une séance dès que tu lui ajoutes un exercice, et une séance se copie vers d'autres jours. Les changements s'appliquent dès aujourd'hui ; les semaines passées gardent ce qui était prévu.
+- **Mes programmes** (📖 en haut de l'écran Programme) : quand tu veux changer de programme, crée-en un nouveau (vide ou à partir de l'actuel) et choisis le jour où il commence. L'ancien reste dans ton historique, avec les séances faites.
 
 ### ✍️ Saisie d'une séance
 - Gros boutons **− / +** pour les séries, les répétitions et le poids (maintenir le bouton pour aller plus vite, toucher le nombre pour le taper).

@@ -14,6 +14,8 @@ import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekSessions
 import com.lehyanflouriot.muscuapp.core.domain.defaultLogDate
+import com.lehyanflouriot.muscuapp.core.domain.programAt
+import com.lehyanflouriot.muscuapp.core.domain.programOf
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
@@ -24,6 +26,7 @@ import com.lehyanflouriot.muscuapp.ui.common.show
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseEditorSheet
 import com.lehyanflouriot.muscuapp.ui.log.LogEntrySheet
 import com.lehyanflouriot.muscuapp.ui.log.LogRequest
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Composable
@@ -33,7 +36,7 @@ fun WeekRoute(
     timer: RestTimer,
     onOpenExercise: (String) -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenProgram: () -> Unit,
+    onOpenProgram: (programId: String, day: DayOfWeek) -> Unit,
 ) {
     val today = rememberToday()
     val currentWeek = today.startOfWeek()
@@ -72,7 +75,13 @@ fun WeekRoute(
                 )
             },
             onEditEntry = { entry -> logRequest = LogRequest.Edit(entry.id) },
-            onOpenProgram = onOpenProgram,
+            onOpenProgram = {
+                val training = data.training
+                // The program of the day shown, or the one to come when that day has none yet.
+                val program = training.programAt(sessionDate)
+                    ?: training.schedule.firstOrNull()?.let { training.program(it.planId) }?.let(training::programOf)
+                program?.let { onOpenProgram(it.id, sessionDate.dayOfWeek) }
+            },
         ),
         today = today,
         hasAnyEntry = data.entries.isNotEmpty(),
