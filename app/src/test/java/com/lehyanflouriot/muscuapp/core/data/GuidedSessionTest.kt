@@ -50,8 +50,8 @@ class GuidedSessionTest {
         // One more rep than last Wednesday, set by set.
         assertEquals(WorkSet(11), squat.nextSetGoal())
 
-        val entryId = repo.addSet("ex-squat-bulgare", today, WorkSet(12, 8.0))!!
-        assertEquals(entryId, repo.addSet("ex-squat-bulgare", today, WorkSet(11, 8.0)))
+        val entryId = repo.addSet("ex-squat-bulgare", today, WorkSet(12, 8.0))!!.entryId
+        assertEquals(entryId, repo.addSet("ex-squat-bulgare", today, WorkSet(11, 8.0))?.entryId)
         squat = repo.session().items.first()
         assertEquals(listOf(12, 11), squat.doneSets().map { it.set.reps })
         // A single entry for the day, which the week shows as done.
@@ -81,10 +81,67 @@ class GuidedSessionTest {
     @Test
     fun anEntryLeftWithoutSetsGoesAway() = runTest {
         val repo = repository()
-        val entryId = repo.addSet("ex-rollout-serviette", today, WorkSet(10))!!
+        val entryId = repo.addSet("ex-rollout-serviette", today, WorkSet(10))!!.entryId
         repo.updateSet(entryId, 0, null)
         assertTrue(repo.data.value!!.entries.isEmpty())
         assertFalse(repo.session().items.last().done)
+    }
+
+    private fun WorkoutRepository.squatReps() = session().items.first().doneSets().map { it.set.reps }
+
+    @Test
+    fun aSetNotedByMistakeIsUndone() = runTest {
+        val repo = repository()
+        val first = repo.addSet("ex-squat-bulgare", today, WorkSet(12, 8.0))!!
+        val second = repo.addSet("ex-squat-bulgare", today, WorkSet(11, 8.0))!!
+        // The second set goes away, the first one stays.
+        assertTrue(repo.undo(second))
+        assertEquals(listOf(12), repo.squatReps())
+        assertFalse(repo.undo(second))
+        // The first set undone, the entry it created goes away.
+        assertTrue(repo.undo(first))
+        assertTrue(repo.data.value!!.entries.isEmpty())
+    }
+
+    @Test
+    fun aCorrectionOrADeletionIsUndone() = runTest {
+        val repo = repository()
+        val entryId = repo.addSet("ex-squat-bulgare", today, WorkSet(12, 8.0))!!.entryId
+        repo.addSet("ex-squat-bulgare", today, WorkSet(11, 8.0))
+        val corrected = repo.updateSet(entryId, 1, WorkSet(10, 8.0))!!
+        assertTrue(corrected.changed)
+        assertTrue(repo.undo(corrected))
+        assertEquals(listOf(12, 11), repo.squatReps())
+        assertFalse(repo.updateSet(entryId, 0, WorkSet(12, 8.0))!!.changed)
+
+        // Both sets removed, the entry goes away; undone, it comes back as it was.
+        val removed = repo.updateSet(entryId, 0, null)!!
+        val removedLast = repo.updateSet(entryId, 0, null)!!
+        assertTrue(repo.data.value!!.entries.isEmpty())
+        assertTrue(repo.undo(removedLast))
+        assertTrue(repo.undo(removed))
+        assertEquals(listOf(12, 11), repo.squatReps())
+    }
+
+    @Test
+    fun aSavedEntryIsUndone() = runTest {
+        val repo = repository()
+        val saved = repo.saveEntry(null, "ex-squat-bulgare", today, listOf(WorkSet(10), WorkSet(10)))
+        val edited = repo.saveEntry(saved.entryId, "ex-squat-bulgare", today, listOf(WorkSet(12), WorkSet(10)), "lourd")
+        assertTrue(repo.undo(edited))
+        assertEquals(saved.after, repo.data.value!!.entries.single())
+        assertTrue(repo.undo(saved))
+        assertTrue(repo.data.value!!.entries.isEmpty())
+    }
+
+    @Test
+    fun aChangeIsNotUndoneOnceTheEntryChangedAgain() = runTest {
+        val repo = repository()
+        val first = repo.addSet("ex-squat-bulgare", today, WorkSet(12))!!
+        repo.addSet("ex-squat-bulgare", today, WorkSet(11))
+        // Putting the entry back as it was would lose the second set.
+        assertFalse(repo.undo(first))
+        assertEquals(listOf(12, 11), repo.squatReps())
     }
 
     @Test

@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,11 +27,13 @@ import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
+import com.lehyanflouriot.muscuapp.core.timer.TimerLogic
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
 import com.lehyanflouriot.muscuapp.timer.RestTimer
 import com.lehyanflouriot.muscuapp.ui.common.DialogAction
 import com.lehyanflouriot.muscuapp.ui.common.FormDialog
 import com.lehyanflouriot.muscuapp.ui.common.FormField
+import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
 import com.lehyanflouriot.muscuapp.ui.common.parseDecimal
 import com.lehyanflouriot.muscuapp.ui.common.parseWholeNumber
 import com.lehyanflouriot.muscuapp.ui.common.rememberToday
@@ -68,8 +71,12 @@ fun GuidedSessionRoute(
     val idleDuration by timer.idleDuration.collectAsStateWithLifecycle()
     val now = rememberTimerNow(rawTimerState, timer::now)
     val startRest = rememberRestStarter(timer)
-    // The exercise chosen by the user, or else the first one with sets still to do.
-    var pickedLine by rememberSaveable { mutableStateOf<String?>(null) }
+    val messenger = LocalMessenger.current
+    val context = LocalContext.current
+    val undoLabel = stringResource(R.string.action_undo)
+    // The exercise chosen by the user, or else the first one with sets still to do. A session
+    // already done is looked over from its first exercise.
+    var pickedLine by rememberSaveable { mutableStateOf(session.items.first().line.id.takeIf { session.complete }) }
     val index = session.items.indexOfFirst { it.line.id == pickedLine }.takeIf { it >= 0 }
         ?: session.currentIndex()
         ?: session.items.lastIndex
@@ -91,16 +98,31 @@ fun GuidedSessionRoute(
             onSelect = { selected -> session.items.getOrNull(selected)?.let { pickedLine = it.line.id } },
             onDraftChange = { drafts[item.line.id] = it },
             onSetDone = {
-                repository.addSet(item.exercise.id, date, draft)
-                drafts.remove(item.line.id)
-                val exerciseDone = item.doneSets().size + 1 >= item.plannedSets
+                val line = item.line.id
+                val set = draft
+                val number = item.doneSets().size + 1
+                val change = repository.addSet(item.exercise.id, date, set)
+                drafts.remove(line)
+                val exerciseDone = number >= item.plannedSets
                 val sessionDone = exerciseDone && session.items.all { it === item || it.complete }
                 if (!sessionDone) {
                     val rest = item.line.restSeconds ?: item.exercise.restSeconds ?: (idleDuration / 1_000).toInt()
                     startRest(rest, item.exercise.name)
                 }
-                // Its last set done, the exercise gives way to the next one with sets to do.
-                if (exerciseDone) pickedLine = null
+                // Its last set done, the exercise gives way to the next one with sets to do, if any.
+                if (exerciseDone && !sessionDone) pickedLine = null
+                if (change != null) {
+                    messenger.show(context.getString(R.string.guided_set_saved, number), undoLabel) {
+                        if (repository.undo(change)) {
+                            // Back to the set as it was before it was noted, without the rest it started.
+                            drafts[line] = set
+                            pickedLine = line
+                            val restState = timer.state.value
+                            val resting = restState is TimerState.Running || restState is TimerState.Paused
+                            if (resting && TimerLogic.label(restState) == item.exercise.name) timer.stop()
+                        }
+                    }
+                }
             },
             onEditSet = { done, number -> editing = EditedSet(done, number, item.exercise) },
             onRestAdd = { timer.adjust(REST_ADD_MS) },
@@ -149,8 +171,11 @@ fun GuidedSessionRoute(
             onConfirm = { values ->
                 val reps = parseWholeNumber(values[0], repsRange) ?: set.reps
                 val weight = values.getOrNull(1)?.let(weightValid) ?: set.weight
-                repository.updateSet(edited.done.entryId, edited.done.index, WorkSet(reps, weight))
+                val change = repository.updateSet(edited.done.entryId, edited.done.index, WorkSet(reps, weight))
                 editing = null
+                if (change != null && change.changed) {
+                    messenger.show(context.getString(R.string.guided_set_updated, edited.number), undoLabel) { repository.undo(change) }
+                }
             },
             extraContent = {
                 DialogAction(
@@ -158,8 +183,11 @@ fun GuidedSessionRoute(
                     icon = Icons.Rounded.DeleteOutline,
                     destructive = true,
                     onClick = {
-                        repository.updateSet(edited.done.entryId, edited.done.index, null)
+                        val change = repository.updateSet(edited.done.entryId, edited.done.index, null)
                         editing = null
+                        if (change != null) {
+                            messenger.show(context.getString(R.string.guided_set_deleted, edited.number), undoLabel) { repository.undo(change) }
+                        }
                     },
                 )
             },

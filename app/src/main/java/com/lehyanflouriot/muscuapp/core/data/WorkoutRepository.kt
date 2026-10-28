@@ -72,6 +72,15 @@ data class ExerciseDraft(
 data class DeletedExercise(val exercise: Exercise, val entries: List<WorkoutEntry>)
 
 /**
+ * A change made to the entry [entryId], kept to allow "undo": the entry before it ([before], null
+ * when the change created it) and after it ([after], null when the change removed it).
+ */
+data class EntryChange(val entryId: String, val before: WorkoutEntry?, val after: WorkoutEntry?) {
+    /** Whether the entry is any different after the change. */
+    val changed: Boolean get() = before != after
+}
+
+/**
  * Single source of truth of the app. Every change is applied in memory first (so the UI
  * updates immediately) and then written to [storage] in the background.
  */
@@ -206,78 +215,88 @@ class WorkoutRepository(
 
     // region Entries
 
-    /** Creates an entry when [entryId] is null, updates it otherwise. Returns the entry id. */
+    /** Creates an entry when [entryId] is null, updates it otherwise. */
     fun saveEntry(
         entryId: String?,
         exerciseId: String,
         date: LocalDate,
         sets: List<WorkSet>,
         note: String = "",
-    ): String {
+    ): EntryChange {
         val cleanSets = cleanSets(sets)
         val id = entryId ?: newId()
+        var change = EntryChange(id, null, null)
         mutate { data ->
             val existing = data.entries.firstOrNull { it.id == id }
-            if (existing == null) {
-                data.copy(
-                    entries = data.entries + WorkoutEntry(
-                        id = id,
-                        exerciseId = exerciseId,
-                        date = date,
-                        sets = cleanSets,
-                        note = note.trim(),
-                        createdAt = clock(),
-                    ),
-                )
-            } else {
-                data.copy(
-                    entries = data.entries.map {
-                        if (it.id == id) it.copy(date = date, sets = cleanSets, note = note.trim()) else it
-                    },
-                )
-            }
+            val saved = existing?.copy(date = date, sets = cleanSets, note = note.trim())
+                ?: WorkoutEntry(id = id, exerciseId = exerciseId, date = date, sets = cleanSets, note = note.trim(), createdAt = clock())
+            change = EntryChange(id, existing, saved)
+            data.copy(entries = if (existing == null) data.entries + saved else data.entries.map { if (it.id == id) saved else it })
         }
-        return id
+        return change
     }
 
     /**
      * Notes one more set of [exerciseId] on [date], in the last entry of that day when there is one,
-     * as a session guided set by set does. Returns the id of the entry.
+     * as a session guided set by set does.
      */
-    fun addSet(exerciseId: String, date: LocalDate, set: WorkSet): String? {
+    fun addSet(exerciseId: String, date: LocalDate, set: WorkSet): EntryChange? {
         val clean = cleanSets(listOf(set)).singleOrNull() ?: return null
         val newEntryId = newId()
-        var entryId: String? = null
+        var change: EntryChange? = null
         mutate { data ->
-            entryId = null
+            change = null
             if (data.exercise(exerciseId) == null) return@mutate data
             val last = data.entries.filter { it.exerciseId == exerciseId && it.date == date }.maxWithOrNull(entryOrder)
-            if (last == null) {
-                entryId = newEntryId
-                val entry = WorkoutEntry(id = newEntryId, exerciseId = exerciseId, date = date, sets = listOf(clean), createdAt = clock())
-                data.copy(entries = data.entries + entry)
-            } else {
-                entryId = last.id
-                data.copy(entries = data.entries.map { if (it.id == last.id) it.copy(sets = it.sets + clean) else it })
-            }
+            val updated = last?.copy(sets = last.sets + clean)
+                ?: WorkoutEntry(id = newEntryId, exerciseId = exerciseId, date = date, sets = listOf(clean), createdAt = clock())
+            change = EntryChange(updated.id, last, updated)
+            data.copy(entries = if (last == null) data.entries + updated else data.entries.map { if (it.id == last.id) updated else it })
         }
-        return entryId
+        return change
     }
 
     /** Changes the set [index] of an entry, or removes it when [set] is null. An entry left without sets goes away. */
-    fun updateSet(entryId: String, index: Int, set: WorkSet?) {
+    fun updateSet(entryId: String, index: Int, set: WorkSet?): EntryChange? {
+        var change: EntryChange? = null
         mutate { data ->
+            change = null
             val entry = data.entries.firstOrNull { it.id == entryId }
             if (entry == null || index !in entry.sets.indices) return@mutate data
             val sets = cleanSets(entry.sets.toMutableList().apply { if (set == null) removeAt(index) else this[index] = set })
+            val updated = entry.copy(sets = sets).takeIf { sets.isNotEmpty() }
+            change = EntryChange(entryId, entry, updated)
             data.copy(
-                entries = if (sets.isEmpty()) {
+                entries = if (updated == null) {
                     data.entries.filterNot { it.id == entryId }
                 } else {
-                    data.entries.map { if (it.id == entryId) it.copy(sets = sets) else it }
+                    data.entries.map { if (it.id == entryId) updated else it }
                 },
             )
         }
+        return change
+    }
+
+    /**
+     * Puts the entry of [change] back as it was before. Nothing happens when it was changed again
+     * since, on another device for instance. Returns whether the change was undone.
+     */
+    fun undo(change: EntryChange): Boolean {
+        var undone = false
+        mutate { data ->
+            val current = data.entries.firstOrNull { it.id == change.entryId }
+            undone = current == change.after
+            if (!undone) return@mutate data
+            val before = change.before?.takeIf { data.exercise(it.exerciseId) != null }
+            data.copy(
+                entries = when {
+                    current == null -> data.entries + listOfNotNull(before)
+                    before == null -> data.entries.filterNot { it.id == change.entryId }
+                    else -> data.entries.map { if (it.id == change.entryId) before else it }
+                },
+            )
+        }
+        return undone
     }
 
     fun deleteEntry(id: String): WorkoutEntry? {

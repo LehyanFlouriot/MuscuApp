@@ -77,7 +77,7 @@ class WorkoutRepositoryTest {
     fun updatingAnEntryKeepsItsIdentity() = runTest {
         val repo = repository(FakeStorage())
         val exerciseId = repo.addExercise(ExerciseDraft("Tractions", usesWeight = false))
-        val entryId = repo.saveEntry(null, exerciseId, day, listOf(WorkSet(8)))
+        val entryId = repo.saveEntry(null, exerciseId, day, listOf(WorkSet(8))).entryId
         repo.saveEntry(entryId, exerciseId, day.minusDays(1), listOf(WorkSet(10), WorkSet(9)))
         val entry = repo.data.value!!.entries.single()
         assertEquals(entryId, entry.id)
@@ -109,7 +109,7 @@ class WorkoutRepositoryTest {
     fun deletingAnEntryCanBeUndone() = runTest {
         val repo = repository(FakeStorage())
         val exerciseId = repo.addExercise(ExerciseDraft("Curl"))
-        val entryId = repo.saveEntry(null, exerciseId, day, listOf(WorkSet(10, 12.0)))
+        val entryId = repo.saveEntry(null, exerciseId, day, listOf(WorkSet(10, 12.0))).entryId
         val deleted = repo.deleteEntry(entryId)!!
         assertTrue(repo.data.value!!.entries.isEmpty())
         repo.restoreEntry(deleted)

@@ -34,8 +34,9 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 ### ▶️ Séance guidée
 - **Démarrer la séance** (sur la séance du jour) : les exercices un par un, série par série. La série à faire part de ton objectif ; ajuste-la avec les gros boutons **− / +**, puis **Série faite**.
 - Chaque série est enregistrée tout de suite, et le **repos prévu par le programme démarre tout seul**, avec en bas de l'écran le décompte et ce qui vient ensuite.
-- Une barre montre où tu en es de chaque exercice ; ses séries faites, l'exercice suivant arrive. Tu peux ajouter une série, corriger ou supprimer une série faite, passer un exercice ou revenir en arrière.
-- L'écran reste allumé pendant la séance, et tu peux la quitter puis la **continuer** à tout moment.
+- Une barre montre où tu en es de chaque exercice ; ses séries faites, l'exercice suivant arrive. Tu peux ajouter une série, passer un exercice ou revenir en arrière.
+- **Rien n'est définitif** : juste après « Série faite », un bouton **Annuler** la retire (et arrête le repos qu'elle a lancé). Touche une série faite pour la corriger ou la supprimer, là aussi avec **Annuler**.
+- L'écran reste allumé pendant la séance, et tu peux la quitter puis la **continuer** à tout moment. Une fois terminée, **Revoir la séance** la rouvre pour corriger une série.
 
 ### 📱 Widget sur l'écran d'accueil
 - Ajoute le widget **Séance du jour** (appui long sur l'écran d'accueil → *Widgets* → MuscuApp) : la séance du jour, où tu en es (2/6) et ce qui vient ensuite, sans ouvrir l'app.
@@ -52,6 +53,7 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - Exercices au poids du corps (pompes, tractions…) et exercices en durée (gainage…).
 - Date en un geste : *Aujourd'hui*, *Hier* ou un autre jour.
 - Un bouton **Repos** lance le minuteur directement depuis la saisie, entre deux séries.
+- Une erreur ? Juste après **Enregistrer**, **Annuler** retire la saisie (ou remet la version d'avant). Plus tard, touche l'exercice fait pour la modifier ou la supprimer.
 
 ### 🍽️ Nutrition
 - Ton **plan alimentaire** jour par jour, déjà rempli avec ta semaine type (prise de masse 66 → 75 kg) : les 5 repas avec leurs quantités, l'eau et les conseils du plan.

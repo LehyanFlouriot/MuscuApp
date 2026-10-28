@@ -711,6 +711,11 @@
     <string name="guided_rest_close">OK</string>
     <string name="guided_then">Ensuite\u00A0: %1$s, série %2$d sur %3$d</string>
     <string name="guided_delete_set">Supprimer la série</string>
+    <string name="guided_review">Revoir la séance</string>
+    <string name="guided_edit_hint">Touche une série faite pour la corriger</string>
+    <string name="guided_set_saved">Série %1$d enregistrée</string>
+    <string name="guided_set_updated">Série %1$d corrigée</string>
+    <string name="guided_set_deleted">Série %1$d supprimée</string>
 
     <!-- Reminders -->
     <string name="settings_reminders">Rappels</string>

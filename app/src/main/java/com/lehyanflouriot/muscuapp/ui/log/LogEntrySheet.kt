@@ -113,8 +113,13 @@ fun LogEntrySheet(
             restButtonText = restText,
             onRestClick = { startRest(restSeconds, exercise.name) },
             onSave = {
-                repository.saveEntry(entry?.id, exercise.id, formState.date, formState.sets, formState.note)
-                messenger.show(context.getString(if (entry == null) R.string.log_saved else R.string.log_updated))
+                val change = repository.saveEntry(entry?.id, exercise.id, formState.date, formState.sets, formState.note)
+                val message = context.getString(if (entry == null) R.string.log_saved else R.string.log_updated)
+                if (change.changed) {
+                    messenger.show(message, context.getString(R.string.action_undo)) { repository.undo(change) }
+                } else {
+                    messenger.show(message)
+                }
                 close()
             },
             onDelete = entry?.let { existing ->

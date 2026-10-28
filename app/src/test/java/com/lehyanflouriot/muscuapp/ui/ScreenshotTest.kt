@@ -20,10 +20,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +78,7 @@ import com.lehyanflouriot.muscuapp.core.sync.RemoteDocument
 import com.lehyanflouriot.muscuapp.core.sync.SyncProblem
 import com.lehyanflouriot.muscuapp.core.sync.SyncStatus
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
+import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.ProgramsSheet
 import com.lehyanflouriot.muscuapp.ui.common.programStatusText
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailScreen
@@ -518,18 +523,19 @@ class ScreenshotTest {
         )
     }
 
-    /** Wednesday's session, under way or with everything done. */
-    private fun guidedSession(complete: Boolean): SessionView {
+    /** Wednesday, with every set of the session done. */
+    private fun sessionDone(): AppData {
         val appData = sessionUnderway()
-        val session = buildSession(appData, today)!!
-        if (!complete) return session
-        val done = session.items.flatMap { item ->
-            List(item.plannedSets) { index -> item.goal.getOrElse(index) { item.goal.last() } }.let { sets ->
-                listOf(WorkoutEntry("done-${item.line.id}", item.exercise.id, today, sets, createdAt = 99))
-            }
+        val done = buildSession(appData, today)!!.items.map { item ->
+            val sets = List(item.plannedSets) { index -> item.goal.getOrElse(index) { item.goal.last() } }
+            WorkoutEntry("done-${item.line.id}", item.exercise.id, today, sets, createdAt = 99)
         }
-        return buildSession(appData.copy(entries = appData.entries.filterNot { it.date == today } + done), today)!!
+        return appData.copy(entries = appData.entries.filterNot { it.date == today } + done)
     }
+
+    /** Wednesday's session, under way or with everything done. */
+    private fun guidedSession(complete: Boolean): SessionView =
+        buildSession(if (complete) sessionDone() else sessionUnderway(), today)!!
 
     @Composable
     private fun Guided(session: SessionView, timerState: TimerState) {
@@ -550,6 +556,21 @@ class ScreenshotTest {
     fun guidedSession() = capture("14-seance-guidee") {
         Guided(guidedSession(complete = false), TimerState.Running(endAt = now + 52_000, total = 90_000, label = "Squat bulgare"))
     }
+
+    /** Right after a set: the rest starts, and the set can still be taken back. */
+    @Test
+    fun guidedSessionUndo() = capture("14-seance-guidee-annuler") {
+        val hostState = remember { SnackbarHostState() }
+        val message = stringResource(R.string.guided_set_saved, 2)
+        val undo = stringResource(R.string.action_undo)
+        LaunchedEffect(Unit) { hostState.showSnackbar(message, undo, duration = SnackbarDuration.Indefinite) }
+        CompositionLocalProvider(LocalSnackbarHostState provides hostState) {
+            Guided(guidedSession(complete = false), TimerState.Running(endAt = now + 88_000, total = 90_000, label = "Sissy squat ou shrimp squat"))
+        }
+    }
+
+    @Test
+    fun weekSessionDone() = capture("1-semaine-seance-faite") { Week(sessionDone()) }
 
     @Test
     fun guidedSessionDone() = capture("14-seance-guidee-fin", darkTheme = true) {

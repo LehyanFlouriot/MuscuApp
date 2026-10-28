@@ -363,6 +363,14 @@ private fun SetsCard(
                     Icon(Icons.Rounded.Edit, contentDescription = null, tint = colors.onSurfaceVariant.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
                 }
             }
+            if (done.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.guided_edit_hint),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colors.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 50.dp, end = 16.dp, bottom = 4.dp),
+                )
+            }
             if (!item.complete || extra) {
                 SetEditor(
                     number = done.size + 1,

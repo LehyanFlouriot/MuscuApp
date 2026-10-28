@@ -25,6 +25,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SelfImprovement
@@ -32,6 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -100,18 +102,31 @@ fun SessionCard(
         ) {
             SessionHeader(session = session, today = today, onOpenProgram = actions.onOpenProgram)
             SessionDays(week = week, selected = selected, today = today, onSelect = actions.onSelectDay)
-            // A session of today or of a day gone by, not done yet, can be done set by set.
-            if (!session.isRest && session.date <= today && !session.complete) {
-                Button(
-                    onClick = { actions.onStart(session.date) },
-                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                ) {
-                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(if (session.doneSets().isEmpty()) R.string.guided_start else R.string.guided_resume))
+            // A session of today or of a day gone by can be done set by set, and looked over once done.
+            if (!session.isRest && session.date <= today) {
+                val buttonModifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                if (session.complete) {
+                    FilledTonalButton(
+                        onClick = { actions.onStart(session.date) },
+                        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                        modifier = buttonModifier,
+                    ) {
+                        Icon(Icons.Rounded.EditNote, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.guided_review))
+                    }
+                } else {
+                    Button(
+                        onClick = { actions.onStart(session.date) },
+                        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                        modifier = buttonModifier,
+                    ) {
+                        Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(if (session.doneSets().isEmpty()) R.string.guided_start else R.string.guided_resume))
+                    }
                 }
             }
             if (session.isRest) {
