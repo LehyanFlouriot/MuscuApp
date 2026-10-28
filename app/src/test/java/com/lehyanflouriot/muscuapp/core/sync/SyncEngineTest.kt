@@ -80,8 +80,15 @@ class SyncEngineTest {
         syncStorage: MemoryStorage = MemoryStorage(),
         storage: MemoryStorage = MemoryStorage(),
         appVersion: Int = APP_VERSION,
+        seedProgram: Boolean = false,
     ): Device {
-        val repository = WorkoutRepository(storage, backgroundScope, UnconfinedTestDispatcher(testScheduler), today = { today })
+        val repository = WorkoutRepository(
+            storage,
+            backgroundScope,
+            UnconfinedTestDispatcher(testScheduler),
+            today = { today },
+            seedProgram = seedProgram,
+        )
         repository.load()
         val engine = SyncEngine(repository, syncStorage, remoteFor = { remote }, appVersion = appVersion, clock = { 42L })
         engine.load()
@@ -364,11 +371,28 @@ class SyncEngineTest {
     @Test
     fun aFreshDeviceHoldsNothingOfItsOwn() = runTest {
         val storage = MemoryStorage()
-        val fresh = device(storage = storage)
+        val fresh = device(storage = storage, seedProgram = true)
         assertTrue(fresh.data.isPristine())
-        assertTrue(device(storage = MemoryStorage(storage.content)).data.isPristine())
+        assertTrue(device(storage = MemoryStorage(storage.content), seedProgram = true).data.isPristine())
         fresh.repository.setWater(today, 1)
         assertFalse(fresh.data.isPristine())
+        val trained = device(seedProgram = true)
+        trained.repository.saveEntry(null, "ex-nordic-curl", today, listOf(WorkSet(6)))
+        assertFalse(trained.data.isPristine())
+    }
+
+    @Test
+    fun aNewDeviceWithTheProgramTakesTheDataOfTheAccount() = runTest {
+        val phone = device(seedProgram = true)
+        phone.repository.saveEntry(null, "ex-tractions-pronation", today, listOf(WorkSet(7), WorkSet(6)))
+        phone.connectAndSync()
+
+        val tablet = device(seedProgram = true)
+        assertNull(tablet.connectAndSync())
+        assertNull(tablet.engine.status.value.choice)
+        assertEquals(phone.data.entries, tablet.data.entries)
+        assertEquals(phone.data.training, tablet.data.training)
+        assertEquals(phone.data.exercises.map { it.id }, tablet.data.exercises.map { it.id })
     }
 
     private companion object {

@@ -76,6 +76,8 @@ class WorkoutRepository(
     private val clock: () -> Long = System::currentTimeMillis,
     private val newId: () -> String = { UUID.randomUUID().toString() },
     private val today: () -> LocalDate = { LocalDate.now() },
+    /** Whether the training program the app comes with is added, with its exercises. */
+    private val seedProgram: Boolean = true,
 ) {
     private val state = MutableStateFlow<AppData?>(null)
 
@@ -94,7 +96,7 @@ class WorkoutRepository(
             val decoded = stored?.let { runCatching { AppJson.decode(it) }.getOrNull() }
             val loaded = decoded?.let { runCatching { sanitize(it) }.getOrNull() }
             if (stored != null && loaded == null) runCatching { storage.keepUnreadableCopy(stored) }
-            val initial = withDefaultPlan(loaded ?: AppData.initial())
+            val initial = withDefaults(loaded ?: AppData.initial())
             // Data that was just created, completed or brought up to date still has to be written once.
             val upToDate = decoded?.schemaVersion == AppData.CURRENT_SCHEMA_VERSION
             var lastWritten: AppData? = if (initial === loaded && upToDate) initial else null
@@ -114,8 +116,11 @@ class WorkoutRepository(
         state.update { current -> current?.let(transform) }
     }
 
-    private fun withDefaultPlan(data: AppData): AppData =
-        if (data.nutrition.seeded) data else data.copy(nutrition = data.nutrition.withDefaultPlan(today(), clock()))
+    /** Adds what the app comes with and was never added yet: the meal plan, the training program. */
+    private fun withDefaults(data: AppData): AppData {
+        val withPlan = if (data.nutrition.seeded) data else data.copy(nutrition = data.nutrition.withDefaultPlan(today(), clock()))
+        return if (seedProgram) withPlan.withDefaultProgram(clock()) else withPlan
+    }
 
     // region Exercises
 
@@ -518,7 +523,7 @@ class WorkoutRepository(
     }
 
     fun replaceAll(data: AppData) {
-        state.update { withDefaultPlan(sanitize(data)) }
+        state.update { withDefaults(sanitize(data)) }
     }
 
     // endregion
@@ -587,6 +592,7 @@ class WorkoutRepository(
                 restPresets = sortPresets(presets),
                 settings = settings,
                 nutrition = sanitizeNutrition(data.nutrition),
+                training = sanitizeTraining(data.training, ids),
             )
         }
     }

@@ -75,6 +75,7 @@ import com.lehyanflouriot.muscuapp.ui.rest.RestRoute
 import com.lehyanflouriot.muscuapp.ui.rest.displayed
 import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsRoute
+import com.lehyanflouriot.muscuapp.ui.week.ProgramRoute
 import com.lehyanflouriot.muscuapp.ui.week.WeekRoute
 import com.lehyanflouriot.muscuapp.ui.weight.WeightRoute
 import kotlinx.coroutines.delay
@@ -89,6 +90,7 @@ object Routes {
     const val WEIGHT = "weight"
     const val REST = "rest"
     const val SETTINGS = "settings"
+    const val PROGRAM = "program"
     const val EXERCISE = "exercise/{id}"
     const val PLAN = "plan/{id}?day={day}"
     const val SHOPPING = "shopping?week={week}"
@@ -199,6 +201,7 @@ fun MuscuApp(
                         timer = timer,
                         onOpenExercise = { navController.navigate(Routes.exercise(it)) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        onOpenProgram = { navController.navigate(Routes.PROGRAM) },
                     )
                 }
                 composable(Routes.NUTRITION) {
@@ -266,6 +269,12 @@ fun MuscuApp(
                         initialWeek = entry.arguments?.getLong("week")?.takeIf { it >= 0 }?.let(LocalDate::ofEpochDay),
                         data = data,
                         repository = repository,
+                        onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
+                    )
+                }
+                composable(Routes.PROGRAM) { entry ->
+                    ProgramRoute(
+                        data = data,
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
                     )
                 }

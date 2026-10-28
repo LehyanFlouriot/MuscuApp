@@ -38,7 +38,8 @@ class WorkoutRepositoryTest {
 
     private fun TestScope.repository(storage: FakeStorage): WorkoutRepository {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
-        return WorkoutRepository(storage, backgroundScope, dispatcher, clock = { 1000L }, newId = { "id${ids++}" })
+        // The training program the app comes with is tested on its own, in TrainingTest.
+        return WorkoutRepository(storage, backgroundScope, dispatcher, clock = { 1000L }, newId = { "id${ids++}" }, seedProgram = false)
             .also { it.load() }
     }
 

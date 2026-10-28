@@ -12,8 +12,10 @@ import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
 import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
+import com.lehyanflouriot.muscuapp.core.domain.buildWeekSessions
 import com.lehyanflouriot.muscuapp.core.domain.defaultLogDate
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
+import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.timer.RestTimer
 import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
@@ -31,6 +33,7 @@ fun WeekRoute(
     timer: RestTimer,
     onOpenExercise: (String) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenProgram: () -> Unit,
 ) {
     val today = rememberToday()
     val currentWeek = today.startOfWeek()
@@ -38,6 +41,10 @@ fun WeekRoute(
     // Never show a week in the future (for instance after the date changed).
     val weekStart = minOf(LocalDate.ofEpochDay(weekEpochDay), currentWeek)
     val overview = remember(data, weekStart) { buildWeekOverview(data, weekStart) }
+    val sessions = remember(data, weekStart) { buildWeekSessions(data, weekStart) }
+    // The day of the session shown, 1 for Monday; null for the one of today, even the next day.
+    var pickedDay by rememberSaveable { mutableStateOf<Int?>(null) }
+    val sessionDate = weekStart.plusDays((pickedDay ?: today.dayOfWeek.value) - 1L)
     val suggestions = remember(data.exercises) {
         ExerciseCatalog.search("", data.exercises.map { it.name }, limit = 12)
     }
@@ -48,6 +55,25 @@ fun WeekRoute(
 
     WeekScreen(
         overview = overview,
+        sessions = sessions,
+        sessionDate = sessionDate,
+        sessionActions = SessionActions(
+            onSelectDay = { date -> pickedDay = date.dayOfWeek.value.takeIf { it != today.dayOfWeek.value } },
+            onLog = { item ->
+                logRequest = LogRequest.New(
+                    exerciseId = item.exercise.id,
+                    // A session of a day still to come is done today.
+                    date = minOf(sessionDate, today),
+                    goal = item.goal,
+                    restSeconds = item.line.restSeconds,
+                    target = listOf(Fmt.target(item.line.target, item.exercise.measure), Fmt.typography(item.line.note))
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                )
+            },
+            onEditEntry = { entry -> logRequest = LogRequest.Edit(entry.id) },
+            onOpenProgram = onOpenProgram,
+        ),
         today = today,
         hasAnyEntry = data.entries.isNotEmpty(),
         suggestions = suggestions,

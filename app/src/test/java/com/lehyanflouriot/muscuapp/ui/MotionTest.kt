@@ -33,6 +33,7 @@ import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
 import com.lehyanflouriot.muscuapp.ui.rest.rememberRestProgress
 import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
+import com.lehyanflouriot.muscuapp.ui.week.SessionActions
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
 import com.lehyanflouriot.muscuapp.ui.weight.WeightScreen
@@ -125,6 +126,9 @@ class MotionTest {
     ) {
         WeekScreen(
             overview = buildWeekOverview(data, today),
+            sessions = null,
+            sessionDate = today,
+            sessionActions = SessionActions(onSelectDay = {}, onLog = {}, onEditEntry = {}, onOpenProgram = {}),
             today = today,
             hasAnyEntry = true,
             suggestions = ExerciseCatalog.popular,

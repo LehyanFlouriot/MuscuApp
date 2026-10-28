@@ -16,6 +16,7 @@ import com.lehyanflouriot.muscuapp.core.domain.lastEntry
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.Exercise
+import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.core.timer.TimerLogic
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
@@ -29,7 +30,16 @@ import java.time.LocalDate
 
 /** Why the log sheet is open. */
 sealed interface LogRequest {
-    data class New(val exerciseId: String, val date: LocalDate) : LogRequest
+    data class New(
+        val exerciseId: String,
+        val date: LocalDate,
+        /** The goal of the session of the program, to start from instead of the last time. */
+        val goal: List<WorkSet>? = null,
+        /** The rest the session asks between two sets. */
+        val restSeconds: Int? = null,
+        /** What the session asks: "4 × 6–12 · RIR 1 · Mains sur 2 livres". */
+        val target: String? = null,
+    ) : LogRequest
 
     data class Edit(val entryId: String) : LogRequest
 }
@@ -61,10 +71,11 @@ fun LogEntrySheet(
     }
     val exercise = target.exercise
     val entry = target.entry
+    val new = request as? LogRequest.New
     val formState = remember(request) {
         LogFormState(
-            initialDate = entry?.date ?: (request as? LogRequest.New)?.date ?: today,
-            initialSets = entry?.sets ?: target.previous?.sets.orEmpty(),
+            initialDate = entry?.date ?: new?.date ?: today,
+            initialSets = entry?.sets ?: new?.goal ?: target.previous?.sets.orEmpty(),
             initialNote = entry?.note.orEmpty(),
             measure = exercise.measure,
         )
@@ -83,7 +94,7 @@ fun LogEntrySheet(
     val idleDuration by timer.idleDuration.collectAsStateWithLifecycle()
     val now = rememberTimerNow(timerState, timer::now)
     val startRest = rememberRestStarter(timer)
-    val restSeconds = exercise.restSeconds ?: (idleDuration / 1_000).toInt()
+    val restSeconds = new?.restSeconds ?: exercise.restSeconds ?: (idleDuration / 1_000).toInt()
     val restText = when (val state = timerState) {
         is TimerState.Running -> Fmt.clockMillis(TimerLogic.remaining(state, now))
         is TimerState.Paused -> Fmt.clockMillis(state.remaining)
@@ -97,6 +108,7 @@ fun LogEntrySheet(
             today = today,
             isEdit = entry != null,
             previous = target.previous,
+            sessionTarget = new?.target,
             weightStep = data.settings.weightStep,
             restButtonText = restText,
             onRestClick = { startRest(restSeconds, exercise.name) },

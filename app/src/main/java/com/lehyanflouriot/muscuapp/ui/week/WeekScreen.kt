@@ -76,6 +76,7 @@ import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.data.ExerciseSuggestion
 import com.lehyanflouriot.muscuapp.core.domain.ExerciseWeekItem
 import com.lehyanflouriot.muscuapp.core.domain.ReferenceWeek
+import com.lehyanflouriot.muscuapp.core.domain.SessionView
 import com.lehyanflouriot.muscuapp.core.domain.WeekOverview
 import com.lehyanflouriot.muscuapp.core.domain.WeekSummary
 import com.lehyanflouriot.muscuapp.core.domain.setStats
@@ -106,9 +107,15 @@ import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
+/** What a week shows: its exercises and, with a program, its sessions and the one chosen. */
+private class WeekContent(val overview: WeekOverview, val sessions: List<SessionView>?, val sessionDate: LocalDate)
+
 @Composable
 fun WeekScreen(
     overview: WeekOverview,
+    sessions: List<SessionView>?,
+    sessionDate: LocalDate,
+    sessionActions: SessionActions,
     today: LocalDate,
     hasAnyEntry: Boolean,
     suggestions: List<ExerciseSuggestion>,
@@ -165,11 +172,11 @@ fun WeekScreen(
     ) { padding ->
         var dragTotal by remember { mutableFloatStateOf(0f) }
         AnimatedContent(
-            targetState = overview,
-            contentKey = { it.weekStart },
+            targetState = WeekContent(overview, sessions, sessionDate),
+            contentKey = { it.overview.weekStart },
             transitionSpec = {
                 // Earlier weeks come from the left and later ones from the right, as when swiping.
-                val direction = if (targetState.weekStart > initialState.weekStart) 1 else -1
+                val direction = if (targetState.overview.weekStart > initialState.overview.weekStart) 1 else -1
                 (
                     slideInHorizontally(tween(Motion.SCREEN_MS, easing = Motion.EaseOut)) { it * direction / 3 } +
                         fadeIn(tween(250, delayMillis = 60))
@@ -200,7 +207,10 @@ fun WeekScreen(
             label = "week",
         ) { shown ->
             WeekList(
-                overview = shown,
+                overview = shown.overview,
+                sessions = shown.sessions,
+                sessionDate = shown.sessionDate,
+                sessionActions = sessionActions,
                 today = today,
                 hasAnyEntry = hasAnyEntry,
                 suggestions = suggestions,
@@ -221,6 +231,9 @@ fun WeekScreen(
 @Composable
 private fun WeekList(
     overview: WeekOverview,
+    sessions: List<SessionView>?,
+    sessionDate: LocalDate,
+    sessionActions: SessionActions,
     today: LocalDate,
     hasAnyEntry: Boolean,
     suggestions: List<ExerciseSuggestion>,
@@ -250,6 +263,17 @@ private fun WeekList(
                 onThisWeek = onThisWeek,
                 modifier = Modifier.reveal(reveal, "selector"),
             )
+        }
+        if (sessions != null) {
+            item(key = "session") {
+                SessionCard(
+                    week = sessions,
+                    selected = sessionDate,
+                    today = today,
+                    actions = sessionActions,
+                    modifier = Modifier.reveal(reveal, "session"),
+                )
+            }
         }
         if (overview.items.isEmpty()) {
             item(key = "empty") {

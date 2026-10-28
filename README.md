@@ -23,6 +23,12 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - Flèches (ou glissement à gauche / à droite) pour revoir ou compléter les semaines passées.
 - Résumé de la semaine : séances, séries, répétitions et volume soulevé.
 
+### 🏋️ Programme d'entraînement
+- Ton programme **hypertrophie au poids du corps** est déjà rempli : 5 séances full body (pectoraux, dos, quadriceps, épaules, ischios & fessiers) et 2 jours de repos, avec pour chaque exercice les séries, les répétitions, le RIR et les consignes.
+- En haut de **Ma semaine**, la **séance du jour** : les exercices dans l'ordre, l'exercice d'emphase mis en avant, et ton **objectif** calculé avec la règle du programme (+1 rep par série chaque semaine, dans la fourchette). Quand tu atteins le haut de la fourchette partout, l'app te propose de passer à une variante plus dure.
+- Touche un exercice : la saisie s'ouvre **pré-remplie avec l'objectif**, et le bouton Repos lance le bon temps (3 min sur l'exercice d'emphase, 1 min 30 sur les autres).
+- Les jours de la semaine montrent où tu en es de chaque séance, et **Programme** affiche toute la semaine et les conseils (échauffement, RIR, repos, progression, décharge).
+
 ### ✍️ Saisie d'une séance
 - Gros boutons **− / +** pour les séries, les répétitions et le poids (maintenir le bouton pour aller plus vite, toucher le nombre pour le taper).
 - Séries différentes (10, 10, 8…) ou poids différents ? *Détailler chaque série*.

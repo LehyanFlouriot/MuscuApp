@@ -619,4 +619,22 @@
     <string name="sync_disconnect_title">Arrêter la synchronisation\u00A0?</string>
     <string name="sync_disconnect_text">Tes données restent sur cet appareil, et sur ton compte Google pour tes autres appareils.</string>
     <string name="sync_disconnected">Synchronisation arrêtée</string>
+
+    <!-- Training program -->
+    <string name="session_today">Séance du jour</string>
+    <string name="session_of">Séance · %1$s</string>
+    <string name="session_program">Programme</string>
+    <string name="session_goal">Objectif\u00A0: %1$s</string>
+    <string name="session_done">Fait\u00A0: %1$s</string>
+    <string name="session_top_reached">Haut de la fourchette atteint partout\u00A0: passe à une variante plus dure.</string>
+    <string name="session_emphasis">Emphase</string>
+    <string name="session_complete">Séance terminée, bravo\u00A0!</string>
+    <string name="session_progress">%1$d/%2$d</string>
+    <string name="session_progress_cd">%1$d exercices faits sur %2$d</string>
+    <string name="session_day_cd">%1$s, %2$s, %3$d exercices faits sur %4$d</string>
+    <string name="session_rest_day_cd">%1$s, repos</string>
+    <string name="session_target">Séance\u00A0: %1$s</string>
+    <string name="program_screen_title">Mon programme</string>
+    <string name="program_tips">Conseils</string>
+    <string name="program_day">%1$s · %2$s</string>
 </resources>

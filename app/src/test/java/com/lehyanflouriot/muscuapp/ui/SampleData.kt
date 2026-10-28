@@ -1,6 +1,7 @@
 package com.lehyanflouriot.muscuapp.ui
 
 import com.lehyanflouriot.muscuapp.core.data.DefaultMealPlan
+import com.lehyanflouriot.muscuapp.core.data.HypertrophyProgram
 import com.lehyanflouriot.muscuapp.core.domain.shoppingKey
 import com.lehyanflouriot.muscuapp.core.domain.roundBodyWeight
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
@@ -15,6 +16,7 @@ import com.lehyanflouriot.muscuapp.core.model.NutritionDay
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
 import com.lehyanflouriot.muscuapp.core.model.ShoppingExtra
 import com.lehyanflouriot.muscuapp.core.model.ShoppingWeek
+import com.lehyanflouriot.muscuapp.core.model.Training
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import java.time.LocalDate
@@ -61,6 +63,50 @@ object SampleData {
             exercises = listOf(bench, flyes, pullUps, row, squat, plank),
             entries = entries,
             bodyWeights = bodyWeights(today),
+        )
+    }
+
+    /**
+     * The program of the app, followed since last week: last Wednesday's session, Monday and
+     * Tuesday of this week, and the start of today's session (a Wednesday).
+     */
+    fun withProgram(today: LocalDate): AppData {
+        val entries = mutableListOf<WorkoutEntry>()
+        fun add(exerciseId: String, date: LocalDate, vararg reps: Int, weight: Double = 0.0) {
+            entries += WorkoutEntry(
+                id = "p${entries.size}",
+                exerciseId = exerciseId,
+                date = date,
+                sets = reps.map { WorkSet(it, weight) },
+                createdAt = entries.size.toLong(),
+            )
+        }
+        val lastWednesday = today.minusWeeks(1)
+        add("ex-squat-bulgare", lastWednesday, 10, 10, 9, 9)
+        add("ex-sissy-squat-shrimp-squat", lastWednesday, 9, 8, 8)
+        add("ex-pompes-archer-diamant", lastWednesday, 10, 9, 9)
+        add("ex-rowing-australien", lastWednesday, 12, 12, 11)
+        add("ex-mollets-unilateraux", lastWednesday, 13, 12, 12)
+        add("ex-rollout-serviette", lastWednesday, 12, 12)
+        val monday = today.minusDays(2)
+        add("ex-pompes-deficit", monday, 9, 8, 8, 7)
+        add("ex-rowing-australien-pieds-sureleves", monday, 10, 10, 9)
+        add("ex-squat-bulgare", monday, 13, 13)
+        add("ex-extensions-triceps-sol", monday, 12, 11, 10)
+        add("ex-releves-jambes", monday, 12, 12, 11)
+        add("ex-mollets-unilateraux", monday, 15, 14, 14)
+        val tuesday = today.minusDays(1)
+        add("ex-tractions-pronation", tuesday, 8, 7, 7, 6)
+        add("ex-rowing-australien-supination", tuesday, 10, 10, 9)
+        add("ex-pompes-pseudo-planche-pike", tuesday, 9, 8, 8)
+        add("ex-souleve-de-terre-roumain-unilateral", tuesday, 10, 10, 10, weight = 8.0)
+        add("ex-hollow-body-hold", tuesday, 35, 35, 30)
+        add("ex-squat-bulgare", today, 11, 11, 10, 10)
+        add("ex-sissy-squat-shrimp-squat", today, 10, 9, 9)
+        return AppData.initial().copy(
+            exercises = HypertrophyProgram.exercises(),
+            entries = entries,
+            training = Training(program = HypertrophyProgram.create(), seeded = true),
         )
     }
 

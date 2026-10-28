@@ -22,6 +22,7 @@ import com.lehyanflouriot.muscuapp.core.domain.WeightPeriod
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
 import com.lehyanflouriot.muscuapp.core.domain.buildShoppingList
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
+import com.lehyanflouriot.muscuapp.core.domain.buildWeekSessions
 import com.lehyanflouriot.muscuapp.core.domain.history
 import com.lehyanflouriot.muscuapp.core.domain.lastEntry
 import com.lehyanflouriot.muscuapp.core.domain.metricValue
@@ -53,6 +54,8 @@ import com.lehyanflouriot.muscuapp.ui.settings.FirstSyncDialog
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
 import com.lehyanflouriot.muscuapp.ui.settings.SyncActions
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
+import com.lehyanflouriot.muscuapp.ui.week.ProgramScreen
+import com.lehyanflouriot.muscuapp.ui.week.SessionActions
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
 import com.lehyanflouriot.muscuapp.ui.weight.WeightScreen
@@ -121,6 +124,9 @@ class ScreenshotTest {
             ) {
                 WeekScreen(
                     overview = buildWeekOverview(appData, today),
+                    sessions = buildWeekSessions(appData, today),
+                    sessionDate = today,
+                    sessionActions = SessionActions(onSelectDay = {}, onLog = {}, onEditEntry = {}, onOpenProgram = {}),
                     today = today,
                     hasAnyEntry = appData.entries.isNotEmpty(),
                     suggestions = ExerciseCatalog.popular,
@@ -317,11 +323,61 @@ class ScreenshotTest {
 
     @Test
     fun week() = capture("1-semaine") {
-        Week(data, TimerState.Running(endAt = now + 72_000, total = 90_000, label = "Développé couché"))
+        Week(SampleData.withProgram(today), TimerState.Running(endAt = now + 72_000, total = 90_000, label = "Squat bulgare"))
     }
 
     @Test
-    fun weekDark() = capture("1-semaine-sombre", darkTheme = true) { Week(data) }
+    fun weekDark() = capture("1-semaine-sombre", darkTheme = true) { Week(SampleData.withProgram(today)) }
+
+    @Test
+    fun weekExercises() = capture(
+        "1-semaine-exercices",
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(3) },
+    ) { Week(SampleData.withProgram(today)) }
+
+    @Test
+    fun program() = capture("12-programme") {
+        val appData = SampleData.withProgram(today)
+        ProgramScreen(
+            program = appData.training.program!!,
+            exercises = appData.exercises.associateBy { it.id },
+            today = today.dayOfWeek,
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun programTips() = capture(
+        "12-programme-conseils",
+        darkTheme = true,
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(9) },
+    ) {
+        val appData = SampleData.withProgram(today)
+        ProgramScreen(
+            program = appData.training.program!!,
+            exercises = appData.exercises.associateBy { it.id },
+            today = today.dayOfWeek,
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun logFromSession() = capture("2-saisie-seance") {
+        val state = remember { LogFormState(today, listOf(WorkSet(12), WorkSet(12), WorkSet(11), WorkSet(11)), "", Measure.REPS) }
+        val appData = SampleData.withProgram(today)
+        LogEntryForm(
+            exercise = appData.exercise("ex-squat-bulgare")!!,
+            state = state,
+            today = today,
+            isEdit = false,
+            previous = appData.entries.first { it.exerciseId == "ex-squat-bulgare" },
+            weightStep = 2.5,
+            onSave = {},
+            sessionTarget = "4 × 8–15 / jambe · RIR 1 · Excentrique 3 s, amplitude complète",
+            restButtonText = "Repos 3:00",
+            onRestClick = {},
+        )
+    }
 
     @Test
     fun logEntry() = capture("2-saisie") {

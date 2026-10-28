@@ -3,6 +3,7 @@ package com.lehyanflouriot.muscuapp.core.format
 import com.lehyanflouriot.muscuapp.core.domain.Amount
 import com.lehyanflouriot.muscuapp.core.domain.AmountUnit
 import com.lehyanflouriot.muscuapp.core.model.Measure
+import com.lehyanflouriot.muscuapp.core.model.SetTarget
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -181,6 +182,15 @@ object Fmt {
             sameWeight -> "$repsPart · ${kg(first.weight)}"
             else -> sets.joinToString(" · ") { "${it.reps}$unit×${weight(it.weight)}" } + "${NBSP}kg"
         }
+    }
+
+    /** What a session asks for an exercise: "4 × 6–12 · RIR 1", "2 × 10–15 / jambe", "3 × 30–45 s". */
+    fun target(target: SetTarget, measure: Measure): String = buildString {
+        append(target.sets).append(NBSP).append('×').append(NBSP).append(target.min)
+        if (target.max != target.min) append('–').append(target.max)
+        if (measure == Measure.SECONDS) append(NBSP).append('s')
+        if (target.per.isNotBlank()) append(" / ").append(target.per)
+        target.rir?.let { append(" · RIR").append(NBSP).append(it) }
     }
 
     /** "lun. 20 oct." */

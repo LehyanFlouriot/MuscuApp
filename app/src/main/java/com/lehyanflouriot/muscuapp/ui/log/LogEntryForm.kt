@@ -21,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
@@ -165,6 +166,7 @@ fun LogEntryForm(
     weightStep: Double,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
+    sessionTarget: String? = null,
     restButtonText: String? = null,
     onRestClick: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -198,6 +200,24 @@ fun LogEntryForm(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+
+        if (sessionTarget != null) {
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Rounded.EventNote, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.session_target, sessionTarget),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
         }
 
