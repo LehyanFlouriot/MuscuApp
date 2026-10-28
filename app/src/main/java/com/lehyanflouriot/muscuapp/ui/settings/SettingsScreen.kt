@@ -15,10 +15,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.MonitorWeight
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material.icons.rounded.Vibration
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,8 +33,15 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +50,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lehyanflouriot.muscuapp.R
+import com.lehyanflouriot.muscuapp.core.domain.Reminder
+import com.lehyanflouriot.muscuapp.core.domain.ReminderKind
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.Settings
 import com.lehyanflouriot.muscuapp.core.model.ThemeMode
@@ -49,6 +61,7 @@ import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
 import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.reveal
 import java.time.LocalDate
+import java.time.LocalTime
 
 private val WEIGHT_STEPS = listOf(0.5, 1.0, 1.25, 2.0, 2.5, 5.0)
 
@@ -63,6 +76,8 @@ fun SettingsScreen(
     syncConnecting: Boolean,
     today: LocalDate,
     syncActions: SyncActions,
+    reminders: Map<ReminderKind, Reminder>,
+    onReminderChange: (ReminderKind, Reminder) -> Unit,
     onBack: () -> Unit,
     onWeightStepChange: (Double) -> Unit,
     onThemeChange: (ThemeMode) -> Unit,
@@ -98,6 +113,24 @@ fun SettingsScreen(
             Column(Modifier.reveal(reveal, "sync"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionHeader(text = stringResource(R.string.settings_sync))
                 SyncCard(status = sync, connecting = syncConnecting, today = today, actions = syncActions)
+            }
+
+            Column(Modifier.reveal(reveal, "reminders"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(text = stringResource(R.string.settings_reminders))
+                ReminderKind.entries.forEach { kind ->
+                    val reminder = reminders[kind] ?: Reminder(enabled = false, time = kind.defaultTime)
+                    val time = Fmt.hourMinute(reminder.time)
+                    ReminderRow(
+                        icon = if (kind == ReminderKind.SESSION) Icons.Rounded.FitnessCenter else Icons.Rounded.MonitorWeight,
+                        title = stringResource(if (kind == ReminderKind.SESSION) R.string.reminder_session else R.string.reminder_weigh_in),
+                        subtitle = stringResource(
+                            if (kind == ReminderKind.SESSION) R.string.reminder_session_hint else R.string.reminder_weigh_in_hint,
+                            time,
+                        ),
+                        reminder = reminder,
+                        onChange = { onReminderChange(kind, it) },
+                    )
+                }
             }
 
             Column(Modifier.reveal(reveal, "logging"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -218,6 +251,59 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+}
+
+/** A daily reminder: on or off, and its time, changed by touching the row. */
+@Composable
+private fun ReminderRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    reminder: Reminder,
+    onChange: (Reminder) -> Unit,
+) {
+    var picking by remember { mutableStateOf(false) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClickLabel = stringResource(R.string.reminder_change_time)) { picking = true }
+            .padding(vertical = 12.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.width(16.dp))
+        Switch(checked = reminder.enabled, onCheckedChange = { onChange(reminder.copy(enabled = it)) })
+    }
+    if (picking) {
+        val state = rememberTimePickerState(initialHour = reminder.time.hour, initialMinute = reminder.time.minute, is24Hour = true)
+        AlertDialog(
+            onDismissRequest = { picking = false },
+            title = { Text(stringResource(R.string.reminder_time_title)) },
+            text = { TimePicker(state = state) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Choosing a time is asking for the reminder.
+                        onChange(Reminder(enabled = true, time = LocalTime.of(state.hour, state.minute)))
+                        picking = false
+                    },
+                ) { Text(stringResource(R.string.action_ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { picking = false }) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
     }
 }
 

@@ -22,6 +22,7 @@ import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.sync.SyncProblem
+import com.lehyanflouriot.muscuapp.reminder.Reminders
 import com.lehyanflouriot.muscuapp.sync.ConnectStep
 import com.lehyanflouriot.muscuapp.sync.SyncController
 import com.lehyanflouriot.muscuapp.timer.RestNotifications
@@ -29,6 +30,7 @@ import com.lehyanflouriot.muscuapp.ui.common.ConfirmDialog
 import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
 import com.lehyanflouriot.muscuapp.ui.common.rememberToday
 import com.lehyanflouriot.muscuapp.ui.common.show
+import com.lehyanflouriot.muscuapp.ui.rest.notificationsEnabled
 import com.lehyanflouriot.muscuapp.ui.rest.openNotificationSettings
 import com.lehyanflouriot.muscuapp.ui.rest.rememberNotificationEnabler
 import com.lehyanflouriot.muscuapp.ui.theme.supportsDynamicColor
@@ -45,6 +47,7 @@ fun SettingsRoute(
     data: AppData,
     repository: WorkoutRepository,
     sync: SyncController,
+    reminders: Reminders,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -53,6 +56,7 @@ fun SettingsRoute(
     val enableNotifications = rememberNotificationEnabler()
     var pendingImport by remember { mutableStateOf<AppData?>(null) }
     val syncStatus by sync.status.collectAsStateWithLifecycle()
+    val reminderState by reminders.state.collectAsStateWithLifecycle()
     var connecting by rememberSaveable { mutableStateOf(false) }
     var choosing by rememberSaveable { mutableStateOf(true) }
     var disconnecting by remember { mutableStateOf(false) }
@@ -147,6 +151,12 @@ fun SettingsRoute(
             onDisconnect = { disconnecting = true },
             onChoose = { choosing = true },
         ),
+        reminders = reminderState,
+        onReminderChange = { kind, reminder ->
+            // A reminder needs the notifications: they are asked for when the first one is turned on.
+            if (reminder.enabled && !notificationsEnabled(context)) enableNotifications()
+            reminders.set(kind, reminder)
+        },
         onBack = onBack,
         onWeightStepChange = { step -> repository.updateSettings { it.copy(weightStep = step) } },
         onThemeChange = { mode -> repository.updateSettings { it.copy(themeMode = mode) } },

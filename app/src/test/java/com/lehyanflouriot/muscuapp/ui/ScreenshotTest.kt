@@ -1,13 +1,19 @@
 package com.lehyanflouriot.muscuapp.ui
 
 import android.app.Application
+import android.content.Context
+import android.content.res.Configuration
+import android.widget.FrameLayout
+import android.widget.RemoteViews
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.hasScrollToIndexAction
@@ -30,12 +37,15 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
 import com.lehyanflouriot.muscuapp.core.data.HypertrophyProgram
 import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
 import com.lehyanflouriot.muscuapp.core.domain.DEFAULT_BODY_WEIGHT
+import com.lehyanflouriot.muscuapp.core.domain.Reminder
+import com.lehyanflouriot.muscuapp.core.domain.ReminderKind
 import com.lehyanflouriot.muscuapp.core.domain.WeightPeriod
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
 import com.lehyanflouriot.muscuapp.core.domain.buildShoppingList
@@ -92,6 +102,7 @@ import com.lehyanflouriot.muscuapp.ui.week.TrainingEditorScreen
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
 import com.lehyanflouriot.muscuapp.ui.weight.WeightScreen
+import com.lehyanflouriot.muscuapp.widget.SessionWidgetViews
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -100,6 +111,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 
 /**
@@ -496,13 +508,20 @@ class ScreenshotTest {
         Week(appData.copy(entries = emptyList(), training = training))
     }
 
-    /** Wednesday's session: the squats done, two sets of sissy squats out of three, or everything. */
-    private fun guidedSession(complete: Boolean): SessionView {
+    /** Wednesday: the squats done, and two sets of sissy squats out of three. */
+    private fun sessionUnderway(): AppData {
         val appData = SampleData.withProgram(today)
-        val entries = appData.entries.map { entry ->
-            if (entry.date == today && entry.exerciseId == "ex-sissy-squat-shrimp-squat") entry.copy(sets = entry.sets.take(2)) else entry
-        }
-        val session = buildSession(appData.copy(entries = entries), today)!!
+        return appData.copy(
+            entries = appData.entries.map { entry ->
+                if (entry.date == today && entry.exerciseId == "ex-sissy-squat-shrimp-squat") entry.copy(sets = entry.sets.take(2)) else entry
+            },
+        )
+    }
+
+    /** Wednesday's session, under way or with everything done. */
+    private fun guidedSession(complete: Boolean): SessionView {
+        val appData = sessionUnderway()
+        val session = buildSession(appData, today)!!
         if (!complete) return session
         val done = session.items.flatMap { item ->
             List(item.plannedSets) { index -> item.goal.getOrElse(index) { item.goal.last() } }.let { sets ->
@@ -535,6 +554,57 @@ class ScreenshotTest {
     @Test
     fun guidedSessionDone() = capture("14-seance-guidee-fin", darkTheme = true) {
         Guided(guidedSession(complete = true), TimerState.Idle)
+    }
+
+    /** Widgets of the home screen, on a wallpaper, in the colors of the light or dark system theme. */
+    @Composable
+    private fun HomeScreen(dark: Boolean, vararg widgets: (Context) -> RemoteViews) {
+        val wallpaper = if (dark) listOf(Color(0xFF101B2C), Color(0xFF2B1B33)) else listOf(Color(0xFF9CC3E6), Color(0xFFF2C6B4))
+        Column(
+            verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
+            modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(wallpaper)).padding(16.dp),
+        ) {
+            widgets.forEach { widget ->
+                AndroidView(
+                    factory = { context ->
+                        val configuration = Configuration(context.resources.configuration).apply {
+                            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                                if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+                        }
+                        val themed = context.createConfigurationContext(configuration)
+                        FrameLayout(themed).also { frame -> frame.addView(widget(themed).apply(themed, frame)) }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(184.dp),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun widget() = capture("15-widget") {
+        HomeScreen(
+            dark = false,
+            { context ->
+                val rest = TimerState.Running(endAt = now + 52_000, total = 90_000, label = "Sissy squat ou shrimp squat")
+                SessionWidgetViews.build(context, sessionUnderway(), rest, today, now)
+            },
+            { context ->
+                val appData = SampleData.withProgram(today)
+                SessionWidgetViews.build(context, appData.copy(entries = appData.entries.filterNot { it.date == today }), TimerState.Idle, today, now)
+            },
+        )
+    }
+
+    @Test
+    fun widgetDark() = capture("15-widget-sombre", darkTheme = true) {
+        HomeScreen(
+            dark = true,
+            { context ->
+                val rest = TimerState.Finished(finishedAt = now - 12_000, total = 90_000, label = "Sissy squat ou shrimp squat")
+                SessionWidgetViews.build(context, sessionUnderway(), rest, today, now)
+            },
+            { context -> SessionWidgetViews.build(context, SampleData.withProgram(today), TimerState.Idle, today.plusDays(1), now) },
+        )
     }
 
     @Test
@@ -702,6 +772,8 @@ class ScreenshotTest {
             syncConnecting = connecting,
             today = today,
             syncActions = SyncActions(onConnect = {}, onReconnect = {}, onSyncNow = {}, onDisconnect = {}, onChoose = {}),
+            reminders = mapOf(ReminderKind.SESSION to Reminder(enabled = true, time = LocalTime.of(18, 30))),
+            onReminderChange = { _, _ -> },
             onBack = {},
             onWeightStepChange = {},
             onThemeChange = {},

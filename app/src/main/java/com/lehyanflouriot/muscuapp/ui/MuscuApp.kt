@@ -329,6 +329,7 @@ fun MuscuApp(
                         data = data,
                         repository = repository,
                         sync = container.sync,
+                        reminders = container.reminders,
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
                     )
                 }

@@ -711,4 +711,42 @@
     <string name="guided_rest_close">OK</string>
     <string name="guided_then">Ensuite\u00A0: %1$s, série %2$d sur %3$d</string>
     <string name="guided_delete_set">Supprimer la série</string>
+
+    <!-- Reminders -->
+    <string name="settings_reminders">Rappels</string>
+    <string name="reminder_session">Séance du jour</string>
+    <string name="reminder_session_hint">Les jours de séance à %1$s, si elle n\'est pas faite</string>
+    <string name="reminder_weigh_in">Pesée du matin</string>
+    <string name="reminder_weigh_in_hint">Chaque jour à %1$s, si ton poids n\'est pas noté</string>
+    <string name="reminder_change_time">Changer l\'heure</string>
+    <string name="reminder_time_title">Heure du rappel</string>
+    <string name="channel_reminders_name">Rappels</string>
+    <string name="channel_reminders_description">La séance du jour et la pesée du matin, à l\'heure choisie.</string>
+    <string name="reminder_session_title">Séance du jour\u00A0: %1$s</string>
+    <string name="reminder_weigh_in_title">Pesée du matin</string>
+    <string name="reminder_weigh_in_text">Note ton poids, à jeun, avant le petit-déjeuner.</string>
+    <plurals name="reminder_session_text">
+        <item quantity="one">%1$d exercice au programme</item>
+        <item quantity="many">%1$d exercices au programme</item>
+        <item quantity="other">%1$d exercices au programme</item>
+    </plurals>
+    <plurals name="reminder_session_left">
+        <item quantity="one">Encore %1$d exercice à faire</item>
+        <item quantity="many">Encore %1$d exercices à faire</item>
+        <item quantity="other">Encore %1$d exercices à faire</item>
+    </plurals>
+
+    <!-- Home screen widget -->
+    <string name="widget_name">Séance du jour</string>
+    <string name="widget_description">La séance du jour et le repos en cours, sans ouvrir l\'app.</string>
+    <string name="widget_start">Démarrer</string>
+    <string name="widget_resume">Continuer</string>
+    <string name="widget_first">Pour commencer\u00A0: %1$s, %2$s</string>
+    <string name="widget_rest_day">Pas de séance aujourd\'hui\u00A0: récupère bien.</string>
+    <string name="widget_no_program">Aucun programme suivi aujourd\'hui.</string>
+    <string name="widget_rest_after">Repos · %1$s</string>
+    <string name="widget_rest_paused">Repos en pause</string>
+    <string name="widget_preview_progress" translatable="false">0/6</string>
+    <string name="widget_preview_title" translatable="false">Quadriceps</string>
+    <string name="widget_preview_detail" translatable="false">Pour commencer\u00A0: Squat, 4\u00A0×\u00A06–8</string>
 </resources>

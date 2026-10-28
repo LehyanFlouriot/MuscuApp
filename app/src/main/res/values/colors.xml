@@ -2,4 +2,13 @@
 <resources>
     <color name="brand">#FF5722</color>
     <color name="window_background">#FFF8F6</color>
+
+    <!-- Home screen widget, in the colors of the screens of the app. -->
+    <color name="widget_background">#FFFFF1ED</color>
+    <color name="widget_text">#FF271813</color>
+    <color name="widget_text_secondary">#FF5B4039</color>
+    <color name="widget_accent">#FFB02F00</color>
+    <color name="widget_rest">#FFFFE2DA</color>
+    <color name="widget_button">#FFB02F00</color>
+    <color name="widget_button_text">#FFFFFFFF</color>
 </resources>

@@ -31,6 +31,21 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - **Tout se modifie** depuis **Programme** : le nom et le thème de chaque séance, les exercices (ajouter, retirer, remonter, remplacer par une variante plus dure), et pour chacun les séries, la fourchette de répétitions, le RIR, le repos, la consigne et l'exercice d'emphase. Un jour de repos devient une séance dès que tu lui ajoutes un exercice, et une séance se copie vers d'autres jours. Les changements s'appliquent dès aujourd'hui ; les semaines passées gardent ce qui était prévu.
 - **Mes programmes** (📖 en haut de l'écran Programme) : quand tu veux changer de programme, crée-en un nouveau (vide ou à partir de l'actuel) et choisis le jour où il commence. L'ancien reste dans ton historique, avec les séances faites.
 
+### ▶️ Séance guidée
+- **Démarrer la séance** (sur la séance du jour) : les exercices un par un, série par série. La série à faire part de ton objectif ; ajuste-la avec les gros boutons **− / +**, puis **Série faite**.
+- Chaque série est enregistrée tout de suite, et le **repos prévu par le programme démarre tout seul**, avec en bas de l'écran le décompte et ce qui vient ensuite.
+- Une barre montre où tu en es de chaque exercice ; ses séries faites, l'exercice suivant arrive. Tu peux ajouter une série, corriger ou supprimer une série faite, passer un exercice ou revenir en arrière.
+- L'écran reste allumé pendant la séance, et tu peux la quitter puis la **continuer** à tout moment.
+
+### 📱 Widget sur l'écran d'accueil
+- Ajoute le widget **Séance du jour** (appui long sur l'écran d'accueil → *Widgets* → MuscuApp) : la séance du jour, où tu en es (2/6) et ce qui vient ensuite, sans ouvrir l'app.
+- Pendant un repos, le **décompte** s'affiche dans le widget. Le bouton **Démarrer** / **Continuer** ouvre directement la séance guidée.
+
+### 🔔 Rappels
+- **Séance du jour** : une notification à l'heure de ton choix, seulement les jours de séance et si elle n'est pas encore faite. Elle ouvre la séance guidée.
+- **Pesée du matin** : une notification chaque jour à l'heure choisie, si ton poids du jour n'est pas noté.
+- À activer dans **Réglages → Rappels** (touche un rappel pour changer l'heure). Ils restent propres à chaque téléphone.
+
 ### ✍️ Saisie d'une séance
 - Gros boutons **− / +** pour les séries, les répétitions et le poids (maintenir le bouton pour aller plus vite, toucher le nombre pour le taper).
 - Séries différentes (10, 10, 8…) ou poids différents ? *Détailler chaque série*.
@@ -84,6 +99,7 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 ### ⚙️ Réglages
 - Pas du poids des boutons + / − (0,5 à 5 kg), thème clair / sombre, couleurs du fond d'écran.
 - **Synchronisation** avec ton compte Google : connexion, état de la dernière synchronisation, déconnexion.
+- **Rappels** de la séance du jour et de la pesée du matin, chacun à l'heure de ton choix.
 - **Sauvegarde** : export / import de toutes tes données dans un fichier.
 
 Sans synchronisation, tes données restent sur ton téléphone (et dans la sauvegarde automatique Android si elle est activée).
