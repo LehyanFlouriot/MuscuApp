@@ -565,7 +565,8 @@ class ScreenshotTest {
     @Test
     fun programLine() = capture("13-programme-exercice") {
         val appData = SampleData.withProgram(today)
-        val line = appData.training.programs.single().day(DayOfWeek.WEDNESDAY).exercises.first()
+        // A rest of its own for this session, shorter than the one of the exercise.
+        val line = appData.training.programs.single().day(DayOfWeek.WEDNESDAY).exercises.first().copy(restSeconds = 150)
         val exercise = appData.exercise(line.exerciseId)!!
         DialogFrame(title = exercise.name, confirm = stringResource(R.string.action_save)) { modifier ->
             SessionLineForm(
@@ -573,7 +574,6 @@ class ScreenshotTest {
                 exercise = exercise,
                 dayName = "mercredi",
                 modifier = modifier,
-                onMove = {},
                 onReplace = {},
                 onRemove = {},
             )

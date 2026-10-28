@@ -20,8 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SwapHoriz
@@ -112,7 +110,6 @@ fun SessionLineDialog(
     initialTarget: SetTarget,
     onDismiss: () -> Unit,
     onSave: (target: SetTarget, emphasis: Boolean, note: String, restSeconds: Int?) -> Unit,
-    onMove: ((Int) -> Unit)? = null,
     onReplace: (() -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
 ) {
@@ -125,7 +122,6 @@ fun SessionLineDialog(
                 state = state,
                 exercise = exercise,
                 dayName = dayName,
-                onMove = onMove,
                 onReplace = onReplace,
                 onRemove = onRemove,
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -153,7 +149,6 @@ fun SessionLineForm(
     exercise: Exercise,
     dayName: String,
     modifier: Modifier = Modifier,
-    onMove: ((Int) -> Unit)? = null,
     onReplace: (() -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
 ) {
@@ -227,6 +222,8 @@ fun SessionLineForm(
         }
         // The rest says whose it is, and how to come back to the one of the exercise.
         Column(Modifier.fillMaxWidth()) {
+            // A rest the same as the exercise's is the exercise's: nothing to come back to.
+            val custom = state.rest?.takeIf { it != exercise.restSeconds }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -235,7 +232,6 @@ fun SessionLineForm(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.training_line_rest), style = MaterialTheme.typography.bodyLarge)
-                    val custom = state.rest
                     Text(
                         text = when {
                             custom != null -> stringResource(R.string.training_line_rest_custom, Fmt.duration(custom))
@@ -248,7 +244,7 @@ fun SessionLineForm(
                 }
                 TextButton(onClick = { pickingRest = true }) { Text(stringResource(R.string.action_edit)) }
             }
-            if (state.rest != null) {
+            if (custom != null) {
                 TextButton(
                     onClick = { state.rest = null },
                     contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
@@ -288,14 +284,9 @@ fun SessionLineForm(
             Spacer(Modifier.width(12.dp))
             Switch(checked = state.emphasis, onCheckedChange = null)
         }
-        if (onMove != null || onReplace != null || onRemove != null) {
+        // The place of the exercise in the session changes by dragging it in the program.
+        if (onReplace != null || onRemove != null) {
             Column {
-                if (onMove != null) {
-                    Row {
-                        DialogAction(stringResource(R.string.nutrition_move_up), Icons.Rounded.ArrowUpward, { onMove(-1) })
-                        DialogAction(stringResource(R.string.nutrition_move_down), Icons.Rounded.ArrowDownward, { onMove(1) })
-                    }
-                }
                 if (onReplace != null) {
                     DialogAction(stringResource(R.string.training_line_replace), Icons.Rounded.SwapHoriz, onReplace)
                 }
