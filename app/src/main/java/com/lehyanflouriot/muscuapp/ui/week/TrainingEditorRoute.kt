@@ -124,6 +124,7 @@ fun TrainingEditorRoute(
         onOpen = { edit = it },
         onOpenPrograms = { showPrograms = true },
         onOpenSettings = onOpenSettings,
+        onMoveLine = { line, delta -> update { it.moveLine(line.id, delta) } },
     )
 
     when (val current = edit) {
@@ -229,7 +230,6 @@ fun TrainingEditorRoute(
                         }
                         close()
                     },
-                    onMove = line?.let { { delta -> update { it.moveLine(line.id, delta) } } },
                     onReplace = line?.let { { edit = TrainingEdit.Pick(current.day, line) } },
                     onRemove = line?.let {
                         {

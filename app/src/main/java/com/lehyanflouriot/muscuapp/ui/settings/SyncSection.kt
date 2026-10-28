@@ -1,6 +1,7 @@
 package com.lehyanflouriot.muscuapp.ui.settings
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -27,10 +28,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.CloudSync
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.SyncProblem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -113,14 +117,28 @@ fun SyncCard(
                     text = statusText(status, today),
                     spinning = status.running,
                 )
-                if (problem == SyncProblem.SETUP && !status.detail.isNullOrBlank()) {
-                    Text(
-                        text = status.detail,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 4,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                // The message of Google, in English and technical, only for who asks for it.
+                val detail = status.detail
+                if (problem == SyncProblem.SETUP && !detail.isNullOrBlank()) {
+                    var showDetail by rememberSaveable { mutableStateOf(false) }
+                    TextButton(onClick = { showDetail = !showDetail }, contentPadding = ButtonDefaults.TextButtonWithIconContentPadding) {
+                        Icon(
+                            imageVector = if (showDetail) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(if (showDetail) R.string.sync_detail_hide else R.string.sync_detail_show))
+                    }
+                    AnimatedVisibility(visible = showDetail) {
+                        Text(
+                            text = detail,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 6,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     when {

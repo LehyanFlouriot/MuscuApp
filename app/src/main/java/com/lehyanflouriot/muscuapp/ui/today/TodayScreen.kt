@@ -129,9 +129,7 @@ fun TodayScreen(
                     text = Fmt.longDay(today).capitalized(),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .reveal(reveal, "date"),
+                    modifier = Modifier.reveal(reveal, "date"),
                 )
             }
             item(key = "weigh-in") {

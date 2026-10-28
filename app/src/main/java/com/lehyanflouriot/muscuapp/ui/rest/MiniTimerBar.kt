@@ -35,6 +35,7 @@ import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.timer.TimerLogic
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
+import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 
 /** Compact view of the running rest, shown at the bottom of the other screens. */
 @Composable
@@ -54,8 +55,8 @@ fun MiniTimerBar(
     val progress = rememberRestProgress(state, now)
     Surface(
         onClick = onOpen,
-        color = if (finished) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
-        contentColor = if (finished) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+        color = if (finished) MaterialTheme.colorScheme.tertiaryContainer else MuscuTheme.extendedColors.highlight,
+        contentColor = if (finished) MaterialTheme.colorScheme.onTertiaryContainer else MuscuTheme.extendedColors.onHighlight,
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(if (applyNavigationBarInsets) Modifier.windowInsetsPadding(WindowInsets.navigationBars) else Modifier) {
@@ -65,7 +66,7 @@ fun MiniTimerBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = MuscuTheme.extendedColors.onHighlight,
                     trackColor = Color.Transparent,
                     drawStopIndicator = {},
                 )

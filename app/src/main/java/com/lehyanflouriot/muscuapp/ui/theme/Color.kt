@@ -5,13 +5,14 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
-// Material 3 "fidelity" scheme generated from the brand orange #FF5722.
+// Material 3 scheme generated from the brand orange #FF5722, with calm containers: the vivid orange
+// is kept, as "highlight", for what celebrates (a streak, a session done) or runs (the rest).
 
 internal val LightColors = lightColorScheme(
     primary = Color(0xFFB02F00),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFFF5722),
-    onPrimaryContainer = Color(0xFF541200),
+    primaryContainer = Color(0xFFFFDBD1),
+    onPrimaryContainer = Color(0xFF3B0900),
     inversePrimary = Color(0xFFFFB5A0),
     secondary = Color(0xFF9F4125),
     onSecondary = Color(0xFFFFFFFF),
@@ -49,8 +50,8 @@ internal val LightColors = lightColorScheme(
 internal val DarkColors = darkColorScheme(
     primary = Color(0xFFFFB5A0),
     onPrimary = Color(0xFF5F1500),
-    primaryContainer = Color(0xFFFF5722),
-    onPrimaryContainer = Color(0xFF541200),
+    primaryContainer = Color(0xFF862200),
+    onPrimaryContainer = Color(0xFFFFDBD1),
     inversePrimary = Color(0xFFB02F00),
     secondary = Color(0xFFFFB5A0),
     onSecondary = Color(0xFF5F1500),
@@ -92,6 +93,9 @@ data class ExtendedColors(
     val onSuccess: Color,
     val successContainer: Color,
     val onSuccessContainer: Color,
+    /** The brand orange, for what celebrates or runs. */
+    val highlight: Color,
+    val onHighlight: Color,
 )
 
 internal val LightExtendedColors = ExtendedColors(
@@ -99,6 +103,8 @@ internal val LightExtendedColors = ExtendedColors(
     onSuccess = Color(0xFFFFFFFF),
     successContainer = Color(0xFFB4F577),
     onSuccessContainer = Color(0xFF0D2000),
+    highlight = Color(0xFFFF5722),
+    onHighlight = Color(0xFF541200),
 )
 
 internal val DarkExtendedColors = ExtendedColors(
@@ -106,4 +112,6 @@ internal val DarkExtendedColors = ExtendedColors(
     onSuccess = Color(0xFF1B3700),
     successContainer = Color(0xFF2A5000),
     onSuccessContainer = Color(0xFFB4F577),
+    highlight = Color(0xFFFF5722),
+    onHighlight = Color(0xFF541200),
 )

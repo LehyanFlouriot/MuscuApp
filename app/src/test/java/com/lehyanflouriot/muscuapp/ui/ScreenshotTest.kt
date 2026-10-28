@@ -475,7 +475,7 @@ class ScreenshotTest {
     @Test
     fun todayRest() = capture("0-aujourdhui-repos", darkTheme = true) {
         val thursday = today.plusDays(1)
-        Today(wednesdayMissed(), SampleData.bulkWeights(today) + BodyWeightEntry(thursday, 77.6), day = thursday)
+        Today(wednesdayMissed(), SampleData.bulkWeights(today) + BodyWeightEntry(thursday, 69.9), day = thursday)
     }
 
     @Test

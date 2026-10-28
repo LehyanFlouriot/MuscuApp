@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.Eco
 import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.Kitchen
 import androidx.compose.material.icons.rounded.Medication
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.RiceBowl
 import androidx.compose.material.icons.rounded.SetMeal
@@ -51,6 +52,8 @@ import androidx.compose.material.icons.rounded.ShoppingBasket
 import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -268,14 +271,28 @@ fun ShoppingScreen(
                     }
                 },
                 actions = {
-                    if (taken > 0) {
-                        IconButton(onClick = actions.onClear) {
-                            Icon(Icons.Rounded.RestartAlt, contentDescription = stringResource(R.string.shopping_clear))
-                        }
-                    }
                     if (total > 0) {
                         IconButton(onClick = actions.onShare) {
                             Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.shopping_share))
+                        }
+                    }
+                    // Unchecking everything says what it does: an icon alone did not.
+                    if (taken > 0) {
+                        var menu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { menu = true }) {
+                                Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more))
+                            }
+                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.shopping_clear)) },
+                                    leadingIcon = { Icon(Icons.Rounded.RestartAlt, contentDescription = null) },
+                                    onClick = {
+                                        menu = false
+                                        actions.onClear()
+                                    },
+                                )
+                            }
                         }
                     }
                 },

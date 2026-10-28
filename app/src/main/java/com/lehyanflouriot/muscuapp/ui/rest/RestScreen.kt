@@ -540,8 +540,9 @@ private fun PresetTile(
 ) {
     val colors = MaterialTheme.colorScheme
     val press = rememberPressFeedback(pressedScale = 0.94f)
-    val container by animateColorAsState(if (active) colors.primaryContainer else colors.surfaceContainerHigh, tween(300), label = "preset")
-    val content by animateColorAsState(if (active) colors.onPrimaryContainer else colors.onSurface, tween(300), label = "preset-text")
+    val highlight = MuscuTheme.extendedColors
+    val container by animateColorAsState(if (active) highlight.highlight else colors.surfaceContainerHigh, tween(300), label = "preset")
+    val content by animateColorAsState(if (active) highlight.onHighlight else colors.onSurface, tween(300), label = "preset-text")
     Card(
         onClick = onClick,
         interactionSource = press.interactionSource,
@@ -565,7 +566,7 @@ private fun PresetTile(
                     style = MaterialTheme.typography.labelMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = if (active) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                    color = if (active) highlight.onHighlight else colors.onSurfaceVariant,
                 )
             }
             if (editing) {

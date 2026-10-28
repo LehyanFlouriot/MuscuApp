@@ -50,7 +50,6 @@
     <string name="date_other">Autre jour</string>
     <string name="week_this">Cette semaine</string>
     <string name="week_last">Semaine dernière</string>
-    <string name="week_number">Semaine %1$d</string>
     <string name="reference_last_week">Sem. dernière</string>
     <string name="reference_weeks_ago">Il y a %1$d sem.</string>
 
@@ -147,7 +146,6 @@
     <string name="detail_log">Noter l\'exercice</string>
     <string name="detail_empty">Rien de noté pour l\'instant. Touche «\u00A0Noter l\'exercice\u00A0» après tes séries.</string>
     <string name="detail_history">Historique</string>
-    <string name="detail_rest_chip">Repos %1$s</string>
     <string name="detail_type_weighted">Avec charge</string>
     <string name="detail_type_bodyweight">Poids du corps</string>
     <string name="detail_type_timed">En durée</string>
@@ -159,6 +157,7 @@
     <string name="record_most_reps">Max de reps</string>
     <string name="record_longest">Plus longue série</string>
     <string name="record_at_weight">à %1$s</string>
+    <string name="record_week_of">sem. du %1$s</string>
     <string name="record_best_week">Meilleure semaine</string>
     <string name="record_sessions">Fois</string>
     <string name="record_sessions_caption">au total</string>
@@ -190,7 +189,6 @@
     <string name="streak_dont_break">Une séance cette semaine, et tu restes sur ta lancée\u00A0!</string>
 
     <!-- Body weight -->
-    <string name="weight_title">Mon poids</string>
     <string name="weight_weigh_in">Ma pesée</string>
     <string name="weight_previous">Pesée précédente\u00A0: %1$s (%2$s)</string>
     <string name="weight_type_hint">Touche le nombre pour taper ton poids au clavier.</string>
@@ -364,7 +362,6 @@
     <!-- Nutrition -->
     <string name="tab_nutrition">Nutrition</string>
     <string name="nutrition_title">Nutrition</string>
-    <string name="nutrition_back_to_today">Revenir à aujourd\'hui</string>
     <string name="nutrition_edit_plan">Modifier le plan alimentaire</string>
     <string name="nutrition_programs">Mes plans alimentaires</string>
     <string name="nutrition_next_week">Semaine prochaine</string>
@@ -391,7 +388,6 @@
     <string name="nutrition_menu_for_rest">Séance prévue ce jour-là, mais le menu est celui d\'un jour de repos.</string>
     <string name="nutrition_menu_for_training">Pas de séance ce jour-là, mais le menu est celui d\'un jour d\'entraînement.</string>
     <string name="nutrition_menu_adapt">Adapter</string>
-    <string name="nutrition_water_glass_cd">Verre %1$d</string>
     <string name="nutrition_tips">Conseils du plan</string>
     <string name="nutrition_program">Plan alimentaire</string>
     <string name="nutrition_program_since">Suivi depuis le %1$s</string>
@@ -498,6 +494,9 @@
     <string name="plan_note_title">Titre</string>
     <string name="plan_note_text">Texte</string>
     <string name="plan_note_delete">Supprimer le conseil</string>
+    <string name="note_expand">Lire en entier</string>
+    <string name="note_collapse">Replier</string>
+    <string name="note_edit_cd">Modifier «\u00A0%1$s\u00A0»</string>
     <string name="programs_title">Mes programmes</string>
     <string name="program_active_since">En cours depuis le %1$s</string>
     <string name="program_planned">Commence le %1$s</string>
@@ -603,6 +602,8 @@
     <!-- Sync with the Google account -->
     <string name="settings_sync">Synchronisation</string>
     <string name="sync_off_title">Synchroniser avec Google</string>
+    <string name="sync_detail_show">Voir le détail</string>
+    <string name="sync_detail_hide">Masquer le détail</string>
     <string name="sync_off_text">Retrouve les mêmes séances, pesées et repas sur tous tes appareils connectés au même compte Google. Tout est gardé dans un dossier caché de ton Google Drive, que seule l\'app peut lire.</string>
     <string name="sync_connect">Se connecter avec Google</string>
     <string name="sync_connecting">Connexion…</string>
@@ -677,6 +678,7 @@
     <string name="training_day_rest_hint">Jour de repos. Ajoute un exercice pour en faire un jour de séance.</string>
     <string name="training_add_exercise">Ajouter un exercice</string>
     <string name="training_rest">repos %1$s</string>
+    <string name="training_copy_day">Copier</string>
     <string name="training_copy_day_cd">Copier la séance du %1$s vers d\'autres jours</string>
     <string name="training_copy_day_title">Copier la séance du %1$s</string>
     <string name="training_copy_day_text">La séance des jours choisis sera remplacée par celle du %1$s.</string>
@@ -693,7 +695,9 @@
     <string name="training_line_rest">Repos entre les séries</string>
     <string name="training_line_rest_default">Celui de l\'exercice\u00A0: %1$s</string>
     <string name="training_line_rest_none">Celui de l\'exercice</string>
-    <string name="training_line_rest_reset">Reprendre le repos de l\'exercice</string>
+    <string name="training_line_rest_reset">Revenir au repos de l\'exercice</string>
+    <string name="training_line_rest_reset_to">Revenir au repos de l\'exercice (%1$s)</string>
+    <string name="training_line_rest_custom">%1$s, pour cette séance</string>
     <string name="training_line_note">Consigne</string>
     <string name="training_line_note_hint">Excentrique 3\u00A0s, amplitude complète…</string>
     <string name="training_line_emphasis">Exercice d\'emphase</string>
@@ -753,6 +757,16 @@
     <string name="reminder_session_title">Séance du jour\u00A0: %1$s</string>
     <string name="reminder_weigh_in_title">Pesée du matin</string>
     <string name="reminder_weigh_in_text">Note ton poids, à jeun, avant le petit-déjeuner.</string>
+    <plurals name="week_ago_title">
+        <item quantity="one">Il y a %1$d semaine</item>
+        <item quantity="many">Il y a %1$d semaines</item>
+        <item quantity="other">Il y a %1$d semaines</item>
+    </plurals>
+    <plurals name="week_in_title">
+        <item quantity="one">Dans %1$d semaine</item>
+        <item quantity="many">Dans %1$d semaines</item>
+        <item quantity="other">Dans %1$d semaines</item>
+    </plurals>
     <plurals name="week_all_exercises">
         <item quantity="one">%1$d exercice</item>
         <item quantity="many">Tous les exercices (%1$d)</item>

@@ -32,6 +32,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.lehyanflouriot.muscuapp.core.domain.WeekPoint
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.max
 
 private const val BAR_MS = 800
@@ -95,7 +96,11 @@ fun WeeklyBarChart(
         val barWidth = slot * 0.56f
         val radius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
         val baseline = topSpace + chartHeight
-        val labelEvery = if (points.size > 8) 2 else 1
+        val labelEvery = when {
+            points.size > 8 -> 3
+            points.size > 5 -> 2
+            else -> 1
+        }
         fun barHeight(index: Int): Float {
             val fraction = heights[index].value
             if (fraction <= 0f) return 0f
@@ -122,8 +127,9 @@ fun WeeklyBarChart(
                     cornerRadius = radius,
                 )
             }
-            val isLast = index == points.lastIndex
-            if (index == selected || isLast || (points.lastIndex - index) % labelEvery == 0) {
+            // The labels of the weeks next to the selected one would run into it.
+            val regular = (points.lastIndex - index) % labelEvery == 0 && abs(index - selected) >= labelEvery
+            if (index == selected || regular) {
                 val layout = textMeasurer.measure(
                     weekShortLabel(point.weekStart),
                     style = if (index == selected) selectedLabelStyle else labelStyle,

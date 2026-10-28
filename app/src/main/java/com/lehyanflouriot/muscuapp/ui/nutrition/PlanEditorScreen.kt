@@ -29,7 +29,6 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FitnessCenter
-import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Tune
@@ -77,6 +76,7 @@ import com.lehyanflouriot.muscuapp.ui.common.EditorRow
 import com.lehyanflouriot.muscuapp.ui.common.EditorSection
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.Motion
+import com.lehyanflouriot.muscuapp.ui.common.NoteRow
 import com.lehyanflouriot.muscuapp.ui.common.ProgramHeader
 import com.lehyanflouriot.muscuapp.ui.common.fullName
 import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
@@ -265,12 +265,7 @@ fun PlanEditorScreen(
                     modifier = Modifier.reveal(reveal, "notes"),
                 ) {
                     plan.notes.forEach { note ->
-                        EditorRow(
-                            icon = Icons.Rounded.Lightbulb,
-                            title = note.title.ifBlank { note.text },
-                            subtitle = if (note.title.isBlank()) "" else note.text,
-                            onClick = { onOpen(PlanEdit.Note(note)) },
-                        )
+                        NoteRow(note = note, onEdit = { onOpen(PlanEdit.Note(note)) })
                     }
                 }
             }

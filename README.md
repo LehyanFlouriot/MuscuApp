@@ -16,9 +16,17 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 
 ## Ce que fait l'app
 
+L'app a cinq onglets : **Aujourd'hui**, **Semaine**, **Nutrition**, **Progrès** et **Programme**. Les réglages (⚙️) sont en haut de chacun.
+
+### ☀️ Aujourd'hui
+- Ta journée sur un seul écran, dans l'ordre où elle se passe : la **pesée du matin**, la **séance du jour** avec son bouton *Démarrer* / *Continuer*, le **prochain repas** à cocher et les **verres d'eau**.
+- Une pesée déjà notée s'affiche comme telle (« 77,3 kg · Pesée notée ✓ · +0,4 kg depuis hier »), avec **Modifier** pour la corriger.
+- **Séance manquée ?** Un jour de repos, l'app te propose de faire aujourd'hui la séance que tu n'as pas faite les jours d'avant. Elle est déplacée à aujourd'hui (objectifs, rappels et widget suivent), son jour prévu indique « Faite aujourd'hui à la place », et tu peux annuler le déplacement tant que rien n'est noté.
+- Le **minuteur de repos**, pour un repos hors séance.
+
 ### 📅 Ma semaine
-- Tous tes exercices, rangés par groupe musculaire, avec ce que tu as fait **cette semaine**.
-- Le bouton **+** sur un exercice ouvre la saisie, **pré-remplie avec ta dernière séance** : la plupart du temps il suffit d'ajuster et d'enregistrer.
+- La séance du jour en haut, puis les exercices **faits cette semaine** ; les autres exercices sont repliés (*Afficher*), avec **Nouvel exercice** à la fin de la liste.
+- Le bouton **+** sur un exercice ouvre la saisie, **pré-remplie avec ta dernière fois** : la plupart du temps il suffit d'ajuster et d'enregistrer.
 - Sous chaque exercice, ta performance de la semaine précédente (🎯 *à battre*) et ta progression (▲ +12 %).
 - Flèches (ou glissement à gauche / à droite) pour revoir ou compléter les semaines passées.
 - Résumé de la semaine : séances, séries, répétitions et volume soulevé.
@@ -27,14 +35,14 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - Ton programme **hypertrophie au poids du corps** est déjà rempli : 5 séances full body (pectoraux, dos, quadriceps, épaules, ischios & fessiers) et 2 jours de repos, avec pour chaque exercice les séries, les répétitions, le RIR et les consignes.
 - En haut de **Ma semaine**, la **séance du jour** : les exercices dans l'ordre, l'exercice d'emphase mis en avant, et ton **objectif** calculé avec la règle du programme (+1 rep par série chaque semaine, dans la fourchette). Quand tu atteins le haut de la fourchette partout, l'app te propose de passer à une variante plus dure.
 - Touche un exercice : la saisie s'ouvre **pré-remplie avec l'objectif**, et le bouton Repos lance le bon temps (3 min sur l'exercice d'emphase, 1 min 30 sur les autres).
-- Les jours de la semaine montrent où tu en es de chaque séance, et **Programme** affiche toute la semaine et les conseils (échauffement, RIR, repos, progression, décharge).
-- **Tout se modifie** depuis **Programme** : le nom et le thème de chaque séance, les exercices (ajouter, retirer, remonter, remplacer par une variante plus dure), et pour chacun les séries, la fourchette de répétitions, le RIR, le repos, la consigne et l'exercice d'emphase. Un jour de repos devient une séance dès que tu lui ajoutes un exercice, et une séance se copie vers d'autres jours. Les changements s'appliquent dès aujourd'hui ; les semaines passées gardent ce qui était prévu.
-- **Mes programmes** (📖 en haut de l'écran Programme) : quand tu veux changer de programme, crée-en un nouveau (vide ou à partir de l'actuel) et choisis le jour où il commence. L'ancien reste dans ton historique, avec les séances faites.
+- Les jours de la semaine montrent où tu en es de chaque séance, et l'onglet **Programme** affiche toute la semaine et les conseils (échauffement, RIR, repos, progression, décharge) : touche un conseil pour le lire en entier.
+- **Tout se modifie** depuis **Programme** : le nom et le thème de chaque séance, les exercices (ajouter, retirer, remplacer par une variante plus dure, **changer l'ordre en les faisant glisser** par la poignée ☰), et pour chacun les séries, la fourchette de répétitions, le RIR, le repos (celui de l'exercice par défaut), la consigne et l'exercice d'emphase. Un jour de repos devient une séance dès que tu lui ajoutes un exercice, et une séance se copie vers d'autres jours. Les changements s'appliquent dès aujourd'hui ; les semaines passées gardent ce qui était prévu.
+- **Mes programmes** (en haut de l'onglet Programme) : quand tu veux changer de programme, crée-en un nouveau (vide ou à partir de l'actuel) et choisis le jour où il commence. L'ancien reste dans ton historique, avec les séances faites.
 
 ### ▶️ Séance guidée
 - **Démarrer la séance** (sur la séance du jour) : les exercices un par un, série par série. La série à faire part de ton objectif ; ajuste-la avec les gros boutons **− / +**, puis **Série faite**.
 - Chaque série est enregistrée tout de suite, et le **repos prévu par le programme démarre tout seul**, avec en bas de l'écran le décompte et ce qui vient ensuite.
-- Une barre montre où tu en es de chaque exercice ; ses séries faites, l'exercice suivant arrive. Tu peux ajouter une série, passer un exercice ou revenir en arrière.
+- Une barre montre où tu en es de chaque exercice ; ses séries faites, l'exercice suivant arrive. Tu peux ajouter une série, **passer l'exercice** ou revenir en arrière, et **passer le repos**.
 - **Rien n'est définitif** : juste après « Série faite », un bouton **Annuler** la retire (et arrête le repos qu'elle a lancé). Touche une série faite pour la corriger ou la supprimer, là aussi avec **Annuler**.
 - L'écran reste allumé pendant la séance, et tu peux la quitter puis la **continuer** à tout moment. Une fois terminée, **Revoir la séance** la rouvre pour corriger une série.
 
@@ -47,9 +55,9 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 - **Pesée du matin** : une notification chaque jour à l'heure choisie, si ton poids du jour n'est pas noté.
 - À activer dans **Réglages → Rappels** (touche un rappel pour changer l'heure). Ils restent propres à chaque téléphone.
 
-### ✍️ Saisie d'une séance
+### ✍️ Saisie d'un exercice
 - Gros boutons **− / +** pour les séries, les répétitions et le poids (maintenir le bouton pour aller plus vite, toucher le nombre pour le taper).
-- Séries différentes (10, 10, 8…) ou poids différents ? *Détailler chaque série*.
+- Séries différentes (10, 10, 8…) ou poids différents ? *Détailler chaque série* (la croix pour retirer une série est en début de ligne, loin des boutons + et −).
 - Exercices au poids du corps (pompes, tractions…) et exercices en durée (gainage…).
 - Date en un geste : *Aujourd'hui*, *Hier* ou un autre jour.
 - Un bouton **Repos** lance le minuteur directement depuis la saisie, entre deux séries.
@@ -57,35 +65,38 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 
 ### 🍽️ Nutrition
 - Ton **plan alimentaire** jour par jour, déjà rempli avec ta semaine type (prise de masse 66 → 75 kg) : les 5 repas avec leurs quantités, l'eau et les conseils du plan.
-- **Coche ce que tu manges** : aliment par aliment, ou tout un repas d'un coup. Un repas terminé se replie et le prochain est mis en avant.
-- Trois **anneaux** pour la journée : calories, protéines et verres d'eau (estimés d'après ce que tu as coché).
-- Pas de riz sous la main ? **⇄ Remplace** un aliment juste pour ce jour, avec des idées tirées des équivalences du plan (riz ↔ pâtes ↔ semoule…). Ton programme ne change pas.
-- **Pilotage du poids** : avec tes pesées, l'app compare ton rythme des 2 dernières semaines à la cible du plan (+0,1 à +0,4 kg par semaine) et te rappelle quoi faire (+ 200 kcal de féculents si ça stagne, − 150 kcal si ça monte trop vite).
+- Trois **anneaux** pour la journée : calories, protéines et verres d'eau (estimés d'après ce que tu as coché), avec les boutons **− / +** de l'eau juste en dessous. Le jour indique sa séance (« Quadriceps ») d'après ton programme d'entraînement.
+- **Coche ce que tu manges**, juste sous le résumé : aliment par aliment, ou tout un repas d'un coup. Un repas terminé se replie et le prochain est mis en avant.
+- Pas de riz sous la main ? **⇄ Remplace** un aliment juste pour ce jour, avec des idées tirées des équivalences du plan (riz ↔ pâtes ↔ semoule…). Ton plan ne change pas.
+- **Pilotage du poids** : avec tes pesées, l'app compare ton rythme des 2 dernières semaines (le même que dans Progrès → Poids) à la cible du plan (+0,1 à +0,4 kg par semaine) et te rappelle quoi faire (+ 200 kcal de féculents si ça stagne, − 150 kcal si ça monte trop vite).
+- Si tu déplaces une séance dans ton programme, l'app signale un jour de séance qui a le menu d'un jour de repos (ou l'inverse), pour que tu l'adaptes.
 - La semaine en haut de l'écran montre où tu en es chaque jour ; glisse à gauche / à droite pour changer de jour, et regarde les jours à venir pour préparer tes repas.
-- **Modifier le programme** : change un aliment ou une quantité, ajoute ou supprime un repas, copie un jour vers d'autres, ajuste l'eau, les objectifs et les conseils. Les changements s'appliquent dès aujourd'hui ; les jours passés gardent ce qui était prévu.
-- **Un seul nom par aliment** : en tapant un aliment, l'app propose les noms déjà utilisés dans le programme, et un aliment renommé peut l'être partout d'un coup. Ainsi la liste de courses ne compte chaque aliment qu'une fois.
-- **Mes programmes** : dans quelques mois, crée un **nouveau programme** (vide ou à partir de l'actuel) et choisis le jour où il commence : aujourd'hui, lundi prochain ou une autre date. L'ancien reste dans ton historique.
+- **Modifier le plan alimentaire** (menu ⋮) : change un aliment ou une quantité, ajoute ou supprime un repas, copie un jour vers d'autres, ajuste l'eau, les objectifs et les conseils. Les changements s'appliquent dès aujourd'hui ; les jours passés gardent ce qui était prévu.
+- **Un seul nom par aliment** : en tapant un aliment, l'app propose les noms déjà utilisés dans le plan, et un aliment renommé peut l'être partout d'un coup. Ainsi la liste de courses ne compte chaque aliment qu'une fois.
+- **Mes plans alimentaires** (menu ⋮) : dans quelques mois, crée un **nouveau plan** (vide ou à partir de l'actuel) et choisis le jour où il commence : aujourd'hui, lundi prochain ou une autre date. L'ancien reste dans ton historique.
 
 ### 🛒 Liste de courses
-- Tout ce qu'il faut acheter pour suivre le programme de la semaine, **quantités additionnées** sur les 7 jours (« Fromage blanc : 1,7 kg », « Lait : 2,1 L », « Miel : 5 c. à s. + 2 c. à c. ») et rangées **par rayon** du supermarché.
+- Tout ce qu'il faut acheter pour suivre le plan de la semaine, **quantités additionnées** sur les 7 jours (« Fromage blanc : 1,7 kg », « Lait : 2,1 L », « Miel : 5 c. à s. + 2 c. à c. ») et rangées **par rayon** du supermarché.
 - **Coche** ce que tu mets dans le panier : l'article descend en bas de son rayon, ce qu'il reste à prendre reste sous tes yeux. La liste est gardée si tu fermes l'app.
 - Le week-end, la liste est celle de la semaine qui arrive ; les flèches permettent de changer de semaine, et « Dès aujourd'hui » ne garde que ce qu'il reste à manger si tu fais les courses en milieu de semaine.
 - Les aliments remplacés pour un jour sont pris en compte. Ajoute tes propres articles (éponges, café…) et **partage** la liste par message.
 
 ### ⏱️ Repos
+- Le minuteur s'ouvre depuis la **barre de repos** en bas de l'écran (pendant un repos) ou depuis **Aujourd'hui** ; la séance guidée et la saisie le lancent toutes seules.
 - Grand minuteur circulaire : démarrer, pause, **−15 s / +15 s**.
 - **Mes temps de repos** : tes durées favorites en un seul appui (modifiables, avec un nom).
 - Le minuteur continue même **écran éteint ou app fermée** : notification avec le décompte (et les boutons +30 s, Pause, Arrêter), puis **sonnerie et vibration** à la fin.
 - Chaque exercice peut avoir son propre temps de repos.
 
 ### 📈 Progrès
+Deux parties : **Exercices** et **Poids**.
 - Nombre de semaines d'entraînement d'affilée 🔥 et séries par semaine.
-- Pour chaque exercice : records (charge max, 1RM estimé, max de répétitions, meilleure semaine), graphique sur 12 semaines (volume, charge max ou répétitions) et historique complet.
+- Pour chaque exercice : records (charge max, 1RM estimé, max de répétitions, meilleure semaine), graphique sur 12 semaines (volume, charge max ou répétitions) et historique complet. Les semaines sont datées (« 19 oct. ») plutôt que numérotées.
 
-### ⚖️ Mon poids
+### ⚖️ Mon poids (Progrès → Poids)
 - Note ton poids en deux secondes : il est pré-rempli avec ta dernière pesée, ajuste avec **− / +** (0,1 kg) ou touche le nombre pour le taper.
 - **Courbe** sur 1 mois, 3 mois, 1 an ou depuis le début, avec la **moyenne sur 7 jours** qui lisse les variations d'un jour à l'autre (eau, repas…).
-- Ton poids actuel, ce que tu as pris depuis la première pesée et ton **rythme par semaine** : de quoi suivre ta prise de masse.
+- Ton poids actuel, ce que tu as pris depuis la première pesée et ton **rythme par semaine** (sur les 2 dernières semaines) : de quoi suivre ta prise de masse.
 - Historique complet avec l'écart d'une pesée à l'autre ; touche une pesée pour la corriger ou la supprimer.
 
 ### ☁️ Synchronisation avec ton compte Google
@@ -98,7 +109,7 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 
 À configurer une seule fois, voir [Activer la synchronisation Google](#activer-la-synchronisation-google).
 
-### ⚙️ Réglages
+### ⚙️ Réglages (⚙️ en haut de chaque onglet)
 - Pas du poids des boutons + / − (0,5 à 5 kg), thème clair / sombre, couleurs du fond d'écran.
 - **Synchronisation** avec ton compte Google : connexion, état de la dernière synchronisation, déconnexion.
 - **Rappels** de la séance du jour et de la pesée du matin, chacun à l'heure de ton choix.

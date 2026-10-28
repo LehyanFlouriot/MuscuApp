@@ -255,16 +255,16 @@ private fun StreakCard(streak: Int, trainedThisWeek: Boolean, modifier: Modifier
     LaunchedEffect(flame) { flame.animateTo(1f, tween(500, delayMillis = 250, easing = EaseOutBack)) }
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = MuscuTheme.extendedColors.highlight,
+            contentColor = MuscuTheme.extendedColors.onHighlight,
         ),
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f),
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = MuscuTheme.extendedColors.onHighlight.copy(alpha = 0.12f),
+                contentColor = MuscuTheme.extendedColors.onHighlight,
                 modifier = Modifier.size(56.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {

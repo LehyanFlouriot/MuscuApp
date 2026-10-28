@@ -2,8 +2,16 @@ package com.lehyanflouriot.muscuapp.ui.common
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
+import androidx.compose.material.icons.rounded.AccessibilityNew
 import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.Hiking
+import androidx.compose.material.icons.rounded.Rowing
 import androidx.compose.material.icons.rounded.SelfImprovement
+import androidx.compose.material.icons.rounded.Sports
+import androidx.compose.material.icons.rounded.SportsGymnastics
+import androidx.compose.material.icons.rounded.SportsKabaddi
+import androidx.compose.material.icons.rounded.SportsMartialArts
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -31,8 +39,26 @@ val MuscleGroup.labelRes: Int
         MuscleGroup.OTHER -> R.string.group_other
     }
 
-/** Icon describing how an exercise is done. */
-val Exercise.icon: ImageVector
+/** Icon of a muscle group, so that exercises are told apart at a glance. */
+val MuscleGroup.icon: ImageVector
+    get() = when (this) {
+        MuscleGroup.CHEST -> Icons.Rounded.SportsGymnastics
+        MuscleGroup.BACK -> Icons.Rounded.Rowing
+        MuscleGroup.SHOULDERS -> Icons.Rounded.AccessibilityNew
+        MuscleGroup.BICEPS -> Icons.Rounded.FitnessCenter
+        MuscleGroup.TRICEPS -> Icons.Rounded.SportsMartialArts
+        MuscleGroup.LEGS -> Icons.Rounded.Hiking
+        MuscleGroup.GLUTES -> Icons.Rounded.SportsKabaddi
+        MuscleGroup.ABS -> Icons.Rounded.SelfImprovement
+        MuscleGroup.CARDIO -> Icons.AutoMirrored.Rounded.DirectionsRun
+        MuscleGroup.OTHER -> Icons.Rounded.Sports
+    }
+
+/** Icon of an exercise: the one of its muscle group. */
+val Exercise.icon: ImageVector get() = muscleGroup.icon
+
+/** Icon describing how an exercise is done: with a load, in seconds, or with the body weight. */
+val Exercise.typeIcon: ImageVector
     get() = when {
         measure == Measure.SECONDS -> Icons.Rounded.Timer
         usesWeight -> Icons.Rounded.FitnessCenter

@@ -440,6 +440,7 @@ private fun DetailedSets(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(Modifier.width(40.dp))
             Text(
                 text = stringResource(R.string.log_set_header),
                 style = MaterialTheme.typography.labelLarge,
@@ -463,10 +464,22 @@ private fun DetailedSets(
                     modifier = Modifier.weight(1f),
                 )
             }
-            Spacer(Modifier.width(40.dp))
         }
         state.rows.forEachIndexed { index, set ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.reveal(reveal, index)) {
+                // At the start of the row, far from the + of the values: no set goes away by mistake.
+                IconButton(
+                    onClick = { state.removeRow(index) },
+                    enabled = state.rows.size > 1,
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.log_remove_set, index + 1),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
                 Text(
                     text = (index + 1).toString(),
                     style = MaterialTheme.typography.titleMedium,
@@ -491,17 +504,6 @@ private fun DetailedSets(
                         onValueClick = { onEdit(EditTarget.RowWeight(index)) },
                         canDecrement = set.weight > 0.0,
                         modifier = Modifier.weight(1f),
-                    )
-                }
-                IconButton(
-                    onClick = { state.removeRow(index) },
-                    enabled = state.rows.size > 1,
-                    modifier = Modifier.size(40.dp),
-                ) {
-                    Icon(
-                        Icons.Rounded.Close,
-                        contentDescription = stringResource(R.string.log_remove_set, index + 1),
-                        modifier = Modifier.size(20.dp),
                     )
                 }
             }

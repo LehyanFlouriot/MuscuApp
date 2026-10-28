@@ -259,8 +259,8 @@ private fun ExerciseStrip(items: List<SessionItem>, current: Int, onSelect: (Int
 private fun SessionDone(session: SessionView, onFinish: () -> Unit) {
     val stats = session.doneSets().stats()
     Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        color = MuscuTheme.extendedColors.highlight,
+        contentColor = MuscuTheme.extendedColors.onHighlight,
         shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth(),
     ) {

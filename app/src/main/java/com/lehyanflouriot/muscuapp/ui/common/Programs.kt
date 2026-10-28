@@ -1,6 +1,8 @@
 package com.lehyanflouriot.muscuapp.ui.common
 
 import android.content.Context
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.rounded.EventBusy
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.AlertDialog
@@ -59,6 +62,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +79,7 @@ import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.domain.ProgramInfo
 import com.lehyanflouriot.muscuapp.core.domain.ProgramStatus
 import com.lehyanflouriot.muscuapp.core.format.Fmt
+import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.Program
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import java.time.DayOfWeek
@@ -539,6 +544,64 @@ fun EditorSection(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * A tip of a program: two lines of it, all of it once touched; the pencil changes it. Reading a
+ * tip never opens it for editing.
+ */
+@Composable
+fun NoteRow(note: PlanNote, onEdit: () -> Unit) {
+    var expanded by rememberSaveable(note.id) { mutableStateOf(false) }
+    // Only a tip cut short unfolds.
+    var cut by remember(note.text) { mutableStateOf(false) }
+    val title = note.title.ifBlank { note.text }
+    val text = if (note.title.isBlank()) "" else note.text
+    val unfold = if (cut || expanded) {
+        Modifier.clickable(
+            onClickLabel = stringResource(if (expanded) R.string.note_collapse else R.string.note_expand),
+            onClick = { expanded = !expanded },
+        )
+    } else {
+        Modifier
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(unfold)
+            .animateContentSize(tween(250))
+            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            Icons.Rounded.Lightbulb,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(text = Fmt.typography(title), style = MaterialTheme.typography.bodyLarge)
+            if (text.isNotBlank()) {
+                Text(
+                    text = Fmt.typography(text),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = if (expanded) Int.MAX_VALUE else 2,
+                    overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { if (!expanded) cut = it.hasVisualOverflow },
+                )
+            }
+        }
+        IconButton(onClick = onEdit) {
+            Icon(
+                Icons.Rounded.Edit,
+                contentDescription = stringResource(R.string.note_edit_cd, title),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }

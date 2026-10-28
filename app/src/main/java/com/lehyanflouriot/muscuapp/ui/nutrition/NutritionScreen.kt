@@ -662,6 +662,7 @@ private fun DaySummaryCard(
                     glassMl = view.plan.glassMl,
                     canChange = true,
                     onChange = onWaterChange,
+                    countGlasses = false,
                 )
                 if (view.plan.waterHint.isNotBlank()) {
                     Row {
@@ -1048,21 +1049,28 @@ internal fun WaterRow(
     canChange: Boolean,
     onChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** False under the rings, which already count the glasses: the row then says how much it is. */
+    countGlasses: Boolean = true,
 ) {
     val waterColor = ringColors().water
     val colors = MaterialTheme.colorScheme
     val glasses = pluralStringResource(R.plurals.nutrition_glasses, target, target)
+    val liters = stringResource(R.string.nutrition_water_liters, Fmt.liters(water * glassMl), Fmt.liters(target * glassMl))
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Rounded.WaterDrop, contentDescription = null, tint = waterColor)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                text = if (canChange) stringResource(R.string.nutrition_amount_of, Fmt.number(water), glasses) else glasses,
+                text = when {
+                    !countGlasses -> liters
+                    canChange -> stringResource(R.string.nutrition_amount_of, Fmt.number(water), glasses)
+                    else -> glasses
+                },
                 style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = stringResource(R.string.nutrition_water_liters, Fmt.liters(water * glassMl), Fmt.liters(target * glassMl)),
+                text = if (countGlasses) liters else stringResource(R.string.plan_glass_size, Fmt.quantity("$glassMl ml")),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )

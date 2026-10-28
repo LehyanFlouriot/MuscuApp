@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,10 +25,9 @@ import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -47,7 +47,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -226,30 +225,41 @@ fun SessionLineForm(
                 modifier = Modifier.width(140.dp),
             )
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.small)
-                .clickable { pickingRest = true }
-                .heightIn(min = 56.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.training_line_rest), style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    text = state.rest?.let(Fmt::duration)
-                        ?: exercise.restSeconds?.let { stringResource(R.string.training_line_rest_default, Fmt.duration(it)) }
-                        ?: stringResource(R.string.training_line_rest_none),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        // The rest says whose it is, and how to come back to the one of the exercise.
+        Column(Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.training_line_rest), style = MaterialTheme.typography.bodyLarge)
+                    val custom = state.rest
+                    Text(
+                        text = when {
+                            custom != null -> stringResource(R.string.training_line_rest_custom, Fmt.duration(custom))
+                            exercise.restSeconds != null -> stringResource(R.string.training_line_rest_default, Fmt.duration(exercise.restSeconds))
+                            else -> stringResource(R.string.training_line_rest_none)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(onClick = { pickingRest = true }) { Text(stringResource(R.string.action_edit)) }
             }
             if (state.rest != null) {
-                IconButton(onClick = { state.rest = null }) {
-                    Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = stringResource(R.string.training_line_rest_reset))
+                TextButton(
+                    onClick = { state.rest = null },
+                    contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
+                ) {
+                    Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        exercise.restSeconds?.let { stringResource(R.string.training_line_rest_reset_to, Fmt.duration(it)) }
+                            ?: stringResource(R.string.training_line_rest_reset),
+                    )
                 }
-            } else {
-                Icon(Icons.Rounded.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         OutlinedTextField(

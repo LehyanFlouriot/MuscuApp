@@ -5,11 +5,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.lehyanflouriot.muscuapp.R
-import com.lehyanflouriot.muscuapp.core.domain.isoWeekNumber
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.domain.weeksBetween
 import com.lehyanflouriot.muscuapp.core.format.Fmt
@@ -33,13 +33,15 @@ fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toE
 
 fun utcMillisToLocalDate(millis: Long): LocalDate = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
 
-/** "Cette semaine", "Semaine dernière" or "Semaine 42". */
+/** "Cette semaine", "Semaine dernière", "Il y a 3 semaines": no week number, which nobody knows. */
 @Composable
 fun weekTitle(weekStart: LocalDate, today: LocalDate): String =
-    when (weeksBetween(weekStart, today)) {
+    when (val weeks = weeksBetween(weekStart, today)) {
         0 -> stringResource(R.string.week_this)
         1 -> stringResource(R.string.week_last)
-        else -> stringResource(R.string.week_number, weekStart.isoWeekNumber)
+        -1 -> stringResource(R.string.nutrition_next_week)
+        in 2..Int.MAX_VALUE -> pluralStringResource(R.plurals.week_ago_title, weeks, weeks)
+        else -> pluralStringResource(R.plurals.week_in_title, -weeks, -weeks)
     }
 
 /** "Aujourd'hui", "Hier" or "lun. 20 oct.". */
@@ -55,5 +57,5 @@ fun relativeDay(date: LocalDate, today: LocalDate): String = when (date) {
 fun weeksAgoLabel(weeksAgo: Int): String =
     if (weeksAgo <= 1) stringResource(R.string.reference_last_week) else stringResource(R.string.reference_weeks_ago, weeksAgo)
 
-/** Short label of a week for charts: "S42". */
-fun weekShortLabel(weekStart: LocalDate): String = "S${weekStart.startOfWeek().isoWeekNumber}"
+/** Short label of a week for charts: the day it starts, "19 oct.". */
+fun weekShortLabel(weekStart: LocalDate): String = Fmt.dayMonth(weekStart.startOfWeek())

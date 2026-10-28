@@ -28,7 +28,6 @@ import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.Unarchive
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -56,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,6 +84,7 @@ import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.repsTotal
 import com.lehyanflouriot.muscuapp.ui.common.reveal
 import com.lehyanflouriot.muscuapp.ui.common.setsCount
+import com.lehyanflouriot.muscuapp.ui.common.typeIcon
 import com.lehyanflouriot.muscuapp.ui.common.weekShortLabel
 import com.lehyanflouriot.muscuapp.ui.common.weekTitle
 import java.time.LocalDate
@@ -252,30 +253,19 @@ fun ExerciseDetailScreen(
 @Composable
 private fun Header(exercise: Exercise, onUnarchive: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AssistChip(onClick = {}, label = { Text(stringResource(exercise.muscleGroup.labelRes)) })
-            AssistChip(
-                onClick = {},
-                label = {
-                    Text(
-                        stringResource(
-                            when {
-                                exercise.measure == Measure.SECONDS -> R.string.detail_type_timed
-                                exercise.usesWeight -> R.string.detail_type_weighted
-                                else -> R.string.detail_type_bodyweight
-                            },
-                        ),
-                    )
-                },
-                leadingIcon = { Icon(exercise.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
+        // What the exercise is: plain tags, which do not look like buttons. Its rest is on the Repos button.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            InfoTag(text = stringResource(exercise.muscleGroup.labelRes), icon = exercise.icon)
+            InfoTag(
+                text = stringResource(
+                    when {
+                        exercise.measure == Measure.SECONDS -> R.string.detail_type_timed
+                        exercise.usesWeight -> R.string.detail_type_weighted
+                        else -> R.string.detail_type_bodyweight
+                    },
+                ),
+                icon = exercise.typeIcon,
             )
-            exercise.restSeconds?.let { seconds ->
-                AssistChip(
-                    onClick = {},
-                    label = { Text(stringResource(R.string.detail_rest_chip, Fmt.clock(seconds.toLong()))) },
-                    leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                )
-            }
         }
         if (exercise.archived) {
             Surface(
@@ -314,6 +304,21 @@ private fun Header(exercise: Exercise, onUnarchive: () -> Unit, modifier: Modifi
                     Text(exercise.notes, style = MaterialTheme.typography.bodyMedium)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun InfoTag(text: String, icon: ImageVector) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    ) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(text, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -369,7 +374,7 @@ private fun RecordsCard(exercise: Exercise, records: ExerciseRecords, modifier: 
                     label = stringResource(R.string.record_best_week),
                     value = week.value,
                     format = { if (records.bestWeekByVolume) Fmt.volume(it) else repsTotal(it.roundToInt(), exercise.measure) },
-                    caption = weekShortLabel(week.weekStart),
+                    caption = stringResource(R.string.record_week_of, weekShortLabel(week.weekStart)),
                 ),
             )
         }
