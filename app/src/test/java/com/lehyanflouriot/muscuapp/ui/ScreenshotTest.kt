@@ -38,7 +38,10 @@ import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -50,17 +53,19 @@ import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
 import com.lehyanflouriot.muscuapp.core.domain.DEFAULT_BODY_WEIGHT
 import com.lehyanflouriot.muscuapp.core.domain.Reminder
 import com.lehyanflouriot.muscuapp.core.domain.ReminderKind
+import com.lehyanflouriot.muscuapp.core.domain.SessionView
 import com.lehyanflouriot.muscuapp.core.domain.WeightPeriod
+import com.lehyanflouriot.muscuapp.core.domain.buildNutritionDay
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
+import com.lehyanflouriot.muscuapp.core.domain.buildSession
 import com.lehyanflouriot.muscuapp.core.domain.buildShoppingList
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
-import com.lehyanflouriot.muscuapp.core.domain.SessionView
-import com.lehyanflouriot.muscuapp.core.domain.buildSession
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekSessions
 import com.lehyanflouriot.muscuapp.core.domain.currentIndex
 import com.lehyanflouriot.muscuapp.core.domain.history
 import com.lehyanflouriot.muscuapp.core.domain.lastEntry
 import com.lehyanflouriot.muscuapp.core.domain.metricValue
+import com.lehyanflouriot.muscuapp.core.domain.missedSession
 import com.lehyanflouriot.muscuapp.core.domain.nextSetGoal
 import com.lehyanflouriot.muscuapp.core.domain.plannedSets
 import com.lehyanflouriot.muscuapp.core.domain.programInfos
@@ -70,8 +75,10 @@ import com.lehyanflouriot.muscuapp.core.domain.suggestedWeight
 import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.BodyWeightEntry
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
+import com.lehyanflouriot.muscuapp.core.model.SessionMove
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.core.sync.RemoteDocument
@@ -86,17 +93,21 @@ import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseEditorForm
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseFormState
 import com.lehyanflouriot.muscuapp.ui.log.LogEntryForm
 import com.lehyanflouriot.muscuapp.ui.log.LogFormState
+import com.lehyanflouriot.muscuapp.ui.nutrition.DayType
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionActions
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionScreen
 import com.lehyanflouriot.muscuapp.ui.nutrition.PlanEditorScreen
 import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingActions
 import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingScreen
-import com.lehyanflouriot.muscuapp.ui.progress.ProgressScreen
+import com.lehyanflouriot.muscuapp.ui.progress.ExercisesProgress
+import com.lehyanflouriot.muscuapp.ui.progress.ProgressFrame
 import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
 import com.lehyanflouriot.muscuapp.ui.settings.FirstSyncDialog
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
 import com.lehyanflouriot.muscuapp.ui.settings.SyncActions
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
+import com.lehyanflouriot.muscuapp.ui.today.TodayActions
+import com.lehyanflouriot.muscuapp.ui.today.TodayScreen
 import com.lehyanflouriot.muscuapp.ui.week.ExercisePickerSheet
 import com.lehyanflouriot.muscuapp.ui.week.GuidedActions
 import com.lehyanflouriot.muscuapp.ui.week.GuidedSessionScreen
@@ -106,7 +117,7 @@ import com.lehyanflouriot.muscuapp.ui.week.SessionLineState
 import com.lehyanflouriot.muscuapp.ui.week.TrainingEditorScreen
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
-import com.lehyanflouriot.muscuapp.ui.weight.WeightScreen
+import com.lehyanflouriot.muscuapp.ui.weight.WeightContent
 import com.lehyanflouriot.muscuapp.widget.SessionWidgetViews
 import org.junit.Rule
 import org.junit.Test
@@ -156,12 +167,13 @@ class ScreenshotTest {
     }
 
     @Composable
-    private fun Week(appData: AppData, timerState: TimerState = TimerState.Idle) {
+    private fun Week(appData: AppData, timerState: TimerState = TimerState.Idle, day: LocalDate = today) {
         MuscuScaffold(
             currentRoute = Routes.WEEK,
             timerState = timerState,
             now = now,
             onNavigate = {},
+            onOpenRest = {},
             onTimerToggle = {},
             onTimerAdd = {},
             onTimerRestart = {},
@@ -173,13 +185,14 @@ class ScreenshotTest {
                     .consumeWindowInsets(padding),
             ) {
                 WeekScreen(
-                    overview = buildWeekOverview(appData, today),
-                    sessions = buildWeekSessions(appData, today),
-                    sessionDate = today,
+                    overview = buildWeekOverview(appData, day),
+                    sessions = buildWeekSessions(appData, day),
+                    sessionDate = day,
                     sessionActions = SessionActions(onSelectDay = {}, onLog = {}, onEditEntry = {}, onOpenProgram = {}, onStart = {}),
-                    today = today,
+                    today = day,
                     hasAnyEntry = appData.entries.isNotEmpty(),
                     suggestions = ExerciseCatalog.popular,
+                    missed = missedSession(appData, day),
                     onPreviousWeek = {},
                     onNextWeek = {},
                     onThisWeek = {},
@@ -197,10 +210,11 @@ class ScreenshotTest {
     @Composable
     private fun Weight(appData: AppData) {
         MuscuScaffold(
-            currentRoute = Routes.WEIGHT,
+            currentRoute = Routes.PROGRESS,
             timerState = TimerState.Idle,
             now = now,
             onNavigate = {},
+            onOpenRest = {},
             onTimerToggle = {},
             onTimerAdd = {},
             onTimerRestart = {},
@@ -211,24 +225,32 @@ class ScreenshotTest {
                     .padding(padding)
                     .consumeWindowInsets(padding),
             ) {
-                val weights = appData.bodyWeights
-                val form = remember { WeighInState(suggestedWeight(weights, today) ?: DEFAULT_BODY_WEIGHT) }
-                WeightScreen(
-                    weights = weights,
-                    today = today,
-                    form = form,
-                    period = WeightPeriod.THREE_MONTHS,
-                    onDateChange = {},
-                    onSave = {},
-                    onPeriodChange = {},
-                    onUpdate = { _, _ -> },
-                    onDelete = {},
-                )
+                ProgressFrame(section = ProgressSection.WEIGHT, onSectionChange = {}, onOpenSettings = {}) { _, inner ->
+                    val weights = appData.bodyWeights
+                    val form = remember { WeighInState(suggestedWeight(weights, today) ?: DEFAULT_BODY_WEIGHT) }
+                    WeightContent(
+                        padding = inner,
+                        weights = weights,
+                        today = today,
+                        form = form,
+                        period = WeightPeriod.THREE_MONTHS,
+                        onDateChange = {},
+                        onSave = {},
+                        onPeriodChange = {},
+                        onUpdate = { _, _ -> },
+                        onDelete = {},
+                    )
+                }
             }
         }
     }
 
     private val nutrition = SampleData.nutrition(today)
+
+    /** What each day is about in the program of the app. */
+    private val programDays: (LocalDate) -> DayType? = { day ->
+        buildSession(SampleData.withProgram(today), day)?.let { DayType(if (it.isRest) "" else it.day.title, !it.isRest) }
+    }
 
     @Composable
     private fun Nutrition(date: LocalDate) {
@@ -237,6 +259,7 @@ class ScreenshotTest {
             timerState = TimerState.Idle,
             now = now,
             onNavigate = {},
+            onOpenRest = {},
             onTimerToggle = {},
             onTimerAdd = {},
             onTimerRestart = {},
@@ -263,7 +286,9 @@ class ScreenshotTest {
                         onCreateProgram = {},
                         onOpenWeight = {},
                         onOpenShopping = {},
+                        onOpenSettings = {},
                     ),
+                    dayType = programDays,
                 )
             }
         }
@@ -275,7 +300,7 @@ class ScreenshotTest {
     @Test
     fun nutritionMeals() = capture(
         "9-nutrition-repas",
-        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(2) },
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(1) },
     ) { Nutrition(today) }
 
     @Test
@@ -284,7 +309,7 @@ class ScreenshotTest {
     @Test
     fun nutritionTomorrow() = capture(
         "9-nutrition-demain",
-        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(2) },
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(1) },
     ) { Nutrition(today.plusDays(1)) }
 
     @Composable
@@ -325,6 +350,7 @@ class ScreenshotTest {
             plan = nutrition.plans.single(),
             day = DayOfWeek.WEDNESDAY,
             keepsHistory = true,
+            session = HypertrophyProgram.create().day(DayOfWeek.WEDNESDAY),
             onDayChange = {},
             onOpen = {},
             onTrainingChange = {},
@@ -342,6 +368,7 @@ class ScreenshotTest {
             plan = nutrition.plans.single(),
             day = DayOfWeek.WEDNESDAY,
             keepsHistory = true,
+            session = HypertrophyProgram.create().day(DayOfWeek.WEDNESDAY),
             onDayChange = {},
             onOpen = {},
             onTrainingChange = {},
@@ -360,6 +387,7 @@ class ScreenshotTest {
             plan = nutrition.plans.single(),
             day = DayOfWeek.WEDNESDAY,
             keepsHistory = true,
+            session = HypertrophyProgram.create().day(DayOfWeek.WEDNESDAY),
             onDayChange = {},
             onOpen = {},
             onTrainingChange = {},
@@ -382,21 +410,95 @@ class ScreenshotTest {
     @Test
     fun weekExercises() = capture(
         "1-semaine-exercices",
-        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(3) },
+        before = {
+            composeRule.onNodeWithText("Afficher").performScrollTo().performClick()
+            composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(6)
+        },
     ) { Week(SampleData.withProgram(today)) }
 
+    /** Wednesday's session was not done: on Thursday, a rest day, it can be done instead. */
+    private fun wednesdayMissed(): AppData {
+        val appData = SampleData.withProgram(today)
+        return appData.copy(entries = appData.entries.filterNot { it.date == today })
+    }
+
+    @Test
+    fun weekMissedSession() = capture("1-semaine-seance-manquee") { Week(wednesdayMissed(), day = today.plusDays(1)) }
+
+    @Test
+    fun weekMovedSession() = capture("1-semaine-seance-deplacee", darkTheme = true) {
+        val appData = wednesdayMissed()
+        val moved = appData.copy(training = appData.training.copy(moves = listOf(SessionMove(date = today.plusDays(1), from = today))))
+        Week(moved, day = today.plusDays(1))
+    }
+
     @Composable
-    private fun TrainingEditor(appData: AppData, initialDay: DayOfWeek = DayOfWeek.MONDAY) {
+    private fun Today(appData: AppData, weights: List<BodyWeightEntry>, day: LocalDate = today) {
+        MuscuScaffold(
+            currentRoute = Routes.TODAY,
+            timerState = TimerState.Idle,
+            now = now,
+            onNavigate = {},
+            onOpenRest = {},
+            onTimerToggle = {},
+            onTimerAdd = {},
+            onTimerRestart = {},
+            onTimerStop = {},
+        ) { padding ->
+            Surface(
+                Modifier
+                    .padding(padding)
+                    .consumeWindowInsets(padding),
+            ) {
+                val form = remember { WeighInState(suggestedWeight(weights, day) ?: DEFAULT_BODY_WEIGHT) }
+                TodayScreen(
+                    today = day,
+                    weights = weights,
+                    weighIn = form,
+                    session = buildSession(appData, day),
+                    missed = missedSession(appData, day),
+                    programStart = null,
+                    nutrition = buildNutritionDay(nutrition, day),
+                    actions = TodayActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}),
+                )
+            }
+        }
+    }
+
+    /** Wednesday: not weighed yet, the session under way, lunch to finish. */
+    @Test
+    fun today() = capture("0-aujourdhui") {
+        Today(sessionUnderway(), SampleData.bulkWeights(today).filterNot { it.date == today })
+    }
+
+    /** Thursday, a rest day: weighed, and Wednesday's session to do instead. */
+    @Test
+    fun todayRest() = capture("0-aujourdhui-repos", darkTheme = true) {
+        val thursday = today.plusDays(1)
+        Today(wednesdayMissed(), SampleData.bulkWeights(today) + BodyWeightEntry(thursday, 77.6), day = thursday)
+    }
+
+    @Test
+    fun todayMeals() = capture(
+        "0-aujourdhui-repas",
+        before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(3) },
+    ) {
+        Today(sessionUnderway(), SampleData.bulkWeights(today))
+    }
+
+    @Composable
+    private fun TrainingEditor(appData: AppData, day: DayOfWeek = DayOfWeek.MONDAY) {
         TrainingEditorScreen(
             program = appData.training.programs.first(),
             exercises = appData.exercises.associateBy { it.id },
             status = programStatusText(appData.training.programInfos(today).first(), today),
             keepsHistory = true,
-            today = today.dayOfWeek,
-            initialDay = initialDay,
+            today = day,
+            scrollTo = null,
+            onScrolled = {},
             onOpen = {},
             onOpenPrograms = {},
-            onBack = {},
+            onOpenSettings = {},
         )
     }
 
@@ -421,7 +523,7 @@ class ScreenshotTest {
 
     @Test
     fun programToday() = capture("12-programme-mercredi", darkTheme = true) {
-        TrainingEditor(SampleData.withProgram(today), initialDay = DayOfWeek.WEDNESDAY)
+        TrainingEditor(SampleData.withProgram(today), day = DayOfWeek.WEDNESDAY)
     }
 
     @Test
@@ -697,6 +799,7 @@ class ScreenshotTest {
             onEditPreset = {},
             onEnableNotifications = {},
             onEditIdleDuration = {},
+            onBack = {},
         )
     }
 
@@ -717,19 +820,23 @@ class ScreenshotTest {
             onEditPreset = {},
             onEnableNotifications = {},
             onEditIdleDuration = {},
+            onBack = {},
         )
     }
 
     @Test
     fun progress() = capture("4-progres") {
-        ProgressScreen(
-            items = buildProgressItems(data, today),
-            activity = weeklySeries(data.entries, today, 12) { metricValue(it, ChartMetric.SETS) },
-            streak = weekStreak(data.entries, today),
-            trainedThisWeek = true,
-            today = today,
-            onOpenExercise = {},
-        )
+        ProgressFrame(section = ProgressSection.EXERCISES, onSectionChange = {}, onOpenSettings = {}) { _, padding ->
+            ExercisesProgress(
+                padding = padding,
+                items = buildProgressItems(data, today),
+                activity = weeklySeries(data.entries, today, 12) { metricValue(it, ChartMetric.SETS) },
+                streak = weekStreak(data.entries, today),
+                trainedThisWeek = true,
+                today = today,
+                onOpenExercise = {},
+            )
+        }
     }
 
     @Test

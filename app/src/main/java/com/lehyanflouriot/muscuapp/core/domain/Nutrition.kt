@@ -17,9 +17,6 @@ import kotlin.math.ceil
 /** Most glasses of water that can be noted in a day. */
 const val MAX_WATER_GLASSES = 30
 
-/** The advice on the weight looks at the weights of this many days. */
-const val GUIDANCE_DAYS = 14
-
 // region Plans over time
 
 /** The period of the plan followed on [date], null before the first plan started. */
@@ -181,7 +178,7 @@ data class WeightGuidance(
     val goal: WeightGoal,
     /** Average of the last days, as advised to compare weights. */
     val current: Double?,
-    /** kg per week over the last [GUIDANCE_DAYS] days. */
+    /** kg per week over the last [RATE_DAYS] days, as shown with the weights. */
     val weeklyRate: Double?,
     val advice: WeightAdvice,
     /** Way already done from the start to the target, from 0 to 1. */
@@ -195,7 +192,7 @@ fun weightGuidance(goal: WeightGoal, weights: List<BodyWeightEntry>, today: Loca
     val known = weights.filter { it.date <= today }.sortedBy { it.date }
     val current = weightTrend(known).lastOrNull()?.weight
     val recent = known.lastOrNull()?.let { it.date >= today.minusDays(7) } == true
-    val rate = if (recent) weeklyRate(known, GUIDANCE_DAYS) else null
+    val rate = if (recent) weeklyRate(known, RATE_DAYS) else null
     val advice = when {
         rate == null -> WeightAdvice.NEED_DATA
         rate < goal.minWeeklyChange -> WeightAdvice.BELOW

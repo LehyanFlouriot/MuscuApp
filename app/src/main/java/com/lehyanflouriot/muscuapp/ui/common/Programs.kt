@@ -88,6 +88,9 @@ fun DayOfWeek.shortName(): String =
 
 fun DayOfWeek.fullName(): String = getDisplayName(TextStyle.FULL, Fmt.locale).replaceFirstChar { it.titlecase(Fmt.locale) }
 
+/** "mercredi", in the middle of a sentence. */
+fun DayOfWeek.lowerName(): String = getDisplayName(TextStyle.FULL, Fmt.locale)
+
 private fun nextMonday(today: LocalDate): LocalDate = today.with(TemporalAdjusters.next(DayOfWeek.MONDAY))
 
 /** "Aujourd'hui", "Lundi prochain", another day, and "Plus tard" when [allowLater]. Null means later. */
@@ -164,6 +167,7 @@ fun NewProgramDialog(
     onDismiss: () -> Unit,
     onCreate: (name: String, copyOf: String?, start: LocalDate?) -> Unit,
     nameHint: String = stringResource(R.string.program_name_hint),
+    title: String = stringResource(R.string.program_new),
 ) {
     var name by remember { mutableStateOf("") }
     var copy by remember { mutableStateOf(current != null) }
@@ -171,7 +175,7 @@ fun NewProgramDialog(
     val focusRequester = remember { FocusRequester() }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.program_new)) },
+        title = { Text(title) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -274,6 +278,8 @@ fun <P : Program> ProgramsSheet(
     onCancelStart: (ProgramInfo<P>) -> Unit,
     onDelete: (P) -> Unit,
     onNew: () -> Unit,
+    title: String = stringResource(R.string.programs_title),
+    newLabel: String = stringResource(R.string.program_new),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -283,7 +289,7 @@ fun <P : Program> ProgramsSheet(
                 .padding(bottom = 24.dp),
         ) {
             Text(
-                text = stringResource(R.string.programs_title),
+                text = title,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             )
@@ -304,7 +310,7 @@ fun <P : Program> ProgramsSheet(
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.program_new))
+                Text(newLabel)
             }
         }
     }

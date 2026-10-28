@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseOutBack
-import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -37,9 +36,9 @@ import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.TipsAndUpdates
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,13 +50,16 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,6 +121,7 @@ fun WeekScreen(
     today: LocalDate,
     hasAnyEntry: Boolean,
     suggestions: List<ExerciseSuggestion>,
+    missed: SessionView? = null,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onThisWeek: () -> Unit,
@@ -135,10 +138,6 @@ fun WeekScreen(
     val previousWeek by rememberUpdatedState(onPreviousWeek)
     val nextWeek by rememberUpdatedState(onNextWeek)
     val canGoNext by rememberUpdatedState(overview.weekStart != today.startOfWeek())
-    // The button pops in once the screen has appeared.
-    val fabState = remember { MutableTransitionState(false) }
-    fabState.targetState = overview.items.isNotEmpty()
-
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -151,22 +150,6 @@ fun WeekScreen(
                 },
                 scrollBehavior = scrollBehavior,
             )
-        },
-        floatingActionButton = {
-            AnimatedVisibility(
-                visibleState = fabState,
-                enter = scaleIn(tween(450, delayMillis = 300, easing = EaseOutBack)) + fadeIn(tween(200, delayMillis = 300)),
-                exit = scaleOut(tween(200)) + fadeOut(tween(200)),
-            ) {
-                val press = rememberPressFeedback()
-                ExtendedFloatingActionButton(
-                    onClick = onAddExercise,
-                    icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.week_add_exercise)) },
-                    interactionSource = press.interactionSource,
-                    modifier = press.modifier,
-                )
-            }
         },
         snackbarHost = { SnackbarHost(LocalSnackbarHostState.current) },
     ) { padding ->
@@ -214,6 +197,7 @@ fun WeekScreen(
                 today = today,
                 hasAnyEntry = hasAnyEntry,
                 suggestions = suggestions,
+                missed = missed,
                 reveal = reveal,
                 onPreviousWeek = onPreviousWeek,
                 onNextWeek = onNextWeek,
@@ -237,6 +221,7 @@ private fun WeekList(
     today: LocalDate,
     hasAnyEntry: Boolean,
     suggestions: List<ExerciseSuggestion>,
+    missed: SessionView?,
     reveal: RevealState,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
@@ -248,9 +233,11 @@ private fun WeekList(
     onQuickAdd: (ExerciseSuggestion) -> Unit,
 ) {
     val isCurrentWeek = overview.weekStart == today.startOfWeek()
+    // With a program, the session leads: the other exercises wait folded, until asked for.
+    var showAll by rememberSaveable(sessions != null) { mutableStateOf(sessions == null) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "selector") {
@@ -271,6 +258,7 @@ private fun WeekList(
                     selected = sessionDate,
                     today = today,
                     actions = sessionActions,
+                    missed = missed.takeIf { isCurrentWeek },
                     modifier = Modifier.reveal(reveal, "session"),
                 )
             }
@@ -302,16 +290,18 @@ private fun WeekList(
                     )
                 }
             }
-            overview.items.groupBy { it.exercise.muscleGroup }.forEach { (group, groupItems) ->
-                item(key = "group-$group") {
+            val done = overview.items.filter { it.done }
+            val others = overview.items.filterNot { it.done }
+            if (done.isNotEmpty()) {
+                item(key = "done-title") {
                     SectionHeader(
-                        text = stringResource(group.labelRes),
+                        text = stringResource(if (isCurrentWeek) R.string.week_done_title else R.string.week_done_past_title),
                         modifier = Modifier
                             .animateItem(fadeInSpec = null)
-                            .reveal(reveal, "group-$group"),
+                            .reveal(reveal, "done-title"),
                     )
                 }
-                items(groupItems, key = { it.exercise.id }) { item ->
+                items(done, key = { it.exercise.id }) { item ->
                     ExerciseWeekCard(
                         item = item,
                         onLog = { onLog(item.exercise) },
@@ -321,6 +311,60 @@ private fun WeekList(
                             .animateItem(fadeInSpec = null)
                             .reveal(reveal, item.exercise.id),
                     )
+                }
+            }
+            item(key = "others-title") {
+                SectionHeader(
+                    text = pluralStringResource(
+                        if (done.isEmpty()) R.plurals.week_all_exercises else R.plurals.week_other_exercises,
+                        others.size,
+                        others.size,
+                    ),
+                    modifier = Modifier
+                        .animateItem(fadeInSpec = null)
+                        .reveal(reveal, "others-title"),
+                    action = {
+                        TextButton(onClick = { showAll = !showAll }) {
+                            Text(stringResource(if (showAll) R.string.action_hide else R.string.action_show))
+                        }
+                    },
+                )
+            }
+            if (showAll) {
+                others.groupBy { it.exercise.muscleGroup }.forEach { (group, groupItems) ->
+                    item(key = "group-$group") {
+                        Text(
+                            text = stringResource(group.labelRes),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .padding(start = 4.dp, top = 4.dp)
+                                .animateItem(fadeInSpec = null)
+                                .reveal(reveal, "group-$group"),
+                        )
+                    }
+                    items(groupItems, key = { it.exercise.id }) { item ->
+                        ExerciseWeekCard(
+                            item = item,
+                            onLog = { onLog(item.exercise) },
+                            onEditEntry = onEditEntry,
+                            onOpen = { onOpenExercise(item.exercise) },
+                            modifier = Modifier
+                                .animateItem(fadeInSpec = null)
+                                .reveal(reveal, item.exercise.id),
+                        )
+                    }
+                }
+                item(key = "new-exercise") {
+                    TextButton(
+                        onClick = onAddExercise,
+                        contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
+                        modifier = Modifier.animateItem(fadeInSpec = null),
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.week_new_exercise))
+                    }
                 }
             }
             // While getting started, more exercises can still be added in one tap.

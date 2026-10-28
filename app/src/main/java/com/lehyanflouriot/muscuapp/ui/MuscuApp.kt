@@ -20,18 +20,17 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.MonitorWeight
 import androidx.compose.material.icons.rounded.Restaurant
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
+import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -40,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +64,7 @@ import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.Motion
 import com.lehyanflouriot.muscuapp.ui.common.SnackbarMessenger
+import com.lehyanflouriot.muscuapp.ui.common.show
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailRoute
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionRoute
 import com.lehyanflouriot.muscuapp.ui.nutrition.PlanEditorRoute
@@ -75,23 +76,23 @@ import com.lehyanflouriot.muscuapp.ui.rest.RestRoute
 import com.lehyanflouriot.muscuapp.ui.rest.displayed
 import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsRoute
+import com.lehyanflouriot.muscuapp.ui.today.TodayRoute
 import com.lehyanflouriot.muscuapp.ui.week.GuidedSessionRoute
 import com.lehyanflouriot.muscuapp.ui.week.TrainingEditorRoute
 import com.lehyanflouriot.muscuapp.ui.week.WeekRoute
-import com.lehyanflouriot.muscuapp.ui.weight.WeightRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import java.time.DayOfWeek
 import java.time.LocalDate
 
 object Routes {
+    const val TODAY = "today"
     const val WEEK = "week"
     const val NUTRITION = "nutrition"
     const val PROGRESS = "progress"
-    const val WEIGHT = "weight"
+    const val PROGRAM = "program"
     const val REST = "rest"
     const val SETTINGS = "settings"
-    const val PROGRAM = "program/{id}?day={day}"
     const val SESSION = "session/{date}"
     const val EXERCISE = "exercise/{id}"
     const val PLAN = "plan/{id}?day={day}"
@@ -100,8 +101,6 @@ object Routes {
     fun exercise(id: String) = "exercise/$id"
 
     fun plan(id: String, day: DayOfWeek) = "plan/$id?day=${day.value}"
-
-    fun program(id: String, day: DayOfWeek) = "program/$id?day=${day.value}"
 
     fun session(date: LocalDate) = "session/${date.toEpochDay()}"
 
@@ -115,14 +114,21 @@ enum class OpenTarget { REST, SESSION, WEIGHT }
 /** A screen asked from outside; [count] tells two requests for the same screen apart. */
 data class OpenRequest(val target: OpenTarget, val count: Int)
 
+/** A program to show in the Programme tab, at the session of [day], asked from another screen. */
+data class ProgramRequest(val programId: String, val day: DayOfWeek)
+
+/** The two parts of the Progrès tab. */
+enum class ProgressSection { EXERCISES, WEIGHT }
+
 private class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector)
 
+// From the most used to the least: the day, the week of training, the meals, the progress, the program.
 private val tabs = listOf(
+    Tab(Routes.TODAY, R.string.tab_today, Icons.Rounded.Today),
     Tab(Routes.WEEK, R.string.tab_week, Icons.Rounded.FitnessCenter),
     Tab(Routes.NUTRITION, R.string.tab_nutrition, Icons.Rounded.Restaurant),
     Tab(Routes.PROGRESS, R.string.tab_progress, Icons.Rounded.Insights),
-    Tab(Routes.WEIGHT, R.string.tab_weight, Icons.Rounded.MonitorWeight),
-    Tab(Routes.REST, R.string.tab_rest, Icons.Rounded.Timer),
+    Tab(Routes.PROGRAM, R.string.tab_program, Icons.AutoMirrored.Rounded.EventNote),
 )
 
 private val tabRoutes: Set<String> = tabs.mapTo(HashSet()) { it.route }
@@ -176,15 +182,31 @@ fun MuscuApp(
         timer.finishIfDue()
     }
 
+    // A program asked from the week, shown by the Programme tab; the part of the Progrès tab shown.
+    var programRequest by remember { mutableStateOf<ProgramRequest?>(null) }
+    var progressSection by rememberSaveable { mutableStateOf(ProgressSection.EXERCISES) }
+    val openTab: (String) -> Unit = { navController.navigateToTab(it) }
+    val openRest = { navController.navigate(Routes.REST) { launchSingleTop = true } }
+    val openSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } }
+    val openWeight = {
+        progressSection = ProgressSection.WEIGHT
+        navController.navigateToTab(Routes.PROGRESS)
+    }
+    val openProgram: (String, DayOfWeek) -> Unit = { id, day ->
+        programRequest = ProgramRequest(id, day)
+        navController.navigateToTab(Routes.PROGRAM)
+    }
+    val startSession: (LocalDate) -> Unit = { date -> navController.navigate(Routes.session(date)) { launchSingleTop = true } }
+
     val openRequest by openRequests.collectAsStateWithLifecycle()
     LaunchedEffect(openRequest) {
         when (openRequest?.target) {
-            OpenTarget.REST -> navController.navigateToTab(Routes.REST)
-            OpenTarget.WEIGHT -> navController.navigateToTab(Routes.WEIGHT)
+            OpenTarget.REST -> openRest()
+            // The weigh-in of the morning is at the top of the day.
+            OpenTarget.WEIGHT -> navController.navigateToTab(Routes.TODAY)
             OpenTarget.SESSION -> {
-                val route = Routes.session(LocalDate.now())
-                navController.navigateToTab(Routes.WEEK)
-                navController.navigate(route) { launchSingleTop = true }
+                navController.navigateToTab(Routes.TODAY)
+                startSession(LocalDate.now())
             }
             null -> Unit
         }
@@ -198,7 +220,8 @@ fun MuscuApp(
             currentRoute = currentRoute,
             timerState = timerState,
             now = now,
-            onNavigate = { navController.navigateToTab(it) },
+            onNavigate = openTab,
+            onOpenRest = openRest,
             onTimerToggle = timer::toggle,
             onTimerAdd = { timer.adjust(ADJUST_STEP_MS) },
             onTimerRestart = timer::restart,
@@ -206,7 +229,7 @@ fun MuscuApp(
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = Routes.WEEK,
+                startDestination = Routes.TODAY,
                 modifier = Modifier
                     .padding(padding)
                     .consumeWindowInsets(padding),
@@ -215,15 +238,27 @@ fun MuscuApp(
                 popEnterTransition = { if (isTabSwitch()) tabEnter else popEnter },
                 popExitTransition = { if (isTabSwitch()) tabExit else popExit },
             ) {
+                composable(Routes.TODAY) {
+                    TodayRoute(
+                        data = data,
+                        repository = repository,
+                        onStartSession = startSession,
+                        onOpenProgram = { openTab(Routes.PROGRAM) },
+                        onOpenNutrition = { openTab(Routes.NUTRITION) },
+                        onOpenWeight = openWeight,
+                        onOpenRest = openRest,
+                        onOpenSettings = openSettings,
+                    )
+                }
                 composable(Routes.WEEK) {
                     WeekRoute(
                         data = data,
                         repository = repository,
                         timer = timer,
                         onOpenExercise = { navController.navigate(Routes.exercise(it)) },
-                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                        onOpenProgram = { id, day -> navController.navigate(Routes.program(id, day)) },
-                        onStartSession = { date -> navController.navigate(Routes.session(date)) },
+                        onOpenSettings = openSettings,
+                        onOpenProgram = openProgram,
+                        onStartSession = startSession,
                     )
                 }
                 composable(Routes.NUTRITION) {
@@ -231,21 +266,37 @@ fun MuscuApp(
                         data = data,
                         repository = repository,
                         onEditPlan = { id, day -> navController.navigate(Routes.plan(id, day)) },
-                        onOpenWeight = { navController.navigateToTab(Routes.WEIGHT) },
+                        onOpenWeight = openWeight,
                         onOpenShopping = { navController.navigate(Routes.shopping(it)) },
+                        onOpenSettings = openSettings,
                     )
                 }
                 composable(Routes.PROGRESS) {
                     ProgressRoute(
                         data = data,
+                        repository = repository,
+                        section = progressSection,
+                        onSectionChange = { progressSection = it },
                         onOpenExercise = { navController.navigate(Routes.exercise(it)) },
+                        onOpenSettings = openSettings,
                     )
                 }
-                composable(Routes.WEIGHT) {
-                    WeightRoute(data = data, repository = repository)
+                composable(Routes.PROGRAM) {
+                    TrainingEditorRoute(
+                        data = data,
+                        repository = repository,
+                        request = programRequest,
+                        onRequestDone = { programRequest = null },
+                        onOpenSettings = openSettings,
+                    )
                 }
-                composable(Routes.REST) {
-                    RestRoute(presets = data.restPresets, repository = repository, timer = timer)
+                composable(Routes.REST) { entry ->
+                    RestRoute(
+                        presets = data.restPresets,
+                        repository = repository,
+                        timer = timer,
+                        onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
+                    )
                 }
                 composable(
                     route = Routes.EXERCISE,
@@ -295,24 +346,6 @@ fun MuscuApp(
                     )
                 }
                 composable(
-                    route = Routes.PROGRAM,
-                    arguments = listOf(
-                        navArgument("id") { type = NavType.StringType },
-                        navArgument("day") {
-                            type = NavType.IntType
-                            defaultValue = DayOfWeek.MONDAY.value
-                        },
-                    ),
-                ) { entry ->
-                    TrainingEditorRoute(
-                        initialProgramId = entry.arguments?.getString("id").orEmpty(),
-                        initialDay = DayOfWeek.of((entry.arguments?.getInt("day") ?: 1).coerceIn(1, 7)),
-                        data = data,
-                        repository = repository,
-                        onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
-                    )
-                }
-                composable(
                     route = Routes.SESSION,
                     arguments = listOf(navArgument("date") { type = NavType.LongType }),
                 ) { entry ->
@@ -345,6 +378,7 @@ fun MuscuScaffold(
     timerState: TimerState,
     now: Long,
     onNavigate: (String) -> Unit,
+    onOpenRest: () -> Unit,
     onTimerToggle: () -> Unit,
     onTimerAdd: () -> Unit,
     onTimerRestart: () -> Unit,
@@ -355,7 +389,7 @@ fun MuscuScaffold(
     // The guided session shows the rest itself.
     val showMiniTimer = timerState !is TimerState.Idle && currentRoute != Routes.REST && currentRoute != Routes.SESSION
     // While the bar slides away under a detail screen, it keeps showing the tab it came from.
-    var lastTab by remember { mutableStateOf(Routes.WEEK) }
+    var lastTab by remember { mutableStateOf(Routes.TODAY) }
     val selectedTab = currentRoute?.takeIf { it in tabRoutes } ?: lastTab
     LaunchedEffect(selectedTab) { lastTab = selectedTab }
     Scaffold(
@@ -366,7 +400,7 @@ fun MuscuScaffold(
                     MiniTimerBar(
                         state = timerState,
                         now = now,
-                        onOpen = { onNavigate(Routes.REST) },
+                        onOpen = onOpenRest,
                         onToggle = onTimerToggle,
                         onAdd = onTimerAdd,
                         onRestart = onTimerRestart,
@@ -385,14 +419,8 @@ fun MuscuScaffold(
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = { onNavigate(tab.route) },
-                                icon = {
-                                    TabIcon(
-                                        icon = tab.icon,
-                                        selected = selected,
-                                        badge = tab.route == Routes.REST && timerState is TimerState.Running,
-                                    )
-                                },
-                                label = { Text(stringResource(tab.label)) },
+                                icon = { TabIcon(icon = tab.icon, selected = selected) },
+                                label = { Text(stringResource(tab.label), maxLines = 1) },
                             )
                         }
                     }
@@ -405,7 +433,7 @@ fun MuscuScaffold(
 
 /** Icon of a tab, which gives a little bounce when the tab gets selected. */
 @Composable
-private fun TabIcon(icon: ImageVector, selected: Boolean, badge: Boolean) {
+private fun TabIcon(icon: ImageVector, selected: Boolean) {
     val scale = remember { Animatable(1f) }
     LaunchedEffect(selected) {
         if (selected) {
@@ -413,13 +441,12 @@ private fun TabIcon(icon: ImageVector, selected: Boolean, badge: Boolean) {
             scale.animateTo(1f, Motion.bounce())
         }
     }
-    val modifier = Modifier.graphicsLayer {
-        scaleX = scale.value
-        scaleY = scale.value
-    }
-    if (badge) {
-        BadgedBox(badge = { Badge() }, modifier = modifier) { Icon(icon, contentDescription = null) }
-    } else {
-        Icon(icon, contentDescription = null, modifier = modifier)
-    }
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        modifier = Modifier.graphicsLayer {
+            scaleX = scale.value
+            scaleY = scale.value
+        },
+    )
 }

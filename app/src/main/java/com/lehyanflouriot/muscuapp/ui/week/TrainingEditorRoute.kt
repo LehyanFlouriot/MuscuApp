@@ -1,5 +1,6 @@
 package com.lehyanflouriot.muscuapp.ui.week
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.SessionExercise
 import com.lehyanflouriot.muscuapp.core.model.TrainingProgram
+import com.lehyanflouriot.muscuapp.ui.ProgramRequest
 import com.lehyanflouriot.muscuapp.ui.common.ConfirmDialog
 import com.lehyanflouriot.muscuapp.ui.common.CopyDayDialog
 import com.lehyanflouriot.muscuapp.ui.common.DialogAction
@@ -45,22 +47,48 @@ import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseEditorSheet
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 
+/**
+ * The Programme tab: the program followed today, or another one chosen in "Mes programmes".
+ * [request] asks for a program and a day of it, from the session of the week.
+ */
 @Composable
 fun TrainingEditorRoute(
-    initialProgramId: String,
-    initialDay: DayOfWeek,
     data: AppData,
     repository: WorkoutRepository,
-    onBack: () -> Unit,
+    request: ProgramRequest?,
+    onRequestDone: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val today = rememberToday()
     val training = data.training
-    // Another program can be opened from "Mes programmes" without leaving the screen.
-    var programId by rememberSaveable { mutableStateOf(initialProgramId) }
-    val program = training.program(programId)?.takeIf { it.versionOf == null }
+    // The program chosen in "Mes programmes", null for the one followed today.
+    var programId by rememberSaveable { mutableStateOf<String?>(null) }
+    var scrollTo by remember { mutableStateOf<DayOfWeek?>(null) }
+    LaunchedEffect(request) {
+        if (request != null) {
+            programId = request.programId
+            scrollTo = request.day
+            onRequestDone()
+        }
+    }
+    val program = programId?.let(training::program)?.takeIf { it.versionOf == null }
+        ?: training.programAt(today)
+        ?: training.programInfos(today).firstOrNull()?.plan
+    var creating by rememberSaveable { mutableStateOf(false) }
     if (program == null) {
-        // The program was deleted (or a backup restored) while it was open.
-        LaunchedEffect(Unit) { onBack() }
+        NoTrainingProgram(onCreate = { creating = true }, onOpenSettings = onOpenSettings)
+        if (creating) {
+            NewProgramDialog(
+                current = null,
+                today = today,
+                nameHint = stringResource(R.string.training_program_name_hint),
+                onDismiss = { creating = false },
+                onCreate = { name, _, start ->
+                    programId = repository.createTrainingProgram(name, null, start ?: today)
+                    creating = false
+                },
+            )
+        }
         return
     }
     val id = program.id
@@ -68,7 +96,6 @@ fun TrainingEditorRoute(
     val context = LocalContext.current
     var edit by remember { mutableStateOf<TrainingEdit?>(null) }
     var showPrograms by rememberSaveable { mutableStateOf(false) }
-    var creating by rememberSaveable { mutableStateOf(false) }
     var starting by remember { mutableStateOf<TrainingProgram?>(null) }
     var deleting by remember { mutableStateOf<TrainingProgram?>(null) }
     val update: ((TrainingProgram) -> TrainingProgram) -> Unit = { repository.updateTrainingProgram(id, it) }
@@ -92,16 +119,17 @@ fun TrainingEditorRoute(
         status = infos.firstOrNull { it.plan.id == id }?.let { programStatusText(it, today) },
         keepsHistory = remember(data, id) { data.trainingHistory(id) },
         today = today.dayOfWeek,
-        initialDay = initialDay,
+        scrollTo = scrollTo,
+        onScrolled = { scrollTo = null },
         onOpen = { edit = it },
         onOpenPrograms = { showPrograms = true },
-        onBack = onBack,
+        onOpenSettings = onOpenSettings,
     )
 
     when (val current = edit) {
         null -> Unit
         TrainingEdit.Program -> FormDialog(
-            title = stringResource(R.string.plan_editor_title),
+            title = stringResource(R.string.training_program_edit),
             fields = listOf(
                 FormField(stringResource(R.string.plan_name), program.name, required = true),
                 FormField(stringResource(R.string.plan_info), program.info, singleLine = false),
@@ -324,7 +352,7 @@ fun TrainingEditorRoute(
                 if (repository.deleteTrainingProgram(other.id)) {
                     messenger.show(context.getString(R.string.program_deleted))
                     // The program shown is gone: the one followed today takes its place.
-                    if (other.id == id) training.programAt(today)?.let { programId = it.id }
+                    if (other.id == id) programId = null
                 }
                 deleting = null
             },

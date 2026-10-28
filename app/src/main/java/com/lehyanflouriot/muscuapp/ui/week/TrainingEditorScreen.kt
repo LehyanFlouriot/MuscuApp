@@ -18,13 +18,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.SelfImprovement
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,9 +57,11 @@ import com.lehyanflouriot.muscuapp.core.model.TrainingDay
 import com.lehyanflouriot.muscuapp.core.model.TrainingProgram
 import com.lehyanflouriot.muscuapp.ui.common.EditorRow
 import com.lehyanflouriot.muscuapp.ui.common.EditorSection
+import com.lehyanflouriot.muscuapp.ui.common.EmptyState
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.Motion
 import com.lehyanflouriot.muscuapp.ui.common.ProgramHeader
+import com.lehyanflouriot.muscuapp.ui.common.SettingsAction
 import com.lehyanflouriot.muscuapp.ui.common.fullName
 import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.reveal
@@ -104,6 +107,45 @@ fun EmphasisBadge(modifier: Modifier = Modifier) {
     )
 }
 
+/** The place of the card of [day] in the list, after the one of the program. */
+private fun dayItemIndex(day: DayOfWeek): Int = if (day == DayOfWeek.MONDAY) 0 else day.ordinal + 1
+
+/** The Programme tab when there is no program yet. */
+@Composable
+fun NoTrainingProgram(onCreate: () -> Unit, onOpenSettings: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.program_screen_title)) },
+                actions = { SettingsAction(onOpenSettings) },
+            )
+        },
+        snackbarHost = { SnackbarHost(LocalSnackbarHostState.current) },
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            EmptyState(
+                icon = Icons.AutoMirrored.Rounded.EventNote,
+                title = stringResource(R.string.training_none_title),
+                text = stringResource(R.string.training_none_text),
+                action = {
+                    Button(onClick = onCreate, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
+                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.training_none_create))
+                    }
+                },
+            )
+        }
+    }
+}
+
 /**
  * The whole week of a training program, as on paper, where everything can be changed: its
  * sessions, what each one asks for its exercises, and the advice to follow it.
@@ -115,29 +157,31 @@ fun TrainingEditorScreen(
     status: String?,
     keepsHistory: Boolean,
     today: DayOfWeek,
-    initialDay: DayOfWeek,
+    scrollTo: DayOfWeek?,
+    onScrolled: () -> Unit,
     onOpen: (TrainingEdit) -> Unit,
     onOpenPrograms: () -> Unit,
-    onBack: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val reveal = rememberRevealState()
-    // The day asked for shows first; from Monday on, the program shows above it.
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = if (initialDay == DayOfWeek.MONDAY) 0 else initialDay.ordinal + 1)
+    // Today's session shows first; from Monday on, the program shows above it.
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = dayItemIndex(scrollTo ?: today))
+    // The day asked from the week comes into view.
+    LaunchedEffect(scrollTo) {
+        if (scrollTo != null) {
+            listState.animateScrollToItem(dayItemIndex(scrollTo))
+            onScrolled()
+        }
+    }
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.program_screen_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                },
                 actions = {
-                    IconButton(onClick = onOpenPrograms) {
-                        Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = stringResource(R.string.programs_title))
-                    }
+                    TextButton(onClick = onOpenPrograms) { Text(stringResource(R.string.programs_title)) }
+                    SettingsAction(onOpenSettings)
                 },
                 scrollBehavior = scrollBehavior,
             )

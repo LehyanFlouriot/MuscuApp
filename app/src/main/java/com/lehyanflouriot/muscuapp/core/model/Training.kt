@@ -3,6 +3,7 @@ package com.lehyanflouriot.muscuapp.core.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 /** What a session asks for an exercise: "4 × 6-12 · RIR 1", "2 × 10-15 / jambe · RIR 3". */
 @Serializable
@@ -67,11 +68,22 @@ data class TrainingProgram(
     fun line(id: String): SessionExercise? = days.firstNotNullOfOrNull { day -> day.exercises.firstOrNull { it.id == id } }
 }
 
+/** A session done on another day than planned: the session planned on [from] is done on [date]. */
+@Serializable
+data class SessionMove(
+    @Serializable(with = LocalDateIsoSerializer::class)
+    val date: LocalDate,
+    @Serializable(with = LocalDateIsoSerializer::class)
+    val from: LocalDate,
+)
+
 @Serializable
 data class Training(
     val programs: List<TrainingProgram> = emptyList(),
     /** Sorted by date. */
     val schedule: List<PlanPeriod> = emptyList(),
+    /** Sessions done on another day than planned, sorted by date. */
+    val moves: List<SessionMove> = emptyList(),
     /** Whether the program the app comes with was already added: it is never added again. */
     val seeded: Boolean = false,
     /** The single program the app had before programs could follow one another: moved to [programs] when read. */

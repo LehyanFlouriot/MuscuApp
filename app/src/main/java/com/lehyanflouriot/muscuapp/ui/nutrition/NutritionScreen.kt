@@ -24,7 +24,6 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,28 +55,32 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.LocalDrink
 import androidx.compose.material.icons.rounded.MonitorWeight
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -116,6 +119,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.domain.FoodView
+import com.lehyanflouriot.muscuapp.core.domain.MAX_WATER_GLASSES
 import com.lehyanflouriot.muscuapp.core.domain.MealView
 import com.lehyanflouriot.muscuapp.core.domain.NutritionDayView
 import com.lehyanflouriot.muscuapp.core.domain.ProgramStatus
@@ -134,7 +138,6 @@ import com.lehyanflouriot.muscuapp.core.domain.weeksBetween
 import com.lehyanflouriot.muscuapp.core.domain.weightGuidance
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.BodyWeightEntry
-import com.lehyanflouriot.muscuapp.core.model.DayPlan
 import com.lehyanflouriot.muscuapp.core.model.MealPlan
 import com.lehyanflouriot.muscuapp.core.model.Nutrition
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
@@ -144,6 +147,7 @@ import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.Motion
 import com.lehyanflouriot.muscuapp.ui.common.RevealState
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
+import com.lehyanflouriot.muscuapp.ui.common.SettingsAction
 import com.lehyanflouriot.muscuapp.ui.common.countUp
 import com.lehyanflouriot.muscuapp.ui.common.rememberPressFeedback
 import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
@@ -168,7 +172,11 @@ class NutritionActions(
     val onOpenWeight: () -> Unit,
     /** Opens the shopping list of the week of the day shown. */
     val onOpenShopping: (LocalDate) -> Unit,
+    val onOpenSettings: () -> Unit,
 )
+
+/** What a day is about for the training program: "Quadriceps" with a session, or rest. */
+data class DayType(val label: String, val training: Boolean)
 
 /**
  * The meals of a day, to check what was eaten: the week at the top, then the rings of the day,
@@ -181,6 +189,8 @@ fun NutritionScreen(
     today: LocalDate,
     date: LocalDate,
     actions: NutritionActions,
+    /** The day of the training program on a date, null when no program is followed. */
+    dayType: (LocalDate) -> DayType? = { null },
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val reveal = rememberRevealState()
@@ -198,21 +208,38 @@ fun NutritionScreen(
                 title = { Text(stringResource(R.string.nutrition_title)) },
                 actions = {
                     AnimatedVisibility(visible = date != today, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
-                        IconButton(onClick = { actions.onSelectDate(today) }) {
-                            Icon(Icons.Rounded.Today, contentDescription = stringResource(R.string.nutrition_back_to_today))
-                        }
+                        TextButton(onClick = { actions.onSelectDate(today) }) { Text(stringResource(R.string.date_today)) }
                     }
                     IconButton(onClick = { actions.onOpenShopping(date) }) {
                         Icon(Icons.Rounded.ShoppingCart, contentDescription = stringResource(R.string.shopping_title))
                     }
-                    if (program != null) {
-                        IconButton(onClick = { actions.onEditPlan(program, date.dayOfWeek) }) {
-                            Icon(Icons.Rounded.EditNote, contentDescription = stringResource(R.string.nutrition_edit_plan))
+                    var menu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { menu = true }) {
+                            Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more))
+                        }
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            if (program != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.nutrition_edit_plan)) },
+                                    leadingIcon = { Icon(Icons.Rounded.EditNote, contentDescription = null) },
+                                    onClick = {
+                                        menu = false
+                                        actions.onEditPlan(program, date.dayOfWeek)
+                                    },
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.nutrition_programs)) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null) },
+                                onClick = {
+                                    menu = false
+                                    actions.onOpenPrograms()
+                                },
+                            )
                         }
                     }
-                    IconButton(onClick = actions.onOpenPrograms) {
-                        Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = stringResource(R.string.nutrition_programs))
-                    }
+                    SettingsAction(actions.onOpenSettings)
                 },
                 scrollBehavior = scrollBehavior,
             )
@@ -274,6 +301,7 @@ fun NutritionScreen(
                     weights = weights,
                     today = today,
                     date = shown,
+                    dayType = dayType(shown),
                     reveal = reveal,
                     actions = actions,
                 )
@@ -288,6 +316,7 @@ private fun DayList(
     weights: List<BodyWeightEntry>,
     today: LocalDate,
     date: LocalDate,
+    dayType: DayType?,
     reveal: RevealState,
     actions: NutritionActions,
 ) {
@@ -310,26 +339,28 @@ private fun DayList(
             return@LazyColumn
         }
         val program = nutrition.programOf(view.plan)
+        // The training program says what the day is about; the plan, which kind of menu it has.
+        val type = dayType ?: DayType(view.dayPlan.label, view.dayPlan.training)
         item(key = "summary") {
             DaySummaryCard(
                 view = view,
                 today = today,
+                dayType = type,
+                canChangeWater = canCheck,
+                onWaterChange = { actions.onWaterChange(date, it) },
                 modifier = Modifier
                     .animateItem(fadeInSpec = null)
                     .reveal(reveal, "summary"),
             )
         }
-        val goal = program.weightGoal
-        if (date == today && goal != null) {
-            item(key = "guidance") {
-                val guidance = remember(goal, weights, today) { weightGuidance(goal, weights, today) }
-                GuidanceCard(
-                    guidance = guidance,
-                    today = today,
-                    onOpenWeight = actions.onOpenWeight,
+        if (dayType != null && dayType.training != view.dayPlan.training && view.foodCount > 0) {
+            item(key = "menu-type") {
+                MenuTypeHint(
+                    training = dayType.training,
+                    onAdapt = { actions.onEditPlan(program, date.dayOfWeek) },
                     modifier = Modifier
                         .animateItem(fadeInSpec = null)
-                        .reveal(reveal, "guidance"),
+                        .reveal(reveal, "menu-type"),
                 )
             }
         }
@@ -361,18 +392,17 @@ private fun DayList(
                     .reveal(reveal, "meal-${meal.slot.id}"),
             )
         }
-        if (view.waterTarget > 0) {
-            item(key = "water") {
-                WaterCard(
-                    water = view.water,
-                    target = view.waterTarget,
-                    glassMl = view.plan.glassMl,
-                    hint = view.plan.waterHint,
-                    canChange = canCheck,
-                    onChange = { actions.onWaterChange(date, it) },
+        val goal = program.weightGoal
+        if (date == today && goal != null) {
+            item(key = "guidance") {
+                val guidance = remember(goal, weights, today) { weightGuidance(goal, weights, today) }
+                GuidanceCard(
+                    guidance = guidance,
+                    today = today,
+                    onOpenWeight = actions.onOpenWeight,
                     modifier = Modifier
                         .animateItem(fadeInSpec = null)
-                        .reveal(reveal, "water"),
+                        .reveal(reveal, "guidance"),
                 )
             }
         }
@@ -558,7 +588,14 @@ private fun share(value: Double, target: Int?): Float =
     if (target == null || target <= 0) 0f else (value / target).toFloat().coerceIn(0f, 1f)
 
 @Composable
-private fun DaySummaryCard(view: NutritionDayView, today: LocalDate, modifier: Modifier = Modifier) {
+private fun DaySummaryCard(
+    view: NutritionDayView,
+    today: LocalDate,
+    dayType: DayType,
+    canChangeWater: Boolean,
+    onWaterChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val rings = ringColors()
     val future = view.date > today
     val kcalTarget = view.kcalTarget
@@ -597,7 +634,7 @@ private fun DaySummaryCard(view: NutritionDayView, today: LocalDate, modifier: M
                         )
                     }
                 }
-                DayTypeChip(view.dayPlan)
+                DayTypeChip(dayType)
             }
             // A ring for each target of the program: calories, protein and water.
             val shown = listOfNotNull(
@@ -615,6 +652,33 @@ private fun DaySummaryCard(view: NutritionDayView, today: LocalDate, modifier: M
                     Spacer(Modifier.width(20.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         shown.forEach { (ring, label, value) -> RingLegend(ring.color, label, value) }
+                    }
+                }
+            }
+            if (view.waterTarget > 0 && canChangeWater) {
+                WaterRow(
+                    water = view.water,
+                    target = view.waterTarget,
+                    glassMl = view.plan.glassMl,
+                    canChange = true,
+                    onChange = onWaterChange,
+                )
+                if (view.plan.waterHint.isNotBlank()) {
+                    Row {
+                        Icon(
+                            Icons.Rounded.Lightbulb,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .size(16.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = Fmt.typography(view.plan.waterHint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
@@ -663,7 +727,7 @@ private fun RingLegend(color: Color, label: Int, value: String) {
 
 /** "Pectoraux" with a dumbbell on training days, "Repos" with a leaf otherwise. */
 @Composable
-private fun DayTypeChip(day: DayPlan) {
+private fun DayTypeChip(day: DayType) {
     val label = day.label.ifBlank {
         stringResource(if (day.training) R.string.nutrition_training else R.string.nutrition_rest_day)
     }
@@ -732,15 +796,16 @@ private fun MealView.subtitle(): String {
     return Fmt.typography(parts.joinToString(" · "))
 }
 
+/** A meal and its foods to check. [onSwap] replaces a food for the day, when given. */
 @Composable
-private fun MealCard(
+internal fun MealCard(
     meal: MealView,
     date: LocalDate,
     canCheck: Boolean,
     highlighted: Boolean,
     onToggleFood: (FoodView) -> Unit,
     onToggleMeal: () -> Unit,
-    onSwap: (FoodView) -> Unit,
+    onSwap: ((FoodView) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -856,7 +921,7 @@ private fun MealCard(
                             food = food,
                             canCheck = canCheck,
                             onToggle = { onToggleFood(food) },
-                            onSwap = { onSwap(food) },
+                            onSwap = onSwap?.let { swap -> { swap(food) } },
                         )
                     }
                 }
@@ -898,7 +963,7 @@ private fun MealBadge(meal: MealView, done: Boolean) {
 }
 
 @Composable
-private fun FoodRow(food: FoodView, canCheck: Boolean, onToggle: () -> Unit, onSwap: () -> Unit) {
+private fun FoodRow(food: FoodView, canCheck: Boolean, onToggle: () -> Unit, onSwap: (() -> Unit)?) {
     val colors = MaterialTheme.colorScheme
     val textColor by animateColorAsState(
         if (food.eaten && canCheck) colors.onSurfaceVariant else colors.onSurface,
@@ -956,12 +1021,16 @@ private fun FoodRow(food: FoodView, canCheck: Boolean, onToggle: () -> Unit, onS
                 )
             }
         }
-        IconButton(onClick = onSwap) {
-            Icon(
-                imageVector = Icons.Rounded.SwapHoriz,
-                contentDescription = stringResource(R.string.nutrition_swap_food, food.name),
-                tint = colors.onSurfaceVariant.copy(alpha = 0.7f),
-            )
+        if (onSwap != null) {
+            IconButton(onClick = onSwap) {
+                Icon(
+                    imageVector = Icons.Rounded.SwapHoriz,
+                    contentDescription = stringResource(R.string.nutrition_swap_food, food.name),
+                    tint = colors.onSurfaceVariant.copy(alpha = 0.7f),
+                )
+            }
+        } else {
+            Spacer(Modifier.width(12.dp))
         }
     }
 }
@@ -970,12 +1039,12 @@ private fun FoodRow(food: FoodView, canCheck: Boolean, onToggle: () -> Unit, onS
 
 // region Water
 
+/** The water of the day, with the buttons to note one glass more or less. */
 @Composable
-private fun WaterCard(
+internal fun WaterRow(
     water: Int,
     target: Int,
     glassMl: Int,
-    hint: String,
     canChange: Boolean,
     onChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -983,109 +1052,58 @@ private fun WaterCard(
     val waterColor = ringColors().water
     val colors = MaterialTheme.colorScheme
     val glasses = pluralStringResource(R.plurals.nutrition_glasses, target, target)
-    Card(
-        colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.WaterDrop, contentDescription = null, tint = waterColor)
-                Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.nutrition_water), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = stringResource(R.string.nutrition_water_liters, Fmt.liters(water * glassMl), Fmt.liters(target * glassMl)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.onSurfaceVariant,
-                    )
-                }
-                Text(
-                    text = if (canChange) stringResource(R.string.nutrition_amount_of, Fmt.number(water), glasses) else glasses,
-                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                    fontWeight = FontWeight.Bold,
-                )
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Rounded.WaterDrop, contentDescription = null, tint = waterColor)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = if (canChange) stringResource(R.string.nutrition_amount_of, Fmt.number(water), glasses) else glasses,
+                style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = stringResource(R.string.nutrition_water_liters, Fmt.liters(water * glassMl), Fmt.liters(target * glassMl)),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+            )
+        }
+        if (canChange) {
+            FilledTonalIconButton(onClick = { onChange(water - 1) }, enabled = water > 0) {
+                Icon(Icons.Rounded.Remove, contentDescription = stringResource(R.string.nutrition_water_remove))
             }
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+            Spacer(Modifier.width(8.dp))
+            val press = rememberPressFeedback()
+            FilledIconButton(
+                onClick = { onChange((water + 1).coerceAtMost(MAX_WATER_GLASSES)) },
+                colors = IconButtonDefaults.filledIconButtonColors(containerColor = waterColor, contentColor = colors.onTertiary),
+                interactionSource = press.interactionSource,
+                modifier = press.modifier,
             ) {
-                repeat(maxOf(target, water)) { index ->
-                    Glass(
-                        filled = index < water,
-                        color = waterColor,
-                        enabled = canChange,
-                        description = stringResource(R.string.nutrition_water_glass_cd, index + 1),
-                        // Tapping the last glass drunk empties it.
-                        onClick = { onChange(if (index + 1 == water) index else index + 1) },
-                    )
-                }
-            }
-            if (canChange) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalIconButton(onClick = { onChange(water - 1) }, enabled = water > 0) {
-                        Icon(Icons.Rounded.Remove, contentDescription = stringResource(R.string.nutrition_water_remove))
-                    }
-                    val press = rememberPressFeedback()
-                    Button(
-                        onClick = { onChange(water + 1) },
-                        colors = ButtonDefaults.buttonColors(containerColor = waterColor, contentColor = colors.onTertiary),
-                        interactionSource = press.interactionSource,
-                        modifier = press.modifier,
-                    ) {
-                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.nutrition_water_add))
-                    }
-                }
-            }
-            if (hint.isNotBlank()) {
-                Row {
-                    Icon(
-                        Icons.Rounded.Lightbulb,
-                        contentDescription = null,
-                        tint = colors.onSurfaceVariant,
-                        modifier = Modifier
-                            .padding(top = 2.dp)
-                            .size(16.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(text = Fmt.typography(hint), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-                }
+                Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.nutrition_water_add_cd))
             }
         }
     }
 }
 
-/** A glass that fills, with a little bounce, when it is drunk. */
+/** The menu of the day is not the kind the training program asks for: a session on a rest-day menu. */
 @Composable
-private fun Glass(filled: Boolean, color: Color, enabled: Boolean, description: String, onClick: () -> Unit) {
-    val tint by animateColorAsState(if (filled) color else color.copy(alpha = 0.2f), tween(250), label = "glass")
-    val scale = remember { Animatable(1f) }
-    var previous by remember { mutableStateOf(filled) }
-    LaunchedEffect(filled) {
-        if (filled && !previous) {
-            scale.snapTo(0.75f)
-            scale.animateTo(1f, Motion.bounce())
-        }
-        previous = filled
-    }
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .clickable(enabled = enabled, onClick = onClick)
-            .semantics { contentDescription = description },
+private fun MenuTypeHint(training: Boolean, onAdapt: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Icon(
-            imageVector = Icons.Rounded.LocalDrink,
-            contentDescription = null,
-            tint = tint,
-            modifier = Modifier.graphicsLayer {
-                scaleX = scale.value
-                scaleY = scale.value
-            },
-        )
+        Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Info, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(if (training) R.string.nutrition_menu_for_rest else R.string.nutrition_menu_for_training),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onAdapt) { Text(stringResource(R.string.nutrition_menu_adapt)) }
+        }
     }
 }
 

@@ -1,8 +1,12 @@
 package com.lehyanflouriot.muscuapp.ui.progress
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,9 +33,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -58,10 +64,12 @@ import com.lehyanflouriot.muscuapp.core.domain.Trend
 import com.lehyanflouriot.muscuapp.core.domain.WeekPoint
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.Exercise
+import com.lehyanflouriot.muscuapp.ui.ProgressSection
 import com.lehyanflouriot.muscuapp.ui.common.EmptyState
 import com.lehyanflouriot.muscuapp.ui.common.ExerciseAvatar
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
 import com.lehyanflouriot.muscuapp.ui.common.SectionHeader
+import com.lehyanflouriot.muscuapp.ui.common.SettingsAction
 import com.lehyanflouriot.muscuapp.ui.common.Sparkline
 import com.lehyanflouriot.muscuapp.ui.common.WeeklyBarChart
 import com.lehyanflouriot.muscuapp.ui.common.countUp
@@ -73,8 +81,61 @@ import com.lehyanflouriot.muscuapp.ui.common.reveal
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import java.time.LocalDate
 
+/**
+ * The frame of the Progrès tab: its title, and the choice between the exercises and the weight,
+ * whose [content] fills the rest.
+ */
 @Composable
-fun ProgressScreen(
+fun ProgressFrame(
+    section: ProgressSection,
+    onSectionChange: (ProgressSection) -> Unit,
+    onOpenSettings: () -> Unit,
+    content: @Composable (ProgressSection, PaddingValues) -> Unit,
+) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            Column {
+                LargeTopAppBar(
+                    title = { Text(stringResource(R.string.progress_title)) },
+                    actions = { SettingsAction(onOpenSettings) },
+                    scrollBehavior = scrollBehavior,
+                )
+                PrimaryTabRow(selectedTabIndex = section.ordinal) {
+                    ProgressSection.entries.forEach { entry ->
+                        Tab(
+                            selected = entry == section,
+                            onClick = { onSectionChange(entry) },
+                            text = {
+                                Text(
+                                    stringResource(
+                                        when (entry) {
+                                            ProgressSection.EXERCISES -> R.string.progress_section_exercises
+                                            ProgressSection.WEIGHT -> R.string.progress_section_weight
+                                        },
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+        },
+        snackbarHost = { SnackbarHost(LocalSnackbarHostState.current) },
+    ) { padding ->
+        AnimatedContent(
+            targetState = section,
+            transitionSpec = { fadeIn(tween(220, delayMillis = 60)).togetherWith(fadeOut(tween(90))) },
+            label = "progress-section",
+        ) { shown -> content(shown, padding) }
+    }
+}
+
+/** How the exercises go: the streak of weeks, the sets of each week, and each exercise. */
+@Composable
+fun ExercisesProgress(
+    padding: PaddingValues,
     items: List<ExerciseProgressItem>,
     activity: List<WeekPoint>,
     streak: Int,
@@ -82,49 +143,37 @@ fun ProgressScreen(
     today: LocalDate,
     onOpenExercise: (Exercise) -> Unit,
 ) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val hasData = items.any { it.lastDate != null }
     val active = items.filterNot { it.exercise.archived }
     val archived = items.filter { it.exercise.archived }
     var showArchived by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = { Text(stringResource(R.string.progress_title)) },
-                scrollBehavior = scrollBehavior,
-            )
-        },
-        snackbarHost = { SnackbarHost(LocalSnackbarHostState.current) },
-    ) { padding ->
-        if (!hasData) {
-            Box(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                EmptyState(
-                    icon = Icons.Rounded.Insights,
-                    title = stringResource(R.string.progress_empty_title),
-                    text = stringResource(R.string.progress_empty_text),
-                )
-            }
-        } else {
-            ProgressList(
-                padding = padding,
-                active = active,
-                archived = archived,
-                showArchived = showArchived,
-                onToggleArchived = { showArchived = !showArchived },
-                streak = streak,
-                trainedThisWeek = trainedThisWeek,
-                activity = activity,
-                today = today,
-                onOpenExercise = onOpenExercise,
+    if (!hasData) {
+        Box(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            EmptyState(
+                icon = Icons.Rounded.Insights,
+                title = stringResource(R.string.progress_empty_title),
+                text = stringResource(R.string.progress_empty_text),
             )
         }
+    } else {
+        ProgressList(
+            padding = padding,
+            active = active,
+            archived = archived,
+            showArchived = showArchived,
+            onToggleArchived = { showArchived = !showArchived },
+            streak = streak,
+            trainedThisWeek = trainedThisWeek,
+            activity = activity,
+            today = today,
+            onOpenExercise = onOpenExercise,
+        )
     }
 }
 

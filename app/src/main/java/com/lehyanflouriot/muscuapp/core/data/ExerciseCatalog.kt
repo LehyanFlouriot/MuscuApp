@@ -87,8 +87,8 @@ object ExerciseCatalog {
     )
 
     private val popularNames = listOf(
-        "Développé couché", "Squat", "Tractions", "Soulevé de terre", "Développé militaire",
-        "Rowing barre", "Curl haltères", "Pompes", "Dips", "Presse à cuisses", "Hip thrust", "Gainage",
+        "Pompes", "Tractions", "Squat", "Dips", "Gainage", "Hip thrust",
+        "Développé couché", "Soulevé de terre", "Développé militaire", "Rowing barre", "Curl haltères", "Presse à cuisses",
     )
 
     /** Shown before anything is typed. */

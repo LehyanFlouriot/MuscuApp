@@ -14,6 +14,7 @@ import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekSessions
 import com.lehyanflouriot.muscuapp.core.domain.defaultLogDate
+import com.lehyanflouriot.muscuapp.core.domain.missedSession
 import com.lehyanflouriot.muscuapp.core.domain.programAt
 import com.lehyanflouriot.muscuapp.core.domain.programOf
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
@@ -21,6 +22,7 @@ import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.timer.RestTimer
 import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
+import com.lehyanflouriot.muscuapp.ui.common.lowerName
 import com.lehyanflouriot.muscuapp.ui.common.rememberToday
 import com.lehyanflouriot.muscuapp.ui.common.show
 import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseEditorSheet
@@ -54,6 +56,7 @@ fun WeekRoute(
     }
     val messenger = LocalMessenger.current
     val context = LocalContext.current
+    val missed = remember(data, today) { missedSession(data, today) }
     var logRequest by remember { mutableStateOf<LogRequest?>(null) }
     var creatingExercise by remember { mutableStateOf(false) }
 
@@ -84,10 +87,19 @@ fun WeekRoute(
                 program?.let { onOpenProgram(it.id, sessionDate.dayOfWeek) }
             },
             onStart = onStartSession,
+            onDoMissed = { session ->
+                repository.moveSession(from = session.date, to = today)
+                messenger.show(
+                    context.getString(R.string.missed_moved, session.date.dayOfWeek.lowerName()),
+                    context.getString(R.string.action_undo),
+                ) { repository.cancelSessionMove(today) }
+            },
+            onCancelMove = { date -> repository.cancelSessionMove(date) },
         ),
         today = today,
         hasAnyEntry = data.entries.isNotEmpty(),
         suggestions = suggestions,
+        missed = missed,
         onPreviousWeek = { weekEpochDay = weekStart.minusWeeks(1).toEpochDay() },
         onNextWeek = { weekEpochDay = minOf(weekStart.plusWeeks(1), currentWeek).toEpochDay() },
         onThisWeek = { weekEpochDay = currentWeek.toEpochDay() },

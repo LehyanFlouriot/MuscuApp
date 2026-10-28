@@ -191,7 +191,13 @@ internal fun sanitizeTraining(training: Training, exerciseIds: Set<String>): Tra
         .asReversed()
         .distinctBy { it.from }
         .merged()
-    return Training(programs = cleanPrograms, schedule = schedule, seeded = training.seeded)
+    // A session is moved once, to a later day, and a day takes a single session.
+    val moves = training.moves
+        .filter { it.from < it.date }
+        .distinctBy { it.date }
+        .distinctBy { it.from }
+        .sortedBy { it.date }
+    return Training(programs = cleanPrograms, schedule = schedule, moves = moves, seeded = training.seeded)
 }
 
 // endregion

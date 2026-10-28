@@ -4,6 +4,7 @@ import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.SessionExercise
+import com.lehyanflouriot.muscuapp.core.model.SessionMove
 import com.lehyanflouriot.muscuapp.core.model.SetTarget
 import com.lehyanflouriot.muscuapp.core.model.Training
 import com.lehyanflouriot.muscuapp.core.model.TrainingDay
@@ -31,6 +32,45 @@ fun AppData.trainingHistory(programId: String): Boolean =
 
 // endregion
 
+// region Sessions done on another day
+
+/** The move of a session done on [date] instead of its own day. */
+fun Training.moveTo(date: LocalDate): SessionMove? = moves.firstOrNull { it.date == date }
+
+/** The move of the session planned on [date] to another day. */
+fun Training.moveFrom(date: LocalDate): SessionMove? = moves.firstOrNull { it.from == date }
+
+/** The day whose session of the program is done on [date]: [date] itself, unless a session was moved to it. */
+fun Training.sessionDate(date: LocalDate): LocalDate = moveTo(date)?.from ?: date
+
+/** How many days back a missed session can still be done another day. */
+const val MISSED_SESSION_DAYS = 6
+
+/**
+ * The last session missed before [today] that can still be done today instead: today has no
+ * session of its own, and nothing was noted since that session, which was not started. Null
+ * when there is none.
+ */
+fun missedSession(data: AppData, today: LocalDate): SessionView? {
+    val own = buildSession(data, today) ?: return null
+    if (!own.isRest || own.movedTo != null) return null
+    val trainedOn = data.entries.mapTo(HashSet()) { it.date }
+    for (offset in 1L..MISSED_SESSION_DAYS) {
+        val date = today.minusDays(offset)
+        // A day trained ends the search: what was missed before it is over.
+        if (date in trainedOn) return null
+        val session = buildSession(data, date) ?: return null
+        when {
+            // Already moved once: it is not moved again.
+            session.movedFrom != null -> return null
+            session.movedTo == null && !session.isRest -> return session
+        }
+    }
+    return null
+}
+
+// endregion
+
 /** An exercise of a session: what the program asks, and what was done that day. */
 data class SessionItem(
     val line: SessionExercise,
@@ -54,23 +94,39 @@ data class SessionView(
     val program: TrainingProgram?,
     val day: TrainingDay,
     val items: List<SessionItem>,
+    /** The day the session was planned on, when it is done on [date] instead. */
+    val movedFrom: LocalDate? = null,
+    /** The day the session planned on [date] is done instead: [date] then has no session. */
+    val movedTo: LocalDate? = null,
 ) {
     val doneCount: Int get() = items.count { it.done }
 
     val isRest: Boolean get() = items.isEmpty()
 }
 
-/** The session planned on [date] by the program, or null when no program is followed that day. */
+/**
+ * The session planned on [date] by the program, or the one moved to that day, or null when no
+ * program is followed that day.
+ */
 fun buildSession(data: AppData, date: LocalDate): SessionView? {
-    val program = data.training.planAt(date) ?: return null
-    val day = program.day(date.dayOfWeek)
+    val training = data.training
+    val move = training.moveTo(date)
+    val planned = move?.from ?: date
+    val program = training.planAt(planned) ?: return null
+    val day = program.day(planned.dayOfWeek)
+    if (move == null) {
+        // The session of the day is done on another day: it has nothing left to do here.
+        training.moveFrom(date)?.let { away ->
+            return SessionView(date, program, day.copy(exercises = emptyList()), emptyList(), movedTo = away.date)
+        }
+    }
     val byExercise = data.entries.groupBy { it.exerciseId }
     val items = day.exercises.mapNotNull { line ->
         val exercise = data.exercise(line.exerciseId) ?: return@mapNotNull null
         val entries = byExercise[exercise.id].orEmpty()
         val before = entries.filter { it.date < date }
         // The same session last week, or else the last time the exercise was done.
-        val last = before.filter { it.date.dayOfWeek == date.dayOfWeek }.maxWithOrNull(entryOrder)
+        val last = before.filter { training.sessionDate(it.date).dayOfWeek == planned.dayOfWeek }.maxWithOrNull(entryOrder)
             ?: before.maxWithOrNull(entryOrder)
         SessionItem(
             line = line,
@@ -81,7 +137,7 @@ fun buildSession(data: AppData, date: LocalDate): SessionView? {
             topReached = last != null && topReached(line.target, last.sets),
         )
     }
-    return SessionView(date, program, day, items)
+    return SessionView(date, program, day, items, movedFrom = move?.from)
 }
 
 /**

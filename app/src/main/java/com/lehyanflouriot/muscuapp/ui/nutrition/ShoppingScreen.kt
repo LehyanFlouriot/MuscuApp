@@ -145,13 +145,10 @@ fun nutritionWeekTitle(weekStart: LocalDate, today: LocalDate): String? = when (
 }
 
 /** "1,7 kg", "5 c. à s. + 2 c. à c.", or for how many meals a food without quantity is. */
-fun ShoppingItem.quantityText(context: Context): String {
-    val meals = context.resources.getQuantityString(R.plurals.shopping_meals, unmeasured, unmeasured)
-    return when {
-        amounts.isEmpty() -> meals
-        unmeasured > 0 -> "${Fmt.amounts(amounts)} + $meals"
-        else -> Fmt.amounts(amounts)
-    }
+fun ShoppingItem.quantityText(context: Context): String = when {
+    amounts.isEmpty() -> context.resources.getQuantityString(R.plurals.shopping_meals, unmeasured, unmeasured)
+    unmeasured > 0 -> "${Fmt.amounts(amounts)} + ${context.resources.getQuantityString(R.plurals.shopping_meals_extra, unmeasured, unmeasured)}"
+    else -> Fmt.amounts(amounts)
 }
 
 /** What is left to buy, as text to send in a message or a note. */

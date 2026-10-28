@@ -14,8 +14,8 @@ const val DEFAULT_BODY_WEIGHT = 70.0
 /** The trend averages the weights noted during this many days. */
 const val TREND_DAYS = 7
 
-/** The weekly rate is measured over this many days. */
-const val RATE_DAYS = 28
+/** The weekly rate is measured over this many days: the 2 weeks after which the plan adjusts the calories. */
+const val RATE_DAYS = 14
 
 /** Rounds to 0.1 kg, the precision of bathroom scales. */
 fun roundBodyWeight(kg: Double): Double = (kg * 10).roundToLong() / 10.0

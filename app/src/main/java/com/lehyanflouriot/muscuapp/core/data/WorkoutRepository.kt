@@ -4,6 +4,8 @@ import com.lehyanflouriot.muscuapp.core.domain.BODY_WEIGHT_RANGE
 import com.lehyanflouriot.muscuapp.core.domain.MAX_WATER_GLASSES
 import com.lehyanflouriot.muscuapp.core.domain.entryOrder
 import com.lehyanflouriot.muscuapp.core.domain.hasHistory
+import com.lehyanflouriot.muscuapp.core.domain.moveFrom
+import com.lehyanflouriot.muscuapp.core.domain.moveTo
 import com.lehyanflouriot.muscuapp.core.domain.periodAt
 import com.lehyanflouriot.muscuapp.core.domain.planAt
 import com.lehyanflouriot.muscuapp.core.domain.roundBodyWeight
@@ -22,6 +24,7 @@ import com.lehyanflouriot.muscuapp.core.model.Nutrition
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.RestPreset
 import com.lehyanflouriot.muscuapp.core.model.SessionExercise
+import com.lehyanflouriot.muscuapp.core.model.SessionMove
 import com.lehyanflouriot.muscuapp.core.model.SetTarget
 import com.lehyanflouriot.muscuapp.core.model.Settings
 import com.lehyanflouriot.muscuapp.core.model.ShoppingExtra
@@ -673,6 +676,22 @@ class WorkoutRepository(
     }
 
     /** Follows a training program from [from] on (today at the earliest), until the next start already planned. */
+    /** Does the session planned on [from] on [to] instead, when neither day has a session moved yet. */
+    fun moveSession(from: LocalDate, to: LocalDate) {
+        mutateTraining { training ->
+            if (from >= to || training.moveTo(to) != null || training.moveFrom(from) != null || training.moveFrom(to) != null) {
+                training
+            } else {
+                training.copy(moves = (training.moves + SessionMove(date = to, from = from)).sortedBy { it.date })
+            }
+        }
+    }
+
+    /** Gives the session done on [date] back to the day it was planned on. */
+    fun cancelSessionMove(date: LocalDate) {
+        mutateTraining { training -> training.copy(moves = training.moves.filterNot { it.date == date }) }
+    }
+
     fun startTrainingProgram(programId: String, from: LocalDate) {
         mutateTraining { it.startProgram(programId, maxOf(from, today())) }
     }

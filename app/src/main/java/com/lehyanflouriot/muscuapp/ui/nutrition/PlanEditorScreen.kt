@@ -28,7 +28,9 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WaterDrop
@@ -42,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -68,6 +71,7 @@ import com.lehyanflouriot.muscuapp.core.model.MealPlan
 import com.lehyanflouriot.muscuapp.core.model.MealSlot
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.PlannedMeal
+import com.lehyanflouriot.muscuapp.core.model.TrainingDay
 import com.lehyanflouriot.muscuapp.ui.common.CompactStepper
 import com.lehyanflouriot.muscuapp.ui.common.EditorRow
 import com.lehyanflouriot.muscuapp.ui.common.EditorSection
@@ -78,6 +82,8 @@ import com.lehyanflouriot.muscuapp.ui.common.fullName
 import com.lehyanflouriot.muscuapp.ui.common.rememberRevealState
 import com.lehyanflouriot.muscuapp.ui.common.reveal
 import com.lehyanflouriot.muscuapp.ui.common.shortName
+import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
+import com.lehyanflouriot.muscuapp.ui.week.dayTitle
 import java.time.DayOfWeek
 
 /** What the user opens from the plan editor. */
@@ -105,6 +111,8 @@ fun PlanEditorScreen(
     plan: MealPlan,
     day: DayOfWeek,
     keepsHistory: Boolean,
+    /** The day in the training program followed today, null without one. */
+    session: TrainingDay?,
     onDayChange: (DayOfWeek) -> Unit,
     onOpen: (PlanEdit) -> Unit,
     onTrainingChange: (Boolean) -> Unit,
@@ -151,6 +159,7 @@ fun PlanEditorScreen(
             item(key = "day") {
                 DaySettings(
                     day = dayPlan,
+                    session = session,
                     glassMl = plan.glassMl,
                     onEditLabel = { onOpen(PlanEdit.DayLabel) },
                     onTrainingChange = onTrainingChange,
@@ -302,6 +311,7 @@ private fun DayPicker(selected: DayOfWeek, onSelect: (DayOfWeek) -> Unit, modifi
 @Composable
 private fun DaySettings(
     day: DayPlan,
+    session: TrainingDay?,
     glassMl: Int,
     onEditLabel: () -> Unit,
     onTrainingChange: (Boolean) -> Unit,
@@ -310,8 +320,9 @@ private fun DaySettings(
     onCopy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = MaterialTheme.colorScheme
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(vertical = 8.dp)) {
@@ -320,37 +331,72 @@ private fun DaySettings(
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onEditLabel)
-                    .heightIn(min = 56.dp)
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.plan_day_label), style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        text = day.label.ifBlank { stringResource(R.string.plan_day_label_empty) },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (session != null) {
+                // What the day is about comes from the training program.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = if (session.isRest) Icons.Rounded.Spa else Icons.Rounded.FitnessCenter,
+                        contentDescription = null,
+                        tint = if (session.isRest) MuscuTheme.extendedColors.success else colors.primary,
                     )
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.plan_day_session), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = if (session.isRest) stringResource(R.string.nutrition_rest_day) else dayTitle(session),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant,
+                        )
+                    }
                 }
-                Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onEditLabel)
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.plan_day_label), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = day.label.ifBlank { stringResource(R.string.plan_day_label_empty) },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant,
+                        )
+                    }
+                    Icon(Icons.Rounded.Edit, contentDescription = null, tint = colors.onSurfaceVariant)
+                }
             }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .toggleable(value = day.training, role = Role.Switch, onValueChange = onTrainingChange)
                     .heightIn(min = 56.dp)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.plan_training_day),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f),
-                )
+                Column(Modifier.weight(1f)) {
+                    Text(text = stringResource(R.string.plan_training_day), style = MaterialTheme.typography.bodyLarge)
+                    val mismatch = session != null && session.isRest == day.training
+                    Text(
+                        text = when {
+                            !mismatch -> stringResource(R.string.plan_training_day_hint)
+                            day.training -> stringResource(R.string.plan_menu_mismatch_rest)
+                            else -> stringResource(R.string.plan_menu_mismatch_training)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (mismatch) colors.error else colors.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
                 Switch(checked = day.training, onCheckedChange = null)
             }
             Row(

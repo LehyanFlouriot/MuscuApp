@@ -17,7 +17,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingFlat
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -185,5 +187,13 @@ fun StatTile(value: String, label: String, modifier: Modifier = Modifier) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+/** The gear at the top of each tab, which opens the settings. */
+@Composable
+fun SettingsAction(onOpenSettings: () -> Unit) {
+    IconButton(onClick = onOpenSettings) {
+        Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings_title))
     }
 }

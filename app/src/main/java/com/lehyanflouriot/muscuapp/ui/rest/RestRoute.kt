@@ -25,6 +25,7 @@ fun RestRoute(
     presets: List<RestPreset>,
     repository: WorkoutRepository,
     timer: RestTimer,
+    onBack: () -> Unit,
 ) {
     val rawState by timer.state.collectAsStateWithLifecycle()
     val idleDuration by timer.idleDuration.collectAsStateWithLifecycle()
@@ -68,6 +69,7 @@ fun RestRoute(
         onEditPreset = { presetEdit = PresetEdit.Existing(it) },
         onEnableNotifications = enableNotifications,
         onEditIdleDuration = { editingIdleDuration = true },
+        onBack = onBack,
     )
 
     when (val edit = presetEdit) {

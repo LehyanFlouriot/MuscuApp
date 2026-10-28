@@ -78,6 +78,10 @@ class SessionActions(
     val onOpenProgram: () -> Unit,
     /** Starts the session of a day, guided set by set. */
     val onStart: (LocalDate) -> Unit,
+    /** Does today the session missed on another day. */
+    val onDoMissed: (SessionView) -> Unit = {},
+    /** Gives the session done on a day back to the day it was planned on. */
+    val onCancelMove: (LocalDate) -> Unit = {},
 )
 
 /** The session of the program on the chosen day of the week: what to do, and what is done. */
@@ -88,6 +92,8 @@ fun SessionCard(
     today: LocalDate,
     actions: SessionActions,
     modifier: Modifier = Modifier,
+    /** A session missed lately, which can be done today when today is free. */
+    missed: SessionView? = null,
 ) {
     val session = week.firstOrNull { it.date == selected } ?: return
     Card(
@@ -129,9 +135,29 @@ fun SessionCard(
                     }
                 }
             }
-            if (session.isRest) {
+            val movedTo = session.movedTo
+            if (movedTo != null) {
+                MovedAway(to = movedTo, today = today, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            } else if (session.isRest) {
                 RestDay(session, week)
+                if (session.date == today && missed != null) {
+                    MissedSession(
+                        missed = missed,
+                        onDoToday = { actions.onDoMissed(missed) },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
             } else {
+                session.movedFrom?.let { from ->
+                    MovedFrom(
+                        from = from,
+                        date = session.date,
+                        today = today,
+                        canCancel = session.doneSets().isEmpty(),
+                        onCancel = { actions.onCancelMove(session.date) },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
                 Column(Modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     session.items.forEach { item ->
                         SessionRow(

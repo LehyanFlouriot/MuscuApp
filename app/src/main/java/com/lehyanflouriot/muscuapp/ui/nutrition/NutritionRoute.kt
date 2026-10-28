@@ -15,6 +15,7 @@ import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.data.removeFood
 import com.lehyanflouriot.muscuapp.core.domain.FoodView
 import com.lehyanflouriot.muscuapp.core.domain.ProgramStatus
+import com.lehyanflouriot.muscuapp.core.domain.buildSession
 import com.lehyanflouriot.muscuapp.core.domain.foodNames
 import com.lehyanflouriot.muscuapp.core.domain.foodsNamed
 import com.lehyanflouriot.muscuapp.core.domain.hasHistory
@@ -47,6 +48,7 @@ fun NutritionRoute(
     onEditPlan: (planId: String, day: DayOfWeek) -> Unit,
     onOpenWeight: () -> Unit,
     onOpenShopping: (weekStart: LocalDate?) -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val today = rememberToday()
     val nutrition = data.nutrition
@@ -79,7 +81,12 @@ fun NutritionRoute(
             onOpenWeight = onOpenWeight,
             // From today, the list is the one of the week to shop for; from another day, of its week.
             onOpenShopping = { day -> onOpenShopping(day.takeIf { it != today }?.startOfWeek()) },
+            onOpenSettings = onOpenSettings,
         ),
+        // What each day is about comes from the training program, when one is followed.
+        dayType = { day ->
+            buildSession(data, day)?.let { session -> DayType(label = if (session.isRest) "" else session.day.title, training = !session.isRest) }
+        },
     )
 
     swap?.let { current ->
@@ -152,12 +159,14 @@ fun NutritionRoute(
             onDelete = { plan ->
                 val active = nutrition.programInfos(today).any { it.plan.id == plan.id && it.status == ProgramStatus.ACTIVE }
                 if (active || nutrition.hasHistory(plan.id)) {
-                    messenger.show(context.getString(R.string.program_cannot_delete))
+                    messenger.show(context.getString(R.string.nutrition_plan_cannot_delete))
                 } else {
                     deleting = plan
                 }
             },
             onNew = { creating = true },
+            title = stringResource(R.string.nutrition_programs),
+            newLabel = stringResource(R.string.nutrition_plan_new),
         )
     }
 
@@ -165,6 +174,7 @@ fun NutritionRoute(
         NewProgramDialog(
             current = nutrition.programAt(today),
             today = today,
+            title = stringResource(R.string.nutrition_plan_new),
             onDismiss = { creating = false },
             onCreate = { name, copyOf, start ->
                 val id = repository.createProgram(name, copyOf, start)
@@ -191,13 +201,13 @@ fun NutritionRoute(
 
     deleting?.let { plan ->
         ConfirmDialog(
-            title = stringResource(R.string.program_delete_title),
+            title = stringResource(R.string.nutrition_plan_delete_title),
             text = stringResource(R.string.program_delete_text, plan.name),
             confirmLabel = stringResource(R.string.action_delete),
             icon = Icons.Rounded.DeleteOutline,
             destructive = true,
             onConfirm = {
-                if (repository.deleteProgram(plan.id)) messenger.show(context.getString(R.string.program_deleted))
+                if (repository.deleteProgram(plan.id)) messenger.show(context.getString(R.string.nutrition_plan_deleted))
                 deleting = null
             },
             onDismiss = { deleting = null },

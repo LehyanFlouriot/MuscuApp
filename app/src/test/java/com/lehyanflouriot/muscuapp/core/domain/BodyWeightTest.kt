@@ -29,14 +29,14 @@ class BodyWeightTest {
     }
 
     @Test
-    fun weeklyRateFollowsTheSlopeOfTheLastFourWeeks() {
+    fun weeklyRateFollowsTheSlopeOfTheLastTwoWeeks() {
         val steadyGain = (0L..27L).map { weight(27 - it, 70.0 + it * 0.1) }
         assertEquals(0.7, weeklyRate(steadyGain)!!, 1e-9)
         // Older weights do not count.
         assertEquals(0.7, weeklyRate(steadyGain + weight(60, 50.0))!!, 1e-9)
-        // One unusual day barely changes it.
+        // One unusual day changes it little.
         val withOutlier = steadyGain.map { if (it.date == today.minusDays(10)) it.copy(weight = it.weight + 1.5) else it }
-        assertEquals(0.7, weeklyRate(withOutlier)!!, 0.1)
+        assertEquals(0.7, weeklyRate(withOutlier)!!, 0.2)
     }
 
     @Test
@@ -44,7 +44,9 @@ class BodyWeightTest {
         assertNull(weeklyRate(emptyList()))
         assertNull(weeklyRate(listOf(weight(10, 70.0), weight(0, 71.0))))
         assertNull(weeklyRate(listOf(weight(5, 70.0), weight(3, 70.5), weight(0, 71.0))))
-        assertEquals(0.7, weeklyRate(listOf(weight(14, 70.0), weight(7, 70.7), weight(0, 71.4)))!!, 1e-9)
+        assertEquals(0.7, weeklyRate(listOf(weight(13, 70.0), weight(6, 70.7), weight(0, 71.3)))!!, 1e-9)
+        // Two weeks ago is already out of the window.
+        assertNull(weeklyRate(listOf(weight(14, 70.0), weight(7, 70.7), weight(0, 71.4))))
     }
 
     @Test
@@ -54,7 +56,7 @@ class BodyWeightTest {
         assertEquals(today.minusDays(40), summary.first.date)
         assertEquals(today, summary.latest.date)
         assertEquals(3.2, summary.change, 1e-9)
-        // Only two weights in the last four weeks.
+        // A single weight in the last two weeks.
         assertNull(summary.weeklyRate)
     }
 

@@ -4,6 +4,7 @@
 
     <!-- Common actions -->
     <string name="action_back">Retour</string>
+    <string name="action_more">Plus d\'options</string>
     <string name="action_cancel">Annuler</string>
     <string name="action_delete">Supprimer</string>
     <string name="action_done">Terminé</string>
@@ -15,10 +16,10 @@
     <string name="action_undo">Annuler</string>
 
     <!-- Tabs -->
+    <string name="tab_today">Aujourd\'hui</string>
     <string name="tab_week">Semaine</string>
     <string name="tab_progress">Progrès</string>
-    <string name="tab_rest">Repos</string>
-    <string name="tab_weight">Poids</string>
+    <string name="tab_program">Programme</string>
 
     <!-- Units and fields -->
     <string name="unit_kg">kg</string>
@@ -55,10 +56,12 @@
 
     <!-- Week screen -->
     <string name="week_screen_title">Ma semaine</string>
+    <string name="week_done_title">Fait cette semaine</string>
+    <string name="week_done_past_title">Fait cette semaine-là</string>
+    <string name="week_new_exercise">Nouvel exercice</string>
     <string name="week_previous">Semaine précédente</string>
     <string name="week_next">Semaine suivante</string>
     <string name="week_back_to_current">Revenir à cette semaine</string>
-    <string name="week_add_exercise">Exercice</string>
     <string name="week_empty_current">Rien de noté pour l\'instant cette semaine. C\'est parti\u00A0!</string>
     <string name="week_empty_past">Aucune séance notée cette semaine-là.</string>
     <string name="week_volume">Volume soulevé\u00A0: %1$s</string>
@@ -67,8 +70,8 @@
     <string name="week_tip">Après ton exercice, touche + pour noter tes séries, tes répétitions et ta charge.</string>
     <string name="week_not_done">Pas encore fait cette semaine</string>
     <string name="week_done_cd">Fait cette semaine</string>
-    <string name="week_log_cd">Noter une séance de %1$s</string>
-    <string name="week_edit_entry">Modifier cette séance</string>
+    <string name="week_log_cd">Noter %1$s</string>
+    <string name="week_edit_entry">Modifier cette saisie</string>
     <string name="reference_line">%1$s\u00A0: %2$s</string>
     <string name="reference_target">🎯 %1$s\u00A0: %2$s</string>
     <string name="reference_sessions">%1$s · %2$s · %3$s</string>
@@ -81,7 +84,7 @@
 
     <!-- Welcome -->
     <string name="welcome_title">Bienvenue sur MuscuApp 💪</string>
-    <string name="welcome_text">Ajoute les exercices que tu fais en salle. Chaque semaine, note tes séries et tes répétitions\u00A0: MuscuApp te montre ta progression.</string>
+    <string name="welcome_text">Ajoute les exercices que tu fais, à la maison ou en salle. Chaque semaine, note tes séries et tes répétitions\u00A0: MuscuApp te montre ta progression.</string>
     <string name="welcome_add">Ajouter un exercice</string>
     <string name="welcome_quick_add">Ajout rapide</string>
     <string name="welcome_quick_add_hint">Touche un exercice pour l\'ajouter directement.</string>
@@ -89,10 +92,10 @@
     <!-- Log sheet -->
     <string name="log_save">Enregistrer</string>
     <string name="log_update">Mettre à jour</string>
-    <string name="log_saved">Séance enregistrée ✓</string>
-    <string name="log_updated">Séance mise à jour ✓</string>
-    <string name="log_deleted">Séance supprimée</string>
-    <string name="log_delete">Supprimer cette séance</string>
+    <string name="log_saved">Exercice enregistré ✓</string>
+    <string name="log_updated">Saisie mise à jour ✓</string>
+    <string name="log_deleted">Saisie supprimée</string>
+    <string name="log_delete">Supprimer cette saisie</string>
     <string name="log_detailed_mode">Séries différentes\u00A0? Détailler chaque série</string>
     <string name="log_simple_mode">Revenir au mode simple</string>
     <string name="log_set_header">Série</string>
@@ -141,8 +144,8 @@
     <string name="detail_delete_title">Supprimer «\u00A0%1$s\u00A0»\u00A0?</string>
     <string name="detail_delete_text">L\'exercice et tout son historique seront supprimés.</string>
     <string name="detail_deleted_message">«\u00A0%1$s\u00A0» supprimé</string>
-    <string name="detail_log">Noter une séance</string>
-    <string name="detail_empty">Aucune séance notée pour l\'instant. Touche «\u00A0Noter une séance\u00A0» après ton exercice.</string>
+    <string name="detail_log">Noter l\'exercice</string>
+    <string name="detail_empty">Rien de noté pour l\'instant. Touche «\u00A0Noter l\'exercice\u00A0» après tes séries.</string>
     <string name="detail_history">Historique</string>
     <string name="detail_rest_chip">Repos %1$s</string>
     <string name="detail_type_weighted">Avec charge</string>
@@ -157,7 +160,7 @@
     <string name="record_longest">Plus longue série</string>
     <string name="record_at_weight">à %1$s</string>
     <string name="record_best_week">Meilleure semaine</string>
-    <string name="record_sessions">Séances</string>
+    <string name="record_sessions">Fois</string>
     <string name="record_sessions_caption">au total</string>
     <string name="chart_title">Progression par semaine</string>
     <string name="chart_hint">Touche une barre pour voir sa valeur.</string>
@@ -179,19 +182,21 @@
     <string name="progress_record_weight">Record\u00A0: %1$s × %2$s</string>
     <string name="progress_record_reps">Record\u00A0: %1$s</string>
     <string name="progress_no_record">Pas encore de record</string>
-    <string name="progress_last_session">Dernière séance\u00A0: %1$s</string>
-    <string name="progress_never">Pas encore de séance</string>
-    <string name="streak_none">Lance ta série</string>
-    <string name="streak_start">Entraîne-toi cette semaine pour démarrer une série de semaines actives.</string>
+    <string name="progress_last_session">Dernière fois\u00A0: %1$s</string>
+    <string name="progress_never">Pas encore fait</string>
+    <string name="streak_none">Prêt à démarrer\u00A0?</string>
+    <string name="streak_start">Entraîne-toi cette semaine pour commencer à compter tes semaines d\'affilée.</string>
     <string name="streak_keep_going">Continue comme ça\u00A0!</string>
-    <string name="streak_dont_break">Note une séance cette semaine pour garder ta série\u00A0!</string>
+    <string name="streak_dont_break">Une séance cette semaine, et tu restes sur ta lancée\u00A0!</string>
 
     <!-- Body weight -->
     <string name="weight_title">Mon poids</string>
     <string name="weight_weigh_in">Ma pesée</string>
     <string name="weight_previous">Pesée précédente\u00A0: %1$s (%2$s)</string>
     <string name="weight_type_hint">Touche le nombre pour taper ton poids au clavier.</string>
-    <string name="weight_saved_state">Enregistré</string>
+    <string name="weight_noted">Pesée notée</string>
+    <string name="weight_change_since">%1$s depuis %2$s</string>
+    <string name="weight_open_curve">Ma courbe</string>
     <string name="weight_saved">Poids enregistré ✓</string>
     <string name="weight_updated">Poids mis à jour ✓</string>
     <string name="weight_deleted">Pesée supprimée</string>
@@ -202,7 +207,7 @@
     <string name="weight_current">actuel</string>
     <string name="weight_since_start">depuis le début</string>
     <string name="weight_per_week">par semaine</string>
-    <string name="weight_summary_hint">Première pesée le %1$s · rythme calculé sur les 4 dernières semaines</string>
+    <string name="weight_summary_hint">Première pesée le %1$s · rythme calculé sur les 2 dernières semaines</string>
     <string name="weight_summary_hint_pending">Première pesée le %1$s · le rythme par semaine s\'affiche après une semaine de pesées</string>
     <string name="weight_chart_title">Évolution</string>
     <string name="weight_period_change">%1$s sur la période</string>
@@ -360,8 +365,8 @@
     <string name="tab_nutrition">Nutrition</string>
     <string name="nutrition_title">Nutrition</string>
     <string name="nutrition_back_to_today">Revenir à aujourd\'hui</string>
-    <string name="nutrition_edit_plan">Modifier le programme</string>
-    <string name="nutrition_programs">Mes programmes</string>
+    <string name="nutrition_edit_plan">Modifier le plan alimentaire</string>
+    <string name="nutrition_programs">Mes plans alimentaires</string>
     <string name="nutrition_next_week">Semaine prochaine</string>
     <string name="nutrition_tomorrow">Demain</string>
     <string name="nutrition_day_cd">%1$s, %2$s mangé</string>
@@ -382,18 +387,22 @@
     <string name="nutrition_water_liters">%1$s sur %2$s</string>
     <string name="nutrition_water_add">Un verre</string>
     <string name="nutrition_water_remove">Retirer un verre</string>
+    <string name="nutrition_water_add_cd">Ajouter un verre</string>
+    <string name="nutrition_menu_for_rest">Séance prévue ce jour-là, mais le menu est celui d\'un jour de repos.</string>
+    <string name="nutrition_menu_for_training">Pas de séance ce jour-là, mais le menu est celui d\'un jour d\'entraînement.</string>
+    <string name="nutrition_menu_adapt">Adapter</string>
     <string name="nutrition_water_glass_cd">Verre %1$d</string>
-    <string name="nutrition_tips">Conseils du programme</string>
-    <string name="nutrition_program">Programme</string>
+    <string name="nutrition_tips">Conseils du plan</string>
+    <string name="nutrition_program">Plan alimentaire</string>
     <string name="nutrition_program_since">Suivi depuis le %1$s</string>
-    <string name="nutrition_no_plan_title">Pas de programme ce jour-là</string>
-    <string name="nutrition_no_plan_before">Ton programme commence le %1$s.</string>
-    <string name="nutrition_empty_title">Ton programme alimentaire</string>
-    <string name="nutrition_empty_text">Crée ton programme\u00A0: chaque jour, tu verras quoi manger et tu cocheras ce que tu as mangé.</string>
-    <string name="nutrition_create_program">Créer un programme</string>
-    <string name="nutrition_no_active_text">Choisis le programme à suivre dans «\u00A0Mes programmes\u00A0».</string>
+    <string name="nutrition_no_plan_title">Pas de plan alimentaire ce jour-là</string>
+    <string name="nutrition_no_plan_before">Ton plan alimentaire commence le %1$s.</string>
+    <string name="nutrition_empty_title">Ton plan alimentaire</string>
+    <string name="nutrition_empty_text">Crée ton plan alimentaire\u00A0: chaque jour, tu verras quoi manger et tu cocheras ce que tu as mangé.</string>
+    <string name="nutrition_create_program">Créer un plan alimentaire</string>
+    <string name="nutrition_no_active_text">Choisis le plan à suivre dans «\u00A0Mes plans alimentaires\u00A0».</string>
     <string name="nutrition_guidance_title">Pilotage du poids</string>
-    <string name="nutrition_guidance_need_data">Pèse-toi 3 à 4 matins par semaine, à jeun\u00A0: au bout de 2 semaines, tu sauras s\'il faut ajuster ton programme.</string>
+    <string name="nutrition_guidance_need_data">Pèse-toi 3 à 4 matins par semaine, à jeun\u00A0: au bout de 2 semaines, tu sauras s\'il faut ajuster ton plan.</string>
     <string name="nutrition_guidance_weigh">Noter mon poids</string>
     <string name="nutrition_guidance_rate">%1$s par semaine</string>
     <string name="nutrition_guidance_period">Sur les 2 dernières semaines</string>
@@ -402,16 +411,16 @@
     <string name="nutrition_guidance_above">Au-dessus de la cible</string>
     <string name="nutrition_guidance_range">Cible\u00A0: %1$s à %2$s par semaine.</string>
     <string name="nutrition_guidance_keep_going">Continue comme ça\u00A0!</string>
-    <string name="nutrition_guidance_advice">Conseil du programme\u00A0: %1$s</string>
+    <string name="nutrition_guidance_advice">Conseil du plan\u00A0: %1$s</string>
     <string name="nutrition_guidance_eta">À ce rythme, %1$s vers le %2$s.</string>
     <string name="nutrition_guidance_current">%1$s en moyenne</string>
     <string name="nutrition_guidance_reached">Objectif atteint\u00A0!</string>
     <string name="nutrition_swap_title">Remplacer pour ce jour</string>
     <string name="nutrition_swap_planned">Prévu\u00A0: %1$s</string>
-    <string name="nutrition_swap_hint">Ton programme ne change pas\u00A0: ce remplacement ne vaut que pour %1$s.</string>
+    <string name="nutrition_swap_hint">Ton plan ne change pas\u00A0: ce remplacement ne vaut que pour %1$s.</string>
     <string name="nutrition_swap_ideas">Idées</string>
     <string name="nutrition_swap_restore">Remettre l\'aliment prévu</string>
-    <string name="nutrition_swap_edit_plan">Modifier dans le programme</string>
+    <string name="nutrition_swap_edit_plan">Modifier dans le plan</string>
     <string name="nutrition_swap_confirm">Remplacer</string>
     <string name="nutrition_food_quantity">Quantité</string>
     <string name="nutrition_food_quantity_hint">150 g, 1, 1 c. à s.</string>
@@ -423,15 +432,20 @@
     <string name="nutrition_food_delete">Supprimer l\'aliment</string>
     <string name="nutrition_move_up">Monter</string>
     <string name="nutrition_move_down">Descendre</string>
-    <string name="plan_editor_title">Modifier le programme</string>
+    <string name="plan_editor_title">Modifier le plan alimentaire</string>
+    <string name="training_program_edit">Modifier le programme</string>
     <string name="plan_editor_hint">Les changements s\'appliquent dès aujourd\'hui. Les jours passés gardent ce qui était prévu.</string>
-    <string name="plan_name">Nom du programme</string>
+    <string name="plan_name">Nom</string>
     <string name="plan_info">Description</string>
     <string name="plan_info_empty">Ajouter une description</string>
     <string name="plan_day_label">Nom du jour</string>
     <string name="plan_day_label_hint">Pectoraux, Repos…</string>
     <string name="plan_day_label_empty">Sans nom</string>
-    <string name="plan_training_day">Jour d\'entraînement</string>
+    <string name="plan_training_day">Menu de jour d\'entraînement</string>
+    <string name="plan_training_day_hint">Plus de calories, avec les repas autour de la séance.</string>
+    <string name="plan_day_session">Séance du programme</string>
+    <string name="plan_menu_mismatch_rest">Ton programme ne prévoit pas de séance ce jour-là.</string>
+    <string name="plan_menu_mismatch_training">Ton programme prévoit une séance ce jour-là.</string>
     <string name="plan_water_glasses">Verres d\'eau</string>
     <string name="plan_copy_day">Copier ce jour vers…</string>
     <string name="plan_copy_day_title">Copier les repas du %1$s</string>
@@ -510,6 +524,10 @@
     <string name="program_started_today">«\u00A0%1$s\u00A0» commence aujourd\'hui.</string>
     <string name="program_started_on">«\u00A0%1$s\u00A0» commencera le %2$s.</string>
     <string name="program_deleted">Programme supprimé</string>
+    <string name="nutrition_plan_new">Nouveau plan alimentaire</string>
+    <string name="nutrition_plan_delete_title">Supprimer ce plan alimentaire\u00A0?</string>
+    <string name="nutrition_plan_cannot_delete">Ce plan a déjà été suivi\u00A0: il reste dans ton historique.</string>
+    <string name="nutrition_plan_deleted">Plan alimentaire supprimé</string>
     <string name="moment_morning">Matin</string>
     <string name="moment_lunch">Midi</string>
     <string name="moment_snack">Collation</string>
@@ -523,9 +541,9 @@
         <item quantity="other">%d verres</item>
     </plurals>
     <plurals name="nutrition_foods_planned">
-        <item quantity="one">%d aliment au programme</item>
-        <item quantity="many">%d aliments au programme</item>
-        <item quantity="other">%d aliments au programme</item>
+        <item quantity="one">%d aliment prévu</item>
+        <item quantity="many">%d aliments prévus</item>
+        <item quantity="other">%d aliments prévus</item>
     </plurals>
     <plurals name="nutrition_water_left">
         <item quantity="one">Tout est coché\u00A0! Encore %d verre d\'eau.</item>
@@ -551,8 +569,8 @@
     <string name="shopping_add">Ajouter</string>
     <string name="shopping_remove">Retirer %1$s</string>
     <string name="shopping_empty_title">Rien à acheter</string>
-    <string name="shopping_empty_text">Aucun programme n\'est prévu cette semaine-là.</string>
-    <string name="shopping_hint">Les quantités viennent de ton programme, aliments remplacés compris.</string>
+    <string name="shopping_empty_text">Aucun plan alimentaire n\'est prévu cette semaine-là.</string>
+    <string name="shopping_hint">Les quantités viennent de ton plan alimentaire, aliments remplacés compris.</string>
     <string name="shopping_in_cart">%1$s · %2$d dans le panier</string>
     <string name="aisle_produce">Fruits et légumes</string>
     <string name="aisle_meat_fish">Viandes, poissons et œufs</string>
@@ -562,6 +580,11 @@
     <string name="aisle_supplements">Compléments</string>
     <string name="aisle_other">Autres</string>
     <plurals name="shopping_meals">
+        <item quantity="one">pour %d repas</item>
+        <item quantity="many">pour %d repas</item>
+        <item quantity="other">pour %d repas</item>
+    </plurals>
+    <plurals name="shopping_meals_extra">
         <item quantity="one">%d repas</item>
         <item quantity="many">%d repas</item>
         <item quantity="other">%d repas</item>
@@ -572,9 +595,9 @@
         <item quantity="other">%d articles</item>
     </plurals>
     <plurals name="nutrition_rename_everywhere">
-        <item quantity="one">Renommer aussi l\'autre «\u00A0%2$s\u00A0» du programme</item>
-        <item quantity="many">Renommer aussi les %1$d autres «\u00A0%2$s\u00A0» du programme</item>
-        <item quantity="other">Renommer aussi les %1$d autres «\u00A0%2$s\u00A0» du programme</item>
+        <item quantity="one">Renommer aussi l\'autre «\u00A0%2$s\u00A0» du plan</item>
+        <item quantity="many">Renommer aussi les %1$d autres «\u00A0%2$s\u00A0» du plan</item>
+        <item quantity="other">Renommer aussi les %1$d autres «\u00A0%2$s\u00A0» du plan</item>
     </plurals>
 
     <!-- Sync with the Google account -->
@@ -694,7 +717,7 @@
     <string name="guided_close">Fermer la séance</string>
     <string name="guided_previous">Précédent</string>
     <string name="guided_next">Suivant</string>
-    <string name="guided_skip">Passer</string>
+    <string name="guided_skip">Passer l\'exercice</string>
     <string name="guided_strip_cd">Exercice %1$d, %2$s\u00A0: %3$d séries faites sur %4$d</string>
     <string name="guided_finish">Terminer</string>
     <string name="guided_last">Dernière fois (%1$s)\u00A0: %2$s</string>
@@ -707,7 +730,7 @@
     <string name="guided_add_set">Une série en plus</string>
     <string name="guided_rest">Repos</string>
     <string name="guided_rest_done">Repos terminé\u00A0: à toi\u00A0!</string>
-    <string name="guided_rest_skip">Passer</string>
+    <string name="guided_rest_skip">Passer le repos</string>
     <string name="guided_rest_close">OK</string>
     <string name="guided_then">Ensuite\u00A0: %1$s, série %2$d sur %3$d</string>
     <string name="guided_delete_set">Supprimer la série</string>
@@ -730,6 +753,16 @@
     <string name="reminder_session_title">Séance du jour\u00A0: %1$s</string>
     <string name="reminder_weigh_in_title">Pesée du matin</string>
     <string name="reminder_weigh_in_text">Note ton poids, à jeun, avant le petit-déjeuner.</string>
+    <plurals name="week_all_exercises">
+        <item quantity="one">%1$d exercice</item>
+        <item quantity="many">Tous les exercices (%1$d)</item>
+        <item quantity="other">Tous les exercices (%1$d)</item>
+    </plurals>
+    <plurals name="week_other_exercises">
+        <item quantity="one">%1$d autre exercice</item>
+        <item quantity="many">Autres exercices (%1$d)</item>
+        <item quantity="other">Autres exercices (%1$d)</item>
+    </plurals>
     <plurals name="reminder_session_text">
         <item quantity="one">%1$d exercice au programme</item>
         <item quantity="many">%1$d exercices au programme</item>
@@ -754,4 +787,31 @@
     <string name="widget_preview_progress" translatable="false">0/6</string>
     <string name="widget_preview_title" translatable="false">Quadriceps</string>
     <string name="widget_preview_detail" translatable="false">Pour commencer\u00A0: Squat, 4\u00A0×\u00A06–8</string>
+
+    <!-- Today -->
+    <string name="today_title">Aujourd\'hui</string>
+    <string name="today_weigh_in">Pesée du matin</string>
+    <string name="today_no_program">Aucun programme d\'entraînement n\'est suivi aujourd\'hui.</string>
+    <string name="today_open_program">Voir le programme</string>
+    <string name="today_meals">Nutrition</string>
+    <string name="today_meals_title">Repas du jour</string>
+    <string name="today_no_plan_title">Sans plan alimentaire</string>
+    <string name="today_no_plan">Aucun plan alimentaire n\'est suivi aujourd\'hui.</string>
+    <string name="today_open_day">Voir la journée</string>
+    <string name="today_protein">%1$s / %2$s de protéines</string>
+    <string name="today_next_meal">Prochain repas</string>
+    <string name="today_all_eaten">Tous les repas du jour sont cochés ✓</string>
+    <string name="today_rest_timer">Minuteur de repos</string>
+    <string name="today_rest_timer_hint">Pour un repos hors séance, avec tes temps favoris</string>
+    <string name="missed_title">Séance manquée</string>
+    <string name="missed_text">%1$s était prévue %2$s et n\'a pas été faite.</string>
+    <string name="missed_do_today">La faire aujourd\'hui</string>
+    <string name="missed_moved">Séance de %1$s déplacée à aujourd\'hui</string>
+    <string name="moved_from">Séance de %1$s, faite %2$s</string>
+    <string name="moved_to">Faite %1$s à la place.</string>
+    <string name="progress_section_exercises">Exercices</string>
+    <string name="progress_section_weight">Poids</string>
+    <string name="training_none_title">Pas encore de programme</string>
+    <string name="training_none_text">Crée ton programme d\'entraînement\u00A0: la séance de chaque jour de la semaine, que l\'app te propose ensuite jour après jour.</string>
+    <string name="training_none_create">Créer un programme</string>
 </resources>

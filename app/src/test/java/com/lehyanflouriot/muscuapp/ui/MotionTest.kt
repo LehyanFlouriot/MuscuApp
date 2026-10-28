@@ -28,7 +28,8 @@ import com.lehyanflouriot.muscuapp.core.timer.TimerLogic
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionActions
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionScreen
-import com.lehyanflouriot.muscuapp.ui.progress.ProgressScreen
+import com.lehyanflouriot.muscuapp.ui.progress.ExercisesProgress
+import com.lehyanflouriot.muscuapp.ui.progress.ProgressFrame
 import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
 import com.lehyanflouriot.muscuapp.ui.rest.rememberRestProgress
 import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
@@ -36,7 +37,7 @@ import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import com.lehyanflouriot.muscuapp.ui.week.SessionActions
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
-import com.lehyanflouriot.muscuapp.ui.weight.WeightScreen
+import com.lehyanflouriot.muscuapp.ui.weight.WeightContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -120,7 +121,7 @@ class MotionTest {
             Tracked("summary", hasText("séances")),
             Tracked("first card", hasText("Développé couché")),
             Tracked("later card", hasText("Rowing barre")),
-            Tracked("button", hasText("Exercice")),
+            Tracked("done title", hasText("Fait cette semaine")),
             Tracked("volume text", hasText("Volume", substring = true), readText = true),
         ),
     ) {
@@ -154,14 +155,17 @@ class MotionTest {
             Tracked("streak text", hasText("d'affilée", substring = true), readText = true),
         ),
     ) {
-        ProgressScreen(
-            items = buildProgressItems(data, today),
-            activity = weeklySeries(data.entries, today, 12) { metricValue(it, ChartMetric.SETS) },
-            streak = weekStreak(data.entries, today),
-            trainedThisWeek = true,
-            today = today,
-            onOpenExercise = {},
-        )
+        ProgressFrame(section = ProgressSection.EXERCISES, onSectionChange = {}, onOpenSettings = {}) { _, padding ->
+            ExercisesProgress(
+                padding = padding,
+                items = buildProgressItems(data, today),
+                activity = weeklySeries(data.entries, today, 12) { metricValue(it, ChartMetric.SETS) },
+                streak = weekStreak(data.entries, today),
+                trainedThisWeek = true,
+                today = today,
+                onOpenExercise = {},
+            )
+        }
     }
 
     @Test
@@ -189,6 +193,7 @@ class MotionTest {
             onEditPreset = {},
             onEnableNotifications = {},
             onEditIdleDuration = {},
+            onBack = {},
         )
     }
 
@@ -202,19 +207,22 @@ class MotionTest {
             Tracked("change value", hasText("+", substring = true), readText = true),
         ),
     ) {
-        val weights = data.bodyWeights
-        val form = remember { WeighInState(suggestedWeight(weights, today) ?: DEFAULT_BODY_WEIGHT) }
-        WeightScreen(
-            weights = weights,
-            today = today,
-            form = form,
-            period = WeightPeriod.THREE_MONTHS,
-            onDateChange = {},
-            onSave = {},
-            onPeriodChange = {},
-            onUpdate = { _, _ -> },
-            onDelete = {},
-        )
+        ProgressFrame(section = ProgressSection.WEIGHT, onSectionChange = {}, onOpenSettings = {}) { _, padding ->
+            val weights = data.bodyWeights
+            val form = remember { WeighInState(suggestedWeight(weights, today) ?: DEFAULT_BODY_WEIGHT) }
+            WeightContent(
+                padding = padding,
+                weights = weights,
+                today = today,
+                form = form,
+                period = WeightPeriod.THREE_MONTHS,
+                onDateChange = {},
+                onSave = {},
+                onPeriodChange = {},
+                onUpdate = { _, _ -> },
+                onDelete = {},
+            )
+        }
     }
 
     @Test
@@ -244,6 +252,7 @@ class MotionTest {
                 onCreateProgram = {},
                 onOpenWeight = {},
                 onOpenShopping = {},
+                onOpenSettings = {},
             ),
         )
     }

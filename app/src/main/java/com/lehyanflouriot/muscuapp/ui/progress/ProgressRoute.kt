@@ -1,7 +1,9 @@
 package com.lehyanflouriot.muscuapp.ui.progress
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
 import com.lehyanflouriot.muscuapp.core.domain.isInWeek
@@ -10,12 +12,31 @@ import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.ui.ProgressSection
 import com.lehyanflouriot.muscuapp.ui.common.rememberToday
+import com.lehyanflouriot.muscuapp.ui.weight.WeightSection
 
 private const val ACTIVITY_WEEKS = 12
 
 @Composable
-fun ProgressRoute(data: AppData, onOpenExercise: (String) -> Unit) {
+fun ProgressRoute(
+    data: AppData,
+    repository: WorkoutRepository,
+    section: ProgressSection,
+    onSectionChange: (ProgressSection) -> Unit,
+    onOpenExercise: (String) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    ProgressFrame(section = section, onSectionChange = onSectionChange, onOpenSettings = onOpenSettings) { shown, padding ->
+        when (shown) {
+            ProgressSection.EXERCISES -> ExercisesSection(data = data, padding = padding, onOpenExercise = onOpenExercise)
+            ProgressSection.WEIGHT -> WeightSection(data = data, repository = repository, padding = padding)
+        }
+    }
+}
+
+@Composable
+private fun ExercisesSection(data: AppData, padding: PaddingValues, onOpenExercise: (String) -> Unit) {
     val today = rememberToday()
     val items = remember(data, today) { buildProgressItems(data, today) }
     val activity = remember(data.entries, today) {
@@ -26,7 +47,8 @@ fun ProgressRoute(data: AppData, onOpenExercise: (String) -> Unit) {
         val week = today.startOfWeek()
         data.entries.any { it.date.isInWeek(week) }
     }
-    ProgressScreen(
+    ExercisesProgress(
+        padding = padding,
         items = items,
         activity = activity,
         streak = streak,

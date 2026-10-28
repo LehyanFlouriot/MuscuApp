@@ -1,5 +1,6 @@
 package com.lehyanflouriot.muscuapp.ui.nutrition
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.runtime.Composable
@@ -30,6 +31,7 @@ import com.lehyanflouriot.muscuapp.core.domain.MAX_WATER_GLASSES
 import com.lehyanflouriot.muscuapp.core.domain.foodNames
 import com.lehyanflouriot.muscuapp.core.domain.foodsNamed
 import com.lehyanflouriot.muscuapp.core.domain.hasHistory
+import com.lehyanflouriot.muscuapp.core.domain.programAt
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.MealPlan
@@ -46,6 +48,7 @@ import com.lehyanflouriot.muscuapp.ui.common.NumberInputDialog
 import com.lehyanflouriot.muscuapp.ui.common.fullName
 import com.lehyanflouriot.muscuapp.ui.common.parseDecimal
 import com.lehyanflouriot.muscuapp.ui.common.parseWholeNumber
+import com.lehyanflouriot.muscuapp.ui.common.rememberToday
 import com.lehyanflouriot.muscuapp.ui.common.show
 import java.time.DayOfWeek
 import java.time.format.TextStyle
@@ -65,6 +68,7 @@ fun PlanEditorRoute(
     onBack: () -> Unit,
 ) {
     val nutrition = data.nutrition
+    val today = rememberToday()
     val plan = nutrition.plan(planId)?.takeIf { it.versionOf == null }
     if (plan == null) {
         // The program was deleted (or a backup restored) while it was open.
@@ -84,6 +88,7 @@ fun PlanEditorRoute(
         plan = plan,
         day = day,
         keepsHistory = nutrition.hasHistory(planId),
+        session = data.training.programAt(today)?.day(day),
         onDayChange = { day = it },
         onOpen = { edit = it },
         onTrainingChange = { training -> update { it.updateDay(day) { d -> d.copy(training = training) } } },
