@@ -2,6 +2,7 @@ package com.lehyanflouriot.muscuapp.core.data
 
 import com.lehyanflouriot.muscuapp.core.domain.BODY_WEIGHT_RANGE
 import com.lehyanflouriot.muscuapp.core.domain.MAX_WATER_GLASSES
+import com.lehyanflouriot.muscuapp.core.domain.entryOrder
 import com.lehyanflouriot.muscuapp.core.domain.hasHistory
 import com.lehyanflouriot.muscuapp.core.domain.periodAt
 import com.lehyanflouriot.muscuapp.core.domain.planAt
@@ -237,6 +238,46 @@ class WorkoutRepository(
             }
         }
         return id
+    }
+
+    /**
+     * Notes one more set of [exerciseId] on [date], in the last entry of that day when there is one,
+     * as a session guided set by set does. Returns the id of the entry.
+     */
+    fun addSet(exerciseId: String, date: LocalDate, set: WorkSet): String? {
+        val clean = cleanSets(listOf(set)).singleOrNull() ?: return null
+        val newEntryId = newId()
+        var entryId: String? = null
+        mutate { data ->
+            entryId = null
+            if (data.exercise(exerciseId) == null) return@mutate data
+            val last = data.entries.filter { it.exerciseId == exerciseId && it.date == date }.maxWithOrNull(entryOrder)
+            if (last == null) {
+                entryId = newEntryId
+                val entry = WorkoutEntry(id = newEntryId, exerciseId = exerciseId, date = date, sets = listOf(clean), createdAt = clock())
+                data.copy(entries = data.entries + entry)
+            } else {
+                entryId = last.id
+                data.copy(entries = data.entries.map { if (it.id == last.id) it.copy(sets = it.sets + clean) else it })
+            }
+        }
+        return entryId
+    }
+
+    /** Changes the set [index] of an entry, or removes it when [set] is null. An entry left without sets goes away. */
+    fun updateSet(entryId: String, index: Int, set: WorkSet?) {
+        mutate { data ->
+            val entry = data.entries.firstOrNull { it.id == entryId }
+            if (entry == null || index !in entry.sets.indices) return@mutate data
+            val sets = cleanSets(entry.sets.toMutableList().apply { if (set == null) removeAt(index) else this[index] = set })
+            data.copy(
+                entries = if (sets.isEmpty()) {
+                    data.entries.filterNot { it.id == entryId }
+                } else {
+                    data.entries.map { if (it.id == entryId) it.copy(sets = sets) else it }
+                },
+            )
+        }
     }
 
     fun deleteEntry(id: String): WorkoutEntry? {

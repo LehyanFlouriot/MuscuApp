@@ -75,6 +75,7 @@ import com.lehyanflouriot.muscuapp.ui.rest.RestRoute
 import com.lehyanflouriot.muscuapp.ui.rest.displayed
 import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
 import com.lehyanflouriot.muscuapp.ui.settings.SettingsRoute
+import com.lehyanflouriot.muscuapp.ui.week.GuidedSessionRoute
 import com.lehyanflouriot.muscuapp.ui.week.TrainingEditorRoute
 import com.lehyanflouriot.muscuapp.ui.week.WeekRoute
 import com.lehyanflouriot.muscuapp.ui.weight.WeightRoute
@@ -91,6 +92,7 @@ object Routes {
     const val REST = "rest"
     const val SETTINGS = "settings"
     const val PROGRAM = "program/{id}?day={day}"
+    const val SESSION = "session/{date}"
     const val EXERCISE = "exercise/{id}"
     const val PLAN = "plan/{id}?day={day}"
     const val SHOPPING = "shopping?week={week}"
@@ -101,9 +103,17 @@ object Routes {
 
     fun program(id: String, day: DayOfWeek) = "program/$id?day=${day.value}"
 
+    fun session(date: LocalDate) = "session/${date.toEpochDay()}"
+
     /** The shopping list of the week starting [weekStart], or of the week to shop for. */
     fun shopping(weekStart: LocalDate?) = "shopping?week=${weekStart?.toEpochDay() ?: -1}"
 }
+
+/** Screens that can be asked from outside the app: a notification, the widget. */
+enum class OpenTarget { REST, SESSION, WEIGHT }
+
+/** A screen asked from outside; [count] tells two requests for the same screen apart. */
+data class OpenRequest(val target: OpenTarget, val count: Int)
 
 private class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector)
 
@@ -143,7 +153,7 @@ private fun NavHostController.navigateToTab(route: String) {
 fun MuscuApp(
     data: AppData,
     container: AppContainer,
-    openRestRequests: StateFlow<Int>,
+    openRequests: StateFlow<OpenRequest?>,
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -166,9 +176,18 @@ fun MuscuApp(
         timer.finishIfDue()
     }
 
-    val openRest by openRestRequests.collectAsStateWithLifecycle()
-    LaunchedEffect(openRest) {
-        if (openRest > 0) navController.navigateToTab(Routes.REST)
+    val openRequest by openRequests.collectAsStateWithLifecycle()
+    LaunchedEffect(openRequest) {
+        when (openRequest?.target) {
+            OpenTarget.REST -> navController.navigateToTab(Routes.REST)
+            OpenTarget.WEIGHT -> navController.navigateToTab(Routes.WEIGHT)
+            OpenTarget.SESSION -> {
+                val route = Routes.session(LocalDate.now())
+                navController.navigateToTab(Routes.WEEK)
+                navController.navigate(route) { launchSingleTop = true }
+            }
+            null -> Unit
+        }
     }
 
     CompositionLocalProvider(
@@ -204,6 +223,7 @@ fun MuscuApp(
                         onOpenExercise = { navController.navigate(Routes.exercise(it)) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                         onOpenProgram = { id, day -> navController.navigate(Routes.program(id, day)) },
+                        onStartSession = { date -> navController.navigate(Routes.session(date)) },
                     )
                 }
                 composable(Routes.NUTRITION) {
@@ -292,6 +312,18 @@ fun MuscuApp(
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
                     )
                 }
+                composable(
+                    route = Routes.SESSION,
+                    arguments = listOf(navArgument("date") { type = NavType.LongType }),
+                ) { entry ->
+                    GuidedSessionRoute(
+                        date = LocalDate.ofEpochDay(entry.arguments?.getLong("date") ?: LocalDate.now().toEpochDay()),
+                        data = data,
+                        repository = repository,
+                        timer = timer,
+                        onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
+                    )
+                }
                 composable(Routes.SETTINGS) { entry ->
                     SettingsRoute(
                         data = data,
@@ -319,7 +351,8 @@ fun MuscuScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val showNavigationBar = currentRoute == null || currentRoute in tabRoutes
-    val showMiniTimer = timerState !is TimerState.Idle && currentRoute != Routes.REST
+    // The guided session shows the rest itself.
+    val showMiniTimer = timerState !is TimerState.Idle && currentRoute != Routes.REST && currentRoute != Routes.SESSION
     // While the bar slides away under a detail screen, it keeps showing the tab it came from.
     var lastTab by remember { mutableStateOf(Routes.WEEK) }
     val selectedTab = currentRoute?.takeIf { it in tabRoutes } ?: lastTab

@@ -128,7 +128,7 @@ class MotionTest {
             overview = buildWeekOverview(data, today),
             sessions = null,
             sessionDate = today,
-            sessionActions = SessionActions(onSelectDay = {}, onLog = {}, onEditEntry = {}, onOpenProgram = {}),
+            sessionActions = SessionActions(onSelectDay = {}, onLog = {}, onEditEntry = {}, onOpenProgram = {}, onStart = {}),
             today = today,
             hasAnyEntry = true,
             suggestions = ExerciseCatalog.popular,

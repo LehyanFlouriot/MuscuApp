@@ -17,14 +17,16 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lehyanflouriot.muscuapp.core.model.ThemeMode
 import com.lehyanflouriot.muscuapp.ui.MuscuApp
+import com.lehyanflouriot.muscuapp.ui.OpenRequest
+import com.lehyanflouriot.muscuapp.ui.OpenTarget
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import com.lehyanflouriot.muscuapp.ui.theme.isDark
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 class MainActivity : ComponentActivity() {
-    /** Incremented every time a notification asks to show the rest timer. */
-    private val openRestRequests = MutableStateFlow(0)
+    /** The last screen a notification or the widget asked to show. */
+    private val openRequests = MutableStateFlow<OpenRequest?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -46,7 +48,7 @@ class MainActivity : ComponentActivity() {
             MuscuTheme(darkTheme = darkTheme, dynamicColor = settings?.dynamicColor == true) {
                 Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
                     data?.let { loaded ->
-                        MuscuApp(data = loaded, container = container, openRestRequests = openRestRequests)
+                        MuscuApp(data = loaded, container = container, openRequests = openRequests)
                     }
                 }
             }
@@ -70,10 +72,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
-        if (intent?.action == ACTION_OPEN_REST) openRestRequests.update { it + 1 }
+        val target = when (intent?.action) {
+            ACTION_OPEN_REST -> OpenTarget.REST
+            ACTION_OPEN_SESSION -> OpenTarget.SESSION
+            ACTION_OPEN_WEIGHT -> OpenTarget.WEIGHT
+            else -> return
+        }
+        openRequests.update { OpenRequest(target, (it?.count ?: 0) + 1) }
     }
 
     companion object {
         const val ACTION_OPEN_REST = "com.lehyanflouriot.muscuapp.action.OPEN_REST"
+        const val ACTION_OPEN_SESSION = "com.lehyanflouriot.muscuapp.action.OPEN_SESSION"
+        const val ACTION_OPEN_WEIGHT = "com.lehyanflouriot.muscuapp.action.OPEN_WEIGHT"
     }
 }

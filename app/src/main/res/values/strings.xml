@@ -686,4 +686,29 @@
     <string name="training_pick_mine">Mes exercices</string>
     <string name="training_pick_catalog">Exercices courants</string>
     <string name="training_pick_in_session">Déjà dans cette séance</string>
+
+    <!-- Guided session -->
+    <string name="guided_start">Démarrer la séance</string>
+    <string name="guided_resume">Continuer la séance</string>
+    <string name="guided_exercise_of">Exercice %1$d sur %2$d</string>
+    <string name="guided_close">Fermer la séance</string>
+    <string name="guided_previous">Précédent</string>
+    <string name="guided_next">Suivant</string>
+    <string name="guided_skip">Passer</string>
+    <string name="guided_strip_cd">Exercice %1$d, %2$s\u00A0: %3$d séries faites sur %4$d</string>
+    <string name="guided_finish">Terminer</string>
+    <string name="guided_last">Dernière fois (%1$s)\u00A0: %2$s</string>
+    <string name="guided_set">Série %1$d</string>
+    <string name="guided_set_of">Série %1$d sur %2$d</string>
+    <string name="guided_extra_set">Série en plus</string>
+    <string name="guided_set_done">Série faite</string>
+    <string name="guided_exercise_done">Exercice terminé</string>
+    <string name="guided_next_exercise">Exercice suivant</string>
+    <string name="guided_add_set">Une série en plus</string>
+    <string name="guided_rest">Repos</string>
+    <string name="guided_rest_done">Repos terminé\u00A0: à toi\u00A0!</string>
+    <string name="guided_rest_skip">Passer</string>
+    <string name="guided_rest_close">OK</string>
+    <string name="guided_then">Ensuite\u00A0: %1$s, série %2$d sur %3$d</string>
+    <string name="guided_delete_set">Supprimer la série</string>
 </resources>

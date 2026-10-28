@@ -26,7 +26,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.EventRepeat
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SelfImprovement
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalIconButton
@@ -53,6 +56,8 @@ import androidx.compose.ui.unit.dp
 import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.domain.SessionItem
 import com.lehyanflouriot.muscuapp.core.domain.SessionView
+import com.lehyanflouriot.muscuapp.core.domain.complete
+import com.lehyanflouriot.muscuapp.core.domain.doneSets
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.ui.common.describe
@@ -69,6 +74,8 @@ class SessionActions(
     val onLog: (SessionItem) -> Unit,
     val onEditEntry: (WorkoutEntry) -> Unit,
     val onOpenProgram: () -> Unit,
+    /** Starts the session of a day, guided set by set. */
+    val onStart: (LocalDate) -> Unit,
 )
 
 /** The session of the program on the chosen day of the week: what to do, and what is done. */
@@ -93,6 +100,20 @@ fun SessionCard(
         ) {
             SessionHeader(session = session, today = today, onOpenProgram = actions.onOpenProgram)
             SessionDays(week = week, selected = selected, today = today, onSelect = actions.onSelectDay)
+            // A session of today or of a day gone by, not done yet, can be done set by set.
+            if (!session.isRest && session.date <= today && !session.complete) {
+                Button(
+                    onClick = { actions.onStart(session.date) },
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                ) {
+                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(if (session.doneSets().isEmpty()) R.string.guided_start else R.string.guided_resume))
+                }
+            }
             if (session.isRest) {
                 RestDay(session, week)
             } else {

@@ -40,10 +40,15 @@ import com.lehyanflouriot.muscuapp.core.domain.WeightPeriod
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
 import com.lehyanflouriot.muscuapp.core.domain.buildShoppingList
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekOverview
+import com.lehyanflouriot.muscuapp.core.domain.SessionView
+import com.lehyanflouriot.muscuapp.core.domain.buildSession
 import com.lehyanflouriot.muscuapp.core.domain.buildWeekSessions
+import com.lehyanflouriot.muscuapp.core.domain.currentIndex
 import com.lehyanflouriot.muscuapp.core.domain.history
 import com.lehyanflouriot.muscuapp.core.domain.lastEntry
 import com.lehyanflouriot.muscuapp.core.domain.metricValue
+import com.lehyanflouriot.muscuapp.core.domain.nextSetGoal
+import com.lehyanflouriot.muscuapp.core.domain.plannedSets
 import com.lehyanflouriot.muscuapp.core.domain.programInfos
 import com.lehyanflouriot.muscuapp.core.domain.records
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
@@ -54,6 +59,7 @@ import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
+import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.core.sync.RemoteDocument
 import com.lehyanflouriot.muscuapp.core.sync.SyncProblem
 import com.lehyanflouriot.muscuapp.core.sync.SyncStatus
@@ -77,6 +83,8 @@ import com.lehyanflouriot.muscuapp.ui.settings.SettingsScreen
 import com.lehyanflouriot.muscuapp.ui.settings.SyncActions
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import com.lehyanflouriot.muscuapp.ui.week.ExercisePickerSheet
+import com.lehyanflouriot.muscuapp.ui.week.GuidedActions
+import com.lehyanflouriot.muscuapp.ui.week.GuidedSessionScreen
 import com.lehyanflouriot.muscuapp.ui.week.SessionActions
 import com.lehyanflouriot.muscuapp.ui.week.SessionLineForm
 import com.lehyanflouriot.muscuapp.ui.week.SessionLineState
@@ -151,7 +159,7 @@ class ScreenshotTest {
                     overview = buildWeekOverview(appData, today),
                     sessions = buildWeekSessions(appData, today),
                     sessionDate = today,
-                    sessionActions = SessionActions(onSelectDay = {}, onLog = {}, onEditEntry = {}, onOpenProgram = {}),
+                    sessionActions = SessionActions(onSelectDay = {}, onLog = {}, onEditEntry = {}, onOpenProgram = {}, onStart = {}),
                     today = today,
                     hasAnyEntry = appData.entries.isNotEmpty(),
                     suggestions = ExerciseCatalog.popular,
@@ -486,6 +494,47 @@ class ScreenshotTest {
         val appData = SampleData.withProgram(today)
         val training = appData.training.copy(schedule = listOf(PlanPeriod(HypertrophyProgram.ID, today.plusDays(1))))
         Week(appData.copy(entries = emptyList(), training = training))
+    }
+
+    /** Wednesday's session: the squats done, two sets of sissy squats out of three, or everything. */
+    private fun guidedSession(complete: Boolean): SessionView {
+        val appData = SampleData.withProgram(today)
+        val entries = appData.entries.map { entry ->
+            if (entry.date == today && entry.exerciseId == "ex-sissy-squat-shrimp-squat") entry.copy(sets = entry.sets.take(2)) else entry
+        }
+        val session = buildSession(appData.copy(entries = entries), today)!!
+        if (!complete) return session
+        val done = session.items.flatMap { item ->
+            List(item.plannedSets) { index -> item.goal.getOrElse(index) { item.goal.last() } }.let { sets ->
+                listOf(WorkoutEntry("done-${item.line.id}", item.exercise.id, today, sets, createdAt = 99))
+            }
+        }
+        return buildSession(appData.copy(entries = appData.entries.filterNot { it.date == today } + done), today)!!
+    }
+
+    @Composable
+    private fun Guided(session: SessionView, timerState: TimerState) {
+        val index = session.currentIndex() ?: session.items.lastIndex
+        GuidedSessionScreen(
+            session = session,
+            index = index,
+            draft = session.items[index].nextSetGoal(),
+            timerState = timerState,
+            now = now,
+            today = today,
+            weightStep = 2.5,
+            actions = GuidedActions({}, {}, {}, { _, _ -> }, {}, {}, {}, {}),
+        )
+    }
+
+    @Test
+    fun guidedSession() = capture("14-seance-guidee") {
+        Guided(guidedSession(complete = false), TimerState.Running(endAt = now + 52_000, total = 90_000, label = "Squat bulgare"))
+    }
+
+    @Test
+    fun guidedSessionDone() = capture("14-seance-guidee-fin", darkTheme = true) {
+        Guided(guidedSession(complete = true), TimerState.Idle)
     }
 
     @Test

@@ -37,6 +37,7 @@ fun WeekRoute(
     onOpenExercise: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenProgram: (programId: String, day: DayOfWeek) -> Unit,
+    onStartSession: (LocalDate) -> Unit,
 ) {
     val today = rememberToday()
     val currentWeek = today.startOfWeek()
@@ -82,6 +83,7 @@ fun WeekRoute(
                     ?: training.schedule.firstOrNull()?.let { training.program(it.planId) }?.let(training::programOf)
                 program?.let { onOpenProgram(it.id, sessionDate.dayOfWeek) }
             },
+            onStart = onStartSession,
         ),
         today = today,
         hasAnyEntry = data.entries.isNotEmpty(),

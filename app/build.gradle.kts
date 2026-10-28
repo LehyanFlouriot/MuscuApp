@@ -27,7 +27,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = commitCount
-        versionName = "1.8.0"
+        versionName = "1.9.0"
     }
 
     signingConfigs {
