@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -76,6 +77,30 @@ import com.lehyanflouriot.muscuapp.ui.common.parseWholeNumber
 /** Rest offered when neither the session nor the exercise has one. */
 private const val DEFAULT_REST_SECONDS = 90
 
+/** What is being typed in the dialog of an exercise of a session, until it is saved. */
+@Stable
+class SessionLineState(line: SessionExercise?, initialTarget: SetTarget) {
+    private val target = line?.target ?: initialTarget
+    var sets by mutableIntStateOf(target.sets)
+    var min by mutableStateOf(target.min.toString())
+    var max by mutableStateOf(if (target.max == target.min) "" else target.max.toString())
+    var per by mutableStateOf(target.per)
+    var rir by mutableStateOf(target.rir)
+    var rest by mutableStateOf(line?.restSeconds)
+    var note by mutableStateOf(line?.note.orEmpty())
+    var emphasis by mutableStateOf(line?.emphasis ?: false)
+
+    val low: Int? get() = parseWholeNumber(min, 1..MAX_TARGET_REPS)
+    val high: Int? get() = if (max.isBlank()) low else parseWholeNumber(max, 1..MAX_TARGET_REPS)
+
+    /** What the session asks, or null while the range typed is not valid. */
+    fun target(): SetTarget? {
+        val low = low ?: return null
+        val high = high ?: return null
+        return SetTarget(sets, low, maxOf(low, high), per.trim(), rir)
+    }
+}
+
 /**
  * What a session asks for one of its exercises: how many sets, in which range of reps (or
  * seconds), how many reps to keep in reserve, the rest between sets, and how to do it.
@@ -92,167 +117,27 @@ fun SessionLineDialog(
     onReplace: (() -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
 ) {
-    val target = line?.target ?: initialTarget
-    var sets by remember { mutableIntStateOf(target.sets) }
-    var min by remember { mutableStateOf(target.min.toString()) }
-    var max by remember { mutableStateOf(if (target.max == target.min) "" else target.max.toString()) }
-    var per by remember { mutableStateOf(target.per) }
-    var rir by remember { mutableStateOf(target.rir) }
-    var rest by remember { mutableStateOf(line?.restSeconds) }
-    var note by remember { mutableStateOf(line?.note.orEmpty()) }
-    var emphasis by remember { mutableStateOf(line?.emphasis ?: false) }
-    var typing by remember { mutableStateOf<String?>(null) }
-    var pickingRest by remember { mutableStateOf(false) }
-    val low = parseWholeNumber(min, 1..MAX_TARGET_REPS)
-    val high = if (max.isBlank()) low else parseWholeNumber(max, 1..MAX_TARGET_REPS)
-    val save = {
-        if (low != null && high != null) {
-            onSave(SetTarget(sets, low, maxOf(low, high), per.trim(), rir), emphasis, note.trim(), rest)
-        }
-    }
-    val setsLabel = stringResource(R.string.field_sets)
-    val rirLabel = stringResource(R.string.training_line_rir)
+    val state = remember { SessionLineState(line, initialTarget) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(exercise.name) },
         text = {
-            Column(
+            SessionLineForm(
+                state = state,
+                exercise = exercise,
+                dayName = dayName,
+                onMove = onMove,
+                onReplace = onReplace,
+                onRemove = onRemove,
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.training_line_scope, dayName),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                StepperRow(label = setsLabel) {
-                    CompactStepper(
-                        value = sets.toString(),
-                        description = setsLabel,
-                        onDecrement = { sets = (sets - 1).coerceAtLeast(1) },
-                        onIncrement = { sets = (sets + 1).coerceAtMost(MAX_TARGET_SETS) },
-                        onValueClick = { typing = setsLabel },
-                        canDecrement = sets > 1,
-                        modifier = Modifier.width(140.dp),
-                    )
-                }
-                Text(
-                    text = stringResource(
-                        if (exercise.measure == Measure.SECONDS) R.string.training_line_seconds else R.string.training_line_reps,
-                    ),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    NumberField(
-                        value = min,
-                        onValueChange = { min = it },
-                        label = stringResource(R.string.training_line_min),
-                        isError = min.isNotBlank() && low == null,
-                        modifier = Modifier.weight(1f),
-                    )
-                    NumberField(
-                        value = max,
-                        onValueChange = { max = it },
-                        label = stringResource(R.string.training_line_max),
-                        placeholder = low?.toString(),
-                        isError = max.isNotBlank() && high == null,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                OutlinedTextField(
-                    value = per,
-                    onValueChange = { per = it },
-                    label = { Text(stringResource(R.string.training_line_per)) },
-                    placeholder = { Text(stringResource(R.string.training_line_per_hint)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                StepperRow(label = rirLabel, hint = stringResource(R.string.training_line_rir_hint)) {
-                    CompactStepper(
-                        value = rir?.toString() ?: "–",
-                        description = rirLabel,
-                        // Below 0, no reserve is asked any more.
-                        onDecrement = { rir = rir?.let { if (it == 0) null else it - 1 } },
-                        onIncrement = { rir = ((rir ?: -1) + 1).coerceAtMost(MAX_RIR) },
-                        onValueClick = { typing = rirLabel },
-                        canDecrement = rir != null,
-                        modifier = Modifier.width(140.dp),
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.small)
-                        .clickable { pickingRest = true }
-                        .heightIn(min = 56.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.training_line_rest), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = rest?.let(Fmt::duration)
-                                ?: exercise.restSeconds?.let { stringResource(R.string.training_line_rest_default, Fmt.duration(it)) }
-                                ?: stringResource(R.string.training_line_rest_none),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    if (rest != null) {
-                        IconButton(onClick = { rest = null }) {
-                            Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = stringResource(R.string.training_line_rest_reset))
-                        }
-                    } else {
-                        Icon(Icons.Rounded.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text(stringResource(R.string.training_line_note)) },
-                    placeholder = { Text(stringResource(R.string.training_line_note_hint)) },
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .toggleable(value = emphasis, role = Role.Switch, onValueChange = { emphasis = it })
-                        .heightIn(min = 56.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.training_line_emphasis), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            text = stringResource(R.string.training_line_emphasis_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Switch(checked = emphasis, onCheckedChange = null)
-                }
-                if (onMove != null || onReplace != null || onRemove != null) {
-                    Column {
-                        if (onMove != null) {
-                            Row {
-                                DialogAction(stringResource(R.string.nutrition_move_up), Icons.Rounded.ArrowUpward, { onMove(-1) })
-                                DialogAction(stringResource(R.string.nutrition_move_down), Icons.Rounded.ArrowDownward, { onMove(1) })
-                            }
-                        }
-                        if (onReplace != null) {
-                            DialogAction(stringResource(R.string.training_line_replace), Icons.Rounded.SwapHoriz, onReplace)
-                        }
-                        if (onRemove != null) {
-                            DialogAction(stringResource(R.string.training_line_remove), Icons.Rounded.DeleteOutline, onRemove, destructive = true)
-                        }
-                    }
-                }
-            }
+            )
         },
         confirmButton = {
-            TextButton(onClick = save, enabled = low != null && high != null) {
+            val target = state.target()
+            TextButton(
+                onClick = { target?.let { onSave(it, state.emphasis, state.note.trim(), state.rest) } },
+                enabled = target != null,
+            ) {
                 Text(stringResource(if (line == null) R.string.training_line_add else R.string.action_save))
             }
         },
@@ -260,17 +145,167 @@ fun SessionLineDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
+}
+
+/** The fields of the dialog of an exercise of a session, and what can be done with the exercise. */
+@Composable
+fun SessionLineForm(
+    state: SessionLineState,
+    exercise: Exercise,
+    dayName: String,
+    modifier: Modifier = Modifier,
+    onMove: ((Int) -> Unit)? = null,
+    onReplace: (() -> Unit)? = null,
+    onRemove: (() -> Unit)? = null,
+) {
+    var typing by remember { mutableStateOf<String?>(null) }
+    var pickingRest by remember { mutableStateOf(false) }
+    val setsLabel = stringResource(R.string.field_sets)
+    val rirLabel = stringResource(R.string.training_line_rir)
+    val low = state.low
+    val high = state.high
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(R.string.training_line_scope, dayName),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        StepperRow(label = setsLabel) {
+            CompactStepper(
+                value = state.sets.toString(),
+                description = setsLabel,
+                onDecrement = { state.sets = (state.sets - 1).coerceAtLeast(1) },
+                onIncrement = { state.sets = (state.sets + 1).coerceAtMost(MAX_TARGET_SETS) },
+                onValueClick = { typing = setsLabel },
+                canDecrement = state.sets > 1,
+                modifier = Modifier.width(140.dp),
+            )
+        }
+        Text(
+            text = stringResource(
+                if (exercise.measure == Measure.SECONDS) R.string.training_line_seconds else R.string.training_line_reps,
+            ),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            NumberField(
+                value = state.min,
+                onValueChange = { state.min = it },
+                label = stringResource(R.string.training_line_min),
+                isError = state.min.isNotBlank() && low == null,
+                modifier = Modifier.weight(1f),
+            )
+            NumberField(
+                value = state.max,
+                onValueChange = { state.max = it },
+                label = stringResource(R.string.training_line_max),
+                placeholder = low?.toString(),
+                isError = state.max.isNotBlank() && high == null,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        OutlinedTextField(
+            value = state.per,
+            onValueChange = { state.per = it },
+            label = { Text(stringResource(R.string.training_line_per)) },
+            placeholder = { Text(stringResource(R.string.training_line_per_hint)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, imeAction = ImeAction.Next),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        StepperRow(label = rirLabel, hint = stringResource(R.string.training_line_rir_hint)) {
+            CompactStepper(
+                value = state.rir?.toString() ?: "–",
+                description = rirLabel,
+                // Below 0, no reserve is asked any more.
+                onDecrement = { state.rir = state.rir?.let { if (it == 0) null else it - 1 } },
+                onIncrement = { state.rir = ((state.rir ?: -1) + 1).coerceAtMost(MAX_RIR) },
+                onValueClick = { typing = rirLabel },
+                canDecrement = state.rir != null,
+                modifier = Modifier.width(140.dp),
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.small)
+                .clickable { pickingRest = true }
+                .heightIn(min = 56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.training_line_rest), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = state.rest?.let(Fmt::duration)
+                        ?: exercise.restSeconds?.let { stringResource(R.string.training_line_rest_default, Fmt.duration(it)) }
+                        ?: stringResource(R.string.training_line_rest_none),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (state.rest != null) {
+                IconButton(onClick = { state.rest = null }) {
+                    Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = stringResource(R.string.training_line_rest_reset))
+                }
+            } else {
+                Icon(Icons.Rounded.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        OutlinedTextField(
+            value = state.note,
+            onValueChange = { state.note = it },
+            label = { Text(stringResource(R.string.training_line_note)) },
+            placeholder = { Text(stringResource(R.string.training_line_note_hint)) },
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(value = state.emphasis, role = Role.Switch, onValueChange = { state.emphasis = it })
+                .heightIn(min = 56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.training_line_emphasis), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = stringResource(R.string.training_line_emphasis_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Switch(checked = state.emphasis, onCheckedChange = null)
+        }
+        if (onMove != null || onReplace != null || onRemove != null) {
+            Column {
+                if (onMove != null) {
+                    Row {
+                        DialogAction(stringResource(R.string.nutrition_move_up), Icons.Rounded.ArrowUpward, { onMove(-1) })
+                        DialogAction(stringResource(R.string.nutrition_move_down), Icons.Rounded.ArrowDownward, { onMove(1) })
+                    }
+                }
+                if (onReplace != null) {
+                    DialogAction(stringResource(R.string.training_line_replace), Icons.Rounded.SwapHoriz, onReplace)
+                }
+                if (onRemove != null) {
+                    DialogAction(stringResource(R.string.training_line_remove), Icons.Rounded.DeleteOutline, onRemove, destructive = true)
+                }
+            }
+        }
+    }
 
     typing?.let { field ->
         val forSets = field == setsLabel
         NumberInputDialog(
             title = field,
-            initialValue = (if (forSets) sets else rir)?.toString().orEmpty(),
+            initialValue = (if (forSets) state.sets else state.rir)?.toString().orEmpty(),
             allowDecimal = false,
             valueRange = if (forSets) 1.0..MAX_TARGET_SETS.toDouble() else 0.0..MAX_RIR.toDouble(),
             onDismiss = { typing = null },
             onConfirm = { value ->
-                if (forSets) sets = value.toInt() else rir = value.toInt()
+                if (forSets) state.sets = value.toInt() else state.rir = value.toInt()
                 typing = null
             },
         )
@@ -278,10 +313,10 @@ fun SessionLineDialog(
     if (pickingRest) {
         DurationPickerDialog(
             title = stringResource(R.string.training_line_rest),
-            initialSeconds = rest ?: exercise.restSeconds ?: DEFAULT_REST_SECONDS,
+            initialSeconds = state.rest ?: exercise.restSeconds ?: DEFAULT_REST_SECONDS,
             onDismiss = { pickingRest = false },
             onConfirm = {
-                rest = it
+                state.rest = it
                 pickingRest = false
             },
         )

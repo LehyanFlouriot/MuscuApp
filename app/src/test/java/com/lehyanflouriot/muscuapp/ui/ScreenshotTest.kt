@@ -1,13 +1,27 @@
 package com.lehyanflouriot.muscuapp.ui
 
 import android.app.Application
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.isRoot
@@ -15,6 +29,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
@@ -63,7 +78,8 @@ import com.lehyanflouriot.muscuapp.ui.settings.SyncActions
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import com.lehyanflouriot.muscuapp.ui.week.ExercisePickerSheet
 import com.lehyanflouriot.muscuapp.ui.week.SessionActions
-import com.lehyanflouriot.muscuapp.ui.week.SessionLineDialog
+import com.lehyanflouriot.muscuapp.ui.week.SessionLineForm
+import com.lehyanflouriot.muscuapp.ui.week.SessionLineState
 import com.lehyanflouriot.muscuapp.ui.week.TrainingEditorScreen
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
@@ -389,21 +405,52 @@ class ScreenshotTest {
         before = { composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(8) },
     ) { TrainingEditor(SampleData.withProgram(today)) }
 
+    /** What a dialog looks like, drawn in the window of the screen. */
+    @Composable
+    private fun DialogFrame(title: String, confirm: String, content: @Composable (Modifier) -> Unit) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.32f))
+                .padding(24.dp),
+        ) {
+            Surface(
+                shape = AlertDialogDefaults.shape,
+                color = AlertDialogDefaults.containerColor,
+                tonalElevation = AlertDialogDefaults.TonalElevation,
+            ) {
+                Column(Modifier.padding(24.dp)) {
+                    Text(title, style = MaterialTheme.typography.headlineSmall, color = AlertDialogDefaults.titleContentColor)
+                    Spacer(Modifier.height(16.dp))
+                    content(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()))
+                    Row(Modifier.align(Alignment.End).padding(top = 24.dp)) {
+                        TextButton(onClick = {}) { Text(stringResource(R.string.action_cancel)) }
+                        TextButton(onClick = {}) { Text(confirm) }
+                    }
+                }
+            }
+        }
+    }
+
+    // Under Robolectric, a text field in a dialog window never rests on a screen of a given width
+    // (robolectric/robolectric#8460): the content of the dialog is drawn in the window of the screen.
     @Test
-    fun programLine() = capture("13-programme-exercice", dialog = true) {
+    fun programLine() = capture("13-programme-exercice") {
         val appData = SampleData.withProgram(today)
         val line = appData.training.programs.single().day(DayOfWeek.WEDNESDAY).exercises.first()
-        SessionLineDialog(
-            exercise = appData.exercise(line.exerciseId)!!,
-            dayName = "mercredi",
-            line = line,
-            initialTarget = line.target,
-            onDismiss = {},
-            onSave = { _, _, _, _ -> },
-            onMove = {},
-            onReplace = {},
-            onRemove = {},
-        )
+        val exercise = appData.exercise(line.exerciseId)!!
+        DialogFrame(title = exercise.name, confirm = stringResource(R.string.action_save)) { modifier ->
+            SessionLineForm(
+                state = remember { SessionLineState(line, line.target) },
+                exercise = exercise,
+                dayName = "mercredi",
+                modifier = modifier,
+                onMove = {},
+                onReplace = {},
+                onRemove = {},
+            )
+        }
     }
 
     @Test
