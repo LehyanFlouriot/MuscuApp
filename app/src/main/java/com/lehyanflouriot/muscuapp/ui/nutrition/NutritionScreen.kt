@@ -24,6 +24,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingFlat
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.outlined.LocalDrink
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Celebration
 import androidx.compose.material.icons.rounded.Check
@@ -55,6 +57,7 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.LocalDrink
 import androidx.compose.material.icons.rounded.MonitorWeight
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Remove
@@ -62,7 +65,6 @@ import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -108,6 +110,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -659,10 +662,8 @@ private fun DaySummaryCard(
                 WaterRow(
                     water = view.water,
                     target = view.waterTarget,
-                    glassMl = view.plan.glassMl,
                     canChange = true,
                     onChange = onWaterChange,
-                    countGlasses = false,
                 )
                 if (view.plan.waterHint.isNotBlank()) {
                     Row {
@@ -1040,43 +1041,39 @@ private fun FoodRow(food: FoodView, canCheck: Boolean, onToggle: () -> Unit, onS
 
 // region Water
 
-/** The water of the day, with the buttons to note one glass more or less. */
+/** The glasses of water of the day, with the buttons to note one glass more or less. */
 @Composable
 internal fun WaterRow(
     water: Int,
     target: Int,
-    glassMl: Int,
     canChange: Boolean,
     onChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    /** False under the rings, which already count the glasses: the row then says how much it is. */
-    countGlasses: Boolean = true,
 ) {
     val waterColor = ringColors().water
     val colors = MaterialTheme.colorScheme
-    val glasses = pluralStringResource(R.plurals.nutrition_glasses, target, target)
-    val liters = stringResource(R.string.nutrition_water_liters, Fmt.liters(water * glassMl), Fmt.liters(target * glassMl))
+    // The glasses say how much is drunk: the buttons tell it to the screen readers.
+    val count = pluralStringResource(R.plurals.nutrition_water_count_cd, water, water, target)
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Rounded.WaterDrop, contentDescription = null, tint = waterColor)
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = when {
-                    !countGlasses -> liters
-                    canChange -> stringResource(R.string.nutrition_amount_of, Fmt.number(water), glasses)
-                    else -> glasses
-                },
-                style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = if (countGlasses) liters else stringResource(R.string.plan_glass_size, Fmt.quantity("$glassMl ml")),
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onSurfaceVariant,
-            )
+        FlowRow(Modifier.weight(1f)) {
+            repeat(maxOf(target, water)) { index ->
+                Glass(
+                    filled = index < water,
+                    color = waterColor,
+                    enabled = canChange,
+                    description = stringResource(R.string.nutrition_water_glass_cd, index + 1),
+                    // Touching the last glass drunk empties it.
+                    onClick = { onChange(if (index + 1 == water) index else index + 1) },
+                )
+            }
         }
         if (canChange) {
-            FilledTonalIconButton(onClick = { onChange(water - 1) }, enabled = water > 0) {
+            Spacer(Modifier.width(8.dp))
+            FilledTonalIconButton(
+                onClick = { onChange(water - 1) },
+                enabled = water > 0,
+                modifier = Modifier.semantics { stateDescription = count },
+            ) {
                 Icon(Icons.Rounded.Remove, contentDescription = stringResource(R.string.nutrition_water_remove))
             }
             Spacer(Modifier.width(8.dp))
@@ -1085,11 +1082,49 @@ internal fun WaterRow(
                 onClick = { onChange((water + 1).coerceAtMost(MAX_WATER_GLASSES)) },
                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = waterColor, contentColor = colors.onTertiary),
                 interactionSource = press.interactionSource,
-                modifier = press.modifier,
+                modifier = press.modifier.semantics { stateDescription = count },
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.nutrition_water_add_cd))
             }
         }
+    }
+}
+
+/** A glass, full once drunk, which fills with a little bounce. */
+@Composable
+private fun Glass(filled: Boolean, color: Color, enabled: Boolean, description: String, onClick: () -> Unit) {
+    // Empty, it keeps only its outline, clear enough to be seen.
+    val tint by animateColorAsState(if (filled) color else color.copy(alpha = 0.75f), tween(250), label = "glass")
+    val scale = remember { Animatable(1f) }
+    var previous by remember { mutableStateOf(filled) }
+    LaunchedEffect(filled) {
+        if (filled && !previous) {
+            scale.snapTo(0.75f)
+            scale.animateTo(1f, Motion.bounce())
+        }
+        previous = filled
+    }
+    val state = stringResource(if (filled) R.string.nutrition_water_glass_drunk else R.string.nutrition_water_glass_left)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics {
+                contentDescription = description
+                stateDescription = state
+            },
+    ) {
+        Icon(
+            imageVector = if (filled) Icons.Rounded.LocalDrink else Icons.Outlined.LocalDrink,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.graphicsLayer {
+                scaleX = scale.value
+                scaleY = scale.value
+            },
+        )
     }
 }
 

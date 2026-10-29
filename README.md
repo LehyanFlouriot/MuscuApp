@@ -67,7 +67,7 @@ L'app a cinq onglets : **Aujourd'hui**, **Semaine**, **Nutrition**, **Progrès**
 
 ### 🍽️ Nutrition
 - Ton **plan alimentaire** jour par jour, déjà rempli avec ta semaine type (prise de masse 66 → 75 kg) : les 5 repas avec leurs quantités, l'eau et les conseils du plan.
-- Trois **anneaux** pour la journée : calories, protéines et verres d'eau (estimés d'après ce que tu as coché), avec les boutons **− / +** de l'eau juste en dessous. Le jour indique sa séance (« Quadriceps ») d'après ton programme d'entraînement.
+- Trois **anneaux** pour la journée : calories, protéines et verres d'eau (estimés d'après ce que tu as coché), avec tes **petits verres d'eau** juste en dessous : touche un verre pour remplir jusqu'à lui (le dernier rempli pour le vider), ou utilise les boutons **− / +**. Le jour indique sa séance (« Quadriceps ») d'après ton programme d'entraînement.
 - **Coche ce que tu manges**, juste sous le résumé : aliment par aliment, ou tout un repas d'un coup. Un repas terminé se replie et le prochain est mis en avant.
 - Pas de riz sous la main ? **⇄ Remplace** un aliment juste pour ce jour, avec des idées tirées des équivalences du plan (riz ↔ pâtes ↔ semoule…). Ton plan ne change pas.
 - **Pilotage du poids** : avec tes pesées, l'app compare ton rythme des 2 dernières semaines (le même que dans Progrès → Poids) à la cible du plan (+0,1 à +0,4 kg par semaine) et te rappelle quoi faire (+ 200 kcal de féculents si ça stagne, − 150 kcal si ça monte trop vite).

@@ -338,7 +338,6 @@ private fun MealsOfTheDay(nutrition: NutritionDayView?, today: LocalDate, action
             WaterRow(
                 water = nutrition.water,
                 target = nutrition.waterTarget,
-                glassMl = nutrition.plan.glassMl,
                 canChange = true,
                 onChange = actions.onWaterChange,
             )

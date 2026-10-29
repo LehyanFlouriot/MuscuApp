@@ -387,7 +387,9 @@
     <string name="nutrition_swap_food">Remplacer %1$s</string>
     <string name="nutrition_swapped_from">Au lieu de %1$s</string>
     <string name="nutrition_future_hint">Tu pourras cocher ce que tu as mangé le jour même.</string>
-    <string name="nutrition_water_liters">%1$s sur %2$s</string>
+    <string name="nutrition_water_glass_cd">Verre %1$d</string>
+    <string name="nutrition_water_glass_drunk">bu</string>
+    <string name="nutrition_water_glass_left">pas encore bu</string>
     <string name="nutrition_water_remove">Retirer un verre</string>
     <string name="nutrition_water_add_cd">Ajouter un verre</string>
     <string name="nutrition_menu_for_rest">Séance prévue ce jour-là, mais le menu est celui d\'un jour de repos.</string>
@@ -548,6 +550,11 @@
         <item quantity="one">%d aliment prévu</item>
         <item quantity="many">%d aliments prévus</item>
         <item quantity="other">%d aliments prévus</item>
+    </plurals>
+    <plurals name="nutrition_water_count_cd">
+        <item quantity="one">%1$d verre d\'eau sur %2$d</item>
+        <item quantity="many">%1$d verres d\'eau sur %2$d</item>
+        <item quantity="other">%1$d verres d\'eau sur %2$d</item>
     </plurals>
     <plurals name="nutrition_water_left">
         <item quantity="one">Tout est coché\u00A0! Encore %d verre d\'eau.</item>
