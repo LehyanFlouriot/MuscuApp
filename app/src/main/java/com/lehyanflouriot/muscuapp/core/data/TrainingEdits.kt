@@ -8,6 +8,7 @@ import com.lehyanflouriot.muscuapp.core.model.SetTarget
 import com.lehyanflouriot.muscuapp.core.model.Training
 import com.lehyanflouriot.muscuapp.core.model.TrainingDay
 import com.lehyanflouriot.muscuapp.core.model.TrainingProgram
+import com.lehyanflouriot.muscuapp.core.model.WarmUp
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -15,6 +16,10 @@ import java.time.LocalDate
 const val MAX_TARGET_SETS = 20
 const val MAX_TARGET_REPS = 999
 const val MAX_RIR = 10
+
+/** Most minutes of mobility, and light sets, of the warm-up of a session. */
+const val MAX_WARM_UP_MINUTES = 30
+const val MAX_LIGHT_SETS = 5
 
 /**
  * Adds the program the app comes with and its exercises, followed from the start of the week of
@@ -173,8 +178,12 @@ private fun sanitizeProgram(program: TrainingProgram, exerciseIds: Set<String>):
         name = program.name.trim().ifEmpty { "Programme" },
         days = days,
         notes = program.notes.filter { it.title.isNotBlank() || it.text.isNotBlank() }.distinctBy { it.id },
+        warmUp = program.warmUp.sanitized(),
     )
 }
+
+internal fun WarmUp.sanitized(): WarmUp =
+    copy(mobilityMinutes = mobilityMinutes.coerceIn(0, MAX_WARM_UP_MINUTES), lightSets = lightSets.coerceIn(0, MAX_LIGHT_SETS))
 
 /** Drops what would break the sessions: unknown programs, exercises that do not exist any more, days twice... */
 internal fun sanitizeTraining(training: Training, exerciseIds: Set<String>): Training {
@@ -197,7 +206,13 @@ internal fun sanitizeTraining(training: Training, exerciseIds: Set<String>): Tra
         .distinctBy { it.date }
         .distinctBy { it.from }
         .sortedBy { it.date }
-    return Training(programs = cleanPrograms, schedule = schedule, moves = moves, seeded = training.seeded)
+    // One time per day, which cannot end before it starts.
+    val times = training.times
+        .filter { it.startedAt > 0 }
+        .map { if (it.lastSetAt < it.startedAt) it.copy(lastSetAt = 0) else it }
+        .distinctBy { it.date }
+        .sortedBy { it.date }
+    return Training(programs = cleanPrograms, schedule = schedule, moves = moves, times = times, seeded = training.seeded)
 }
 
 // endregion

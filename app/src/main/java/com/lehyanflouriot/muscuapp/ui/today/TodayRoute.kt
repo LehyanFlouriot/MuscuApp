@@ -11,6 +11,7 @@ import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.domain.buildNutritionDay
 import com.lehyanflouriot.muscuapp.core.domain.buildSession
 import com.lehyanflouriot.muscuapp.core.domain.missedSession
+import com.lehyanflouriot.muscuapp.core.domain.sessionDuration
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
 import com.lehyanflouriot.muscuapp.ui.common.lowerName
@@ -51,6 +52,7 @@ fun TodayRoute(
         missed = missed,
         programStart = programStart,
         nutrition = nutrition,
+        sessionDuration = data.training.sessionDuration(today),
         actions = TodayActions(
             onSaveWeight = { saveWeighIn(repository, messenger, context, today, weighIn.weight) },
             onTypeWeight = { typing = true },

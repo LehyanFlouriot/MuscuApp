@@ -57,14 +57,14 @@ class WorkoutRepositoryTest {
     fun changesAreWrittenAndReloaded() = runTest {
         val storage = FakeStorage()
         val repo = repository(storage)
-        val id = repo.addExercise(ExerciseDraft("  Squat ", MuscleGroup.LEGS, restSeconds = 180))
+        val id = repo.addExercise(ExerciseDraft("  Squat ", MuscleGroup.QUADS, restSeconds = 180))
         repo.saveEntry(null, id, day, listOf(WorkSet(5, 100.0), WorkSet(0, 100.0), WorkSet(5, -3.0)), " lourd ")
         runCurrent()
 
         val reloaded = repository(FakeStorage(storage.content)).data.value!!
         val exercise = reloaded.exercises.single()
         assertEquals("Squat", exercise.name)
-        assertEquals(MuscleGroup.LEGS, exercise.muscleGroup)
+        assertEquals(MuscleGroup.QUADS, exercise.muscleGroup)
         assertEquals(180, exercise.restSeconds)
         val entry = reloaded.entries.single()
         // Empty sets are dropped and negative loads clamped.

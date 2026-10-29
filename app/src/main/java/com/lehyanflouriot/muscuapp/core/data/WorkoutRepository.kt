@@ -25,12 +25,14 @@ import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.RestPreset
 import com.lehyanflouriot.muscuapp.core.model.SessionExercise
 import com.lehyanflouriot.muscuapp.core.model.SessionMove
+import com.lehyanflouriot.muscuapp.core.model.SessionTime
 import com.lehyanflouriot.muscuapp.core.model.SetTarget
 import com.lehyanflouriot.muscuapp.core.model.Settings
 import com.lehyanflouriot.muscuapp.core.model.ShoppingExtra
 import com.lehyanflouriot.muscuapp.core.model.ShoppingWeek
 import com.lehyanflouriot.muscuapp.core.model.Training
 import com.lehyanflouriot.muscuapp.core.model.TrainingProgram
+import com.lehyanflouriot.muscuapp.core.model.WarmUp
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.core.sync.mergeData
@@ -69,6 +71,7 @@ data class ExerciseDraft(
     val measure: Measure = Measure.REPS,
     val restSeconds: Int? = null,
     val notes: String = "",
+    val secondaryMuscles: List<MuscleGroup> = emptyList(),
 )
 
 /** An exercise removed together with its history, kept to allow "undo". */
@@ -155,6 +158,7 @@ class WorkoutRepository(
                     restSeconds = draft.restSeconds,
                     notes = draft.notes.trim(),
                     createdAt = clock(),
+                    secondaryMuscles = cleanSecondaryMuscles(draft.muscleGroup, draft.secondaryMuscles),
                 ),
             )
         }
@@ -175,6 +179,7 @@ class WorkoutRepository(
                             measure = draft.measure,
                             restSeconds = draft.restSeconds,
                             notes = draft.notes.trim(),
+                            secondaryMuscles = cleanSecondaryMuscles(draft.muscleGroup, draft.secondaryMuscles),
                         )
                     }
                 },
@@ -228,13 +233,19 @@ class WorkoutRepository(
     ): EntryChange {
         val cleanSets = cleanSets(sets)
         val id = entryId ?: newId()
+        val now = clock()
         var change = EntryChange(id, null, null)
         mutate { data ->
             val existing = data.entries.firstOrNull { it.id == id }
             val saved = existing?.copy(date = date, sets = cleanSets, note = note.trim())
-                ?: WorkoutEntry(id = id, exerciseId = exerciseId, date = date, sets = cleanSets, note = note.trim(), createdAt = clock())
+                ?: WorkoutEntry(id = id, exerciseId = exerciseId, date = date, sets = cleanSets, note = note.trim(), createdAt = now)
             change = EntryChange(id, existing, saved)
-            data.copy(entries = if (existing == null) data.entries + saved else data.entries.map { if (it.id == id) saved else it })
+            // Only sets added go on with the session: a value corrected later does not.
+            val added = cleanSets.size > (existing?.sets?.size ?: 0)
+            data.copy(
+                entries = if (existing == null) data.entries + saved else data.entries.map { if (it.id == id) saved else it },
+                training = if (added) data.training.withSetNoted(date, now) else data.training,
+            )
         }
         return change
     }
@@ -246,15 +257,19 @@ class WorkoutRepository(
     fun addSet(exerciseId: String, date: LocalDate, set: WorkSet): EntryChange? {
         val clean = cleanSets(listOf(set)).singleOrNull() ?: return null
         val newEntryId = newId()
+        val now = clock()
         var change: EntryChange? = null
         mutate { data ->
             change = null
             if (data.exercise(exerciseId) == null) return@mutate data
             val last = data.entries.filter { it.exerciseId == exerciseId && it.date == date }.maxWithOrNull(entryOrder)
             val updated = last?.copy(sets = last.sets + clean)
-                ?: WorkoutEntry(id = newEntryId, exerciseId = exerciseId, date = date, sets = listOf(clean), createdAt = clock())
+                ?: WorkoutEntry(id = newEntryId, exerciseId = exerciseId, date = date, sets = listOf(clean), createdAt = now)
             change = EntryChange(updated.id, last, updated)
-            data.copy(entries = if (last == null) data.entries + updated else data.entries.map { if (it.id == last.id) updated else it })
+            data.copy(
+                entries = if (last == null) data.entries + updated else data.entries.map { if (it.id == last.id) updated else it },
+                training = data.training.withSetNoted(date, now),
+            )
         }
         return change
     }
@@ -652,6 +667,16 @@ class WorkoutRepository(
         updateTrainingProgram(programId) { it.copyDay(from, to, newId) }
     }
 
+    /**
+     * Changes what is done before each session of a program. It changes nothing to the days
+     * already lived, so it applies to the program as it is, without keeping it as it was.
+     */
+    fun updateWarmUp(programId: String, warmUp: WarmUp) {
+        mutateTraining { training ->
+            training.copy(programs = training.programs.map { if (it.id == programId) it.copy(warmUp = warmUp.sanitized()) else it })
+        }
+    }
+
     fun addTrainingNote(programId: String, title: String, text: String) {
         if (title.isBlank() && text.isBlank()) return
         val note = PlanNote(id = newId(), title = title.trim(), text = text.trim())
@@ -685,6 +710,29 @@ class WorkoutRepository(
                 training.copy(moves = (training.moves + SessionMove(date = to, from = from)).sortedBy { it.date })
             }
         }
+    }
+
+    /**
+     * Starts the clock of the session of [date], opened today in the guided session. Opened again
+     * before its first set, it starts again; under way, it keeps its start.
+     */
+    fun startSessionClock(date: LocalDate) {
+        if (date != today()) return
+        val now = clock()
+        mutateTraining { training ->
+            if (training.times.any { it.date == date && it.lastSetAt > 0 }) return@mutateTraining training
+            val times = training.times.filterNot { it.date == date } + SessionTime(date = date, startedAt = now)
+            training.copy(times = times.sortedBy { it.date })
+        }
+    }
+
+    /** The last set of the session of [date] is noted at [at], when that session is timed today. */
+    private fun Training.withSetNoted(date: LocalDate, at: Long): Training {
+        val time = times.firstOrNull { it.date == date }
+        if (date != today() || time == null) return this
+        // A first set long after the opening: the session was only looked at then, it starts now.
+        val start = if (time.lastSetAt == 0L && at - time.startedAt > STALE_OPENING_MS) at else time.startedAt
+        return copy(times = times.map { if (it.date == date) it.copy(startedAt = start, lastSetAt = at) else it })
     }
 
     /** Gives the session done on [date] back to the day it was planned on. */
@@ -766,12 +814,19 @@ class WorkoutRepository(
     companion object {
         const val MIN_REST = 5
         const val MAX_REST = 60 * 60
+
+        /** Longest time between the opening of a session and its first set, for the opening to count. */
+        private const val STALE_OPENING_MS = 45 * 60_000L
         private const val SAVE_TIMEOUT_MS = 5_000L
 
         private fun cleanSets(sets: List<WorkSet>): List<WorkSet> =
             sets.filter { it.reps > 0 }.map { it.copy(weight = it.weight.coerceAtLeast(0.0)) }
 
         private fun sortPresets(presets: List<RestPreset>): List<RestPreset> = presets.sortedBy { it.seconds }
+
+        /** The muscles an exercise works too: real muscles, each once, without its main one. */
+        private fun cleanSecondaryMuscles(main: MuscleGroup, secondary: List<MuscleGroup>): List<MuscleGroup> =
+            secondary.filter { it in MuscleGroup.muscles && it != main }.distinct()
 
         private fun sortBodyWeights(weights: List<BodyWeightEntry>): List<BodyWeightEntry> = weights.sortedBy { it.date }
 
@@ -784,6 +839,7 @@ class WorkoutRepository(
             val exercises = data.exercises
                 .filter { it.name.isNotBlank() }
                 .distinctBy { it.id }
+                .map { it.copy(secondaryMuscles = cleanSecondaryMuscles(it.muscleGroup, it.secondaryMuscles)) }
             val ids = exercises.mapTo(HashSet()) { it.id }
             val entries = data.entries
                 .filter { it.exerciseId in ids }

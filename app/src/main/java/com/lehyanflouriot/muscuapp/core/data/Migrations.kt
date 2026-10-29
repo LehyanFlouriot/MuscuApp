@@ -2,8 +2,10 @@ package com.lehyanflouriot.muscuapp.core.data
 
 import com.lehyanflouriot.muscuapp.core.domain.shoppingKey
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.FoodItem
 import com.lehyanflouriot.muscuapp.core.model.MealPlan
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
 import java.time.LocalDate
 
@@ -12,8 +14,56 @@ internal fun migrate(data: AppData): AppData {
     var migrated = data
     if (migrated.schemaVersion < 2) migrated = oneNamePerFood(migrated)
     if (migrated.training.legacyProgram != null) migrated = programsOverTime(migrated)
+    if (migrated.schemaVersion < 4) migrated = musclesInDetail(migrated)
+    // An older version of the app, on another device, may still name the legs as a whole.
+    if (migrated.exercises.any { it.muscleGroup == MuscleGroup.LEGS }) {
+        migrated = migrated.copy(exercises = migrated.exercises.map { it.withLegsSplit() })
+    }
     return migrated
 }
+
+/** The muscles of the exercises the app knows: those of its program, then those of its catalog. */
+private object KnownMuscles {
+    private val program = HypertrophyProgram.exercises()
+    private val byId = program.associate { it.id to (it.muscleGroup to it.secondaryMuscles) }
+    private val byName = ExerciseCatalog.all.associate { ExerciseCatalog.normalize(it.name) to (it.muscleGroup to it.secondaryMuscles) } +
+        program.associate { ExerciseCatalog.normalize(it.name) to (it.muscleGroup to it.secondaryMuscles) }
+
+    fun of(exercise: Exercise): Pair<MuscleGroup, List<MuscleGroup>>? =
+        byId[exercise.id] ?: byName[ExerciseCatalog.normalize(exercise.name)]
+}
+
+private val legParts = setOf(MuscleGroup.QUADS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES, MuscleGroup.CALVES)
+private val calfWords = listOf("mollet", "calf", "calves")
+private val hamstringWords = listOf("ischio", "leg curl", "nordic", "souleve de terre", "good morning", "hamstring")
+
+/**
+ * The part of the legs an exercise of the legs works: the one the app knows for it, or else the
+ * one its name tells, the quadriceps by default.
+ */
+private fun Exercise.withLegsSplit(): Exercise {
+    if (muscleGroup != MuscleGroup.LEGS) return this
+    val known = KnownMuscles.of(this)?.first?.takeIf { it in legParts }
+    val normalized = ExerciseCatalog.normalize(name)
+    val group = known ?: when {
+        calfWords.any { it in normalized } -> MuscleGroup.CALVES
+        hamstringWords.any { it in normalized } -> MuscleGroup.HAMSTRINGS
+        else -> MuscleGroup.QUADS
+    }
+    return copy(muscleGroup = group)
+}
+
+/**
+ * 1.13.0 tells the muscles apart: the legs become quadriceps, hamstrings or calves, and the
+ * exercises the app knows name the muscles they work too. A main group chosen by the user stays.
+ */
+private fun musclesInDetail(data: AppData): AppData = data.copy(
+    exercises = data.exercises.map { exercise ->
+        val split = exercise.withLegsSplit()
+        val secondary = KnownMuscles.of(exercise)?.second.orEmpty().filter { it != split.muscleGroup }
+        split.copy(secondaryMuscles = split.secondaryMuscles.ifEmpty { secondary })
+    },
+)
 
 /** Monday of the week the training program came, with 1.7.0: it is followed from then on. */
 private val FIRST_PROGRAM_WEEK: LocalDate = LocalDate.of(2026, 10, 26)

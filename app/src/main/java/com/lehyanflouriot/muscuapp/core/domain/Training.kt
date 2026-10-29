@@ -181,3 +181,21 @@ fun topReached(target: SetTarget, sets: List<WorkSet>): Boolean =
 
 /** Seconds added each week to a timed exercise, as the steppers do. */
 private const val SECONDS_STEP = 5
+
+// region Times of the sessions
+
+/** How long the session of [date] took, from the opening of its guided session to its last set; null when not known. */
+fun Training.sessionDuration(date: LocalDate): Long? =
+    times.firstOrNull { it.date == date }?.takeIf { it.lastSetAt > it.startedAt }?.let { it.lastSetAt - it.startedAt }
+
+/** When the session of [date] was opened in the guided session, null when it was not. */
+fun Training.sessionStartedAt(date: LocalDate): Long? = times.firstOrNull { it.date == date }?.startedAt
+
+/** How long the sessions of the last [days] days took on average, among those timed; null without any. */
+fun Training.averageSessionDuration(today: LocalDate, days: Long = 28): Long? {
+    val from = today.minusDays(days - 1)
+    val durations = times.filter { it.date in from..today }.mapNotNull { sessionDuration(it.date) }
+    return if (durations.isEmpty()) null else durations.average().toLong()
+}
+
+// endregion

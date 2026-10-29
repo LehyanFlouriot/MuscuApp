@@ -23,11 +23,21 @@ import java.time.LocalDate
 
 /** A few weeks of realistic training, used by the screenshot tests. */
 object SampleData {
-    val bench = Exercise(id = "bench", name = "Développé couché", muscleGroup = MuscleGroup.CHEST, restSeconds = 120)
+    val bench = Exercise(
+        id = "bench", name = "Développé couché", muscleGroup = MuscleGroup.CHEST, restSeconds = 120,
+        secondaryMuscles = listOf(MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS),
+    )
     val flyes = Exercise(id = "flyes", name = "Écarté à la poulie", muscleGroup = MuscleGroup.CHEST, restSeconds = 60)
-    val pullUps = Exercise(id = "pull", name = "Tractions", muscleGroup = MuscleGroup.BACK, usesWeight = false, restSeconds = 120)
-    val row = Exercise(id = "row", name = "Rowing barre", muscleGroup = MuscleGroup.BACK, restSeconds = 90)
-    val squat = Exercise(id = "squat", name = "Squat", muscleGroup = MuscleGroup.LEGS, restSeconds = 180)
+    val pullUps = Exercise(
+        id = "pull", name = "Tractions", muscleGroup = MuscleGroup.BACK, usesWeight = false, restSeconds = 120,
+        secondaryMuscles = listOf(MuscleGroup.BICEPS),
+    )
+    val row = Exercise(
+        id = "row", name = "Rowing barre", muscleGroup = MuscleGroup.BACK, restSeconds = 90, secondaryMuscles = listOf(MuscleGroup.BICEPS),
+    )
+    val squat = Exercise(
+        id = "squat", name = "Squat", muscleGroup = MuscleGroup.QUADS, restSeconds = 180, secondaryMuscles = listOf(MuscleGroup.GLUTES),
+    )
     val plank = Exercise(
         id = "plank", name = "Gainage", muscleGroup = MuscleGroup.ABS,
         usesWeight = false, measure = Measure.SECONDS, restSeconds = 45,

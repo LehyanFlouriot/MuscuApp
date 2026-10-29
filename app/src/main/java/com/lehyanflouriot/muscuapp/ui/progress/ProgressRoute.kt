@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
+import com.lehyanflouriot.muscuapp.core.domain.averageSessionDuration
+import com.lehyanflouriot.muscuapp.core.domain.buildMuscleStats
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
 import com.lehyanflouriot.muscuapp.core.domain.isInWeek
 import com.lehyanflouriot.muscuapp.core.domain.metricValue
@@ -12,6 +14,7 @@ import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.ui.ProgressSection
 import com.lehyanflouriot.muscuapp.ui.common.rememberToday
 import com.lehyanflouriot.muscuapp.ui.weight.WeightSection
@@ -25,11 +28,17 @@ fun ProgressRoute(
     section: ProgressSection,
     onSectionChange: (ProgressSection) -> Unit,
     onOpenExercise: (String) -> Unit,
+    onOpenMuscle: (MuscleGroup) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     ProgressFrame(section = section, onSectionChange = onSectionChange, onOpenSettings = onOpenSettings) { shown, padding ->
         when (shown) {
             ProgressSection.EXERCISES -> ExercisesSection(data = data, padding = padding, onOpenExercise = onOpenExercise)
+            ProgressSection.MUSCLES -> {
+                val today = rememberToday()
+                val muscles = remember(data, today) { buildMuscleStats(data, today) }
+                MusclesProgress(padding = padding, muscles = muscles, onOpenMuscle = onOpenMuscle)
+            }
             ProgressSection.WEIGHT -> WeightSection(data = data, repository = repository, padding = padding)
         }
     }
@@ -55,5 +64,6 @@ private fun ExercisesSection(data: AppData, padding: PaddingValues, onOpenExerci
         trainedThisWeek = trainedThisWeek,
         today = today,
         onOpenExercise = { onOpenExercise(it.id) },
+        averageDuration = data.training.averageSessionDuration(today),
     )
 }

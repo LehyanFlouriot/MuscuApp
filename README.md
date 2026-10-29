@@ -25,7 +25,7 @@ L'app a cinq onglets : **Aujourd'hui**, **Semaine**, **Nutrition**, **Progrès**
 - Le **minuteur de repos**, pour un repos hors séance.
 
 ### 📅 Ma semaine
-- La séance du jour en haut, puis les exercices **faits cette semaine** ; les autres exercices sont repliés (*Afficher*), avec **Nouvel exercice** à la fin de la liste.
+- La séance du jour en haut, puis les exercices **faits cette semaine** ; les autres exercices sont repliés (*Afficher*), avec **Nouvel exercice** à la fin de la liste. Un exercice a son muscle principal et, s'il y a lieu, les **muscles qu'il travaille aussi** (pour les stats par muscle).
 - Le bouton **+** sur un exercice ouvre la saisie, **pré-remplie avec ta dernière fois** : la plupart du temps il suffit d'ajuster et d'enregistrer.
 - Sous chaque exercice, ta performance de la semaine précédente (🎯 *à battre*) et ta progression (▲ +12 %).
 - Flèches (ou glissement à gauche / à droite) pour revoir ou compléter les semaines passées.
@@ -37,10 +37,12 @@ L'app a cinq onglets : **Aujourd'hui**, **Semaine**, **Nutrition**, **Progrès**
 - Touche un exercice : la saisie s'ouvre **pré-remplie avec l'objectif**, et le bouton Repos lance le bon temps (3 min sur l'exercice d'emphase, 1 min 30 sur les autres).
 - Les jours de la semaine montrent où tu en es de chaque séance, et l'onglet **Programme** affiche toute la semaine et les conseils (échauffement, RIR, repos, progression, décharge) : touche un conseil pour le lire en entier.
 - **Tout se modifie** depuis **Programme** : le nom et le thème de chaque séance, les exercices (ajouter, retirer, remplacer par une variante plus dure, **changer l'ordre en les faisant glisser** par la poignée ☰), et pour chacun les séries, la fourchette de répétitions, le RIR, le repos (celui de l'exercice par défaut), la consigne et l'exercice d'emphase. Un jour de repos devient une séance dès que tu lui ajoutes un exercice, et une séance se copie vers d'autres jours. Les changements s'appliquent dès aujourd'hui ; les semaines passées gardent ce qui était prévu.
+- **Échauffement avant chaque séance** (juste sous le programme) : durée de la mobilité et nombre de séries légères, ou pas d'échauffement du tout.
 - **Mes programmes** (en haut de l'onglet Programme) : quand tu veux changer de programme, crée-en un nouveau (vide ou à partir de l'actuel) et choisis le jour où il commence. L'ancien reste dans ton historique, avec les séances faites.
 
 ### ▶️ Séance guidée
-- **Démarrer la séance** (sur la séance du jour) : les exercices un par un, série par série. La série à faire part de ton objectif ; ajuste-la avec les gros boutons **− / +**, puis **Série faite**.
+- **Démarrer la séance** (sur la séance du jour) : d'abord l'**échauffement** (5 min de mobilité avec un compte à rebours qui vibre à la fin, puis 2 séries légères de l'exercice d'emphase, à cocher ; elles ne sont pas notées), puis les exercices un par un, série par série. La série à faire part de ton objectif ; ajuste-la avec les gros boutons **− / +**, puis **Série faite**.
+- La **durée** de la séance s'affiche en haut (« Exercice 2 sur 6 · 23 min ») : elle part de l'ouverture de la séance guidée, échauffement compris, et s'arrête à la dernière série. On la retrouve dans le bilan de fin (« 18 séries · 203 reps · 52 min »), sur la séance faite dans Aujourd'hui et Semaine, et en moyenne dans Progrès.
 - Chaque série est enregistrée tout de suite, et le **repos prévu par le programme démarre tout seul**, avec en bas de l'écran le décompte et ce qui vient ensuite.
 - Une barre montre où tu en es de chaque exercice ; ses séries faites, l'exercice suivant arrive. Tu peux ajouter une série, **passer l'exercice** ou revenir en arrière, et **passer le repos**.
 - **Rien n'est définitif** : juste après « Série faite », un bouton **Annuler** la retire (et arrête le repos qu'elle a lancé). Touche une série faite pour la corriger ou la supprimer, là aussi avec **Annuler**.
@@ -89,9 +91,11 @@ L'app a cinq onglets : **Aujourd'hui**, **Semaine**, **Nutrition**, **Progrès**
 - Chaque exercice peut avoir son propre temps de repos.
 
 ### 📈 Progrès
-Deux parties : **Exercices** et **Poids**.
-- Nombre de semaines d'entraînement d'affilée 🔥 et séries par semaine.
+Trois parties : **Exercices**, **Muscles** et **Poids**.
+- Nombre de semaines d'entraînement d'affilée 🔥, séries par semaine et durée moyenne des séances.
 - Pour chaque exercice : records (charge max, 1RM estimé, max de répétitions, meilleure semaine), graphique sur 12 semaines (volume, charge max ou répétitions) et historique complet. Les semaines sont datées (« 19 oct. ») plutôt que numérotées.
+- **Muscles** : pour chaque muscle (pectoraux, dos, épaules, biceps, triceps, quadriceps, ischios, fessiers, mollets, abdos), les séries par semaine en moyenne sur les 4 dernières semaines, face au repère de 10 à 20 séries, et la **progression sur 4 semaines** (ce que vaut une série de ses exercices principaux : répétitions, ou charge × répétitions). Une série compte pour le muscle principal de l'exercice, et pour **moitié** pour les muscles qu'il travaille aussi (les tractions et les rowings pour les biceps, par exemple).
+- Touche un muscle pour voir ses séries semaine par semaine sur 3 mois et ses exercices, avec la progression de chacun.
 
 ### ⚖️ Mon poids (Progrès → Poids)
 - Note ton poids en deux secondes : il est pré-rempli avec ta dernière pesée, ajuste avec **− / +** (0,1 kg) ou touche le nombre pour le taper.

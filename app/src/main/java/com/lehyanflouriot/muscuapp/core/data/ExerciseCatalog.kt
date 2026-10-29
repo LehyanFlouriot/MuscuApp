@@ -2,6 +2,17 @@ package com.lehyanflouriot.muscuapp.core.data
 
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.ABS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.BACK
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.BICEPS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.CALVES
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.CARDIO
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.CHEST
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.GLUTES
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.HAMSTRINGS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.QUADS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.SHOULDERS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.TRICEPS
 import java.text.Normalizer
 
 /** A common exercise offered when creating a new one. */
@@ -11,6 +22,7 @@ data class ExerciseSuggestion(
     val usesWeight: Boolean = true,
     val measure: Measure = Measure.REPS,
     val restSeconds: Int = 90,
+    val secondaryMuscles: List<MuscleGroup> = emptyList(),
 ) {
     fun toDraft(): ExerciseDraft = ExerciseDraft(
         name = name,
@@ -18,6 +30,7 @@ data class ExerciseSuggestion(
         usesWeight = usesWeight,
         measure = measure,
         restSeconds = restSeconds,
+        secondaryMuscles = secondaryMuscles,
     )
 }
 
@@ -27,63 +40,63 @@ object ExerciseCatalog {
     private const val CORE = 45
 
     val all: List<ExerciseSuggestion> = listOf(
-        ExerciseSuggestion("Développé couché", MuscleGroup.CHEST, restSeconds = HEAVY),
-        ExerciseSuggestion("Développé incliné haltères", MuscleGroup.CHEST),
-        ExerciseSuggestion("Développé décliné", MuscleGroup.CHEST),
-        ExerciseSuggestion("Écarté couché haltères", MuscleGroup.CHEST),
-        ExerciseSuggestion("Écarté à la poulie", MuscleGroup.CHEST),
-        ExerciseSuggestion("Pec deck", MuscleGroup.CHEST),
-        ExerciseSuggestion("Pompes", MuscleGroup.CHEST, usesWeight = false, restSeconds = SHORT),
-        ExerciseSuggestion("Dips", MuscleGroup.CHEST, usesWeight = false),
-        ExerciseSuggestion("Tractions", MuscleGroup.BACK, usesWeight = false, restSeconds = HEAVY),
-        ExerciseSuggestion("Tirage vertical", MuscleGroup.BACK),
-        ExerciseSuggestion("Tirage horizontal", MuscleGroup.BACK),
-        ExerciseSuggestion("Rowing barre", MuscleGroup.BACK, restSeconds = HEAVY),
-        ExerciseSuggestion("Rowing haltère", MuscleGroup.BACK),
-        ExerciseSuggestion("Soulevé de terre", MuscleGroup.BACK, restSeconds = 180),
-        ExerciseSuggestion("Pull-over", MuscleGroup.BACK),
-        ExerciseSuggestion("Shrugs", MuscleGroup.BACK, restSeconds = SHORT),
-        ExerciseSuggestion("Développé militaire", MuscleGroup.SHOULDERS, restSeconds = HEAVY),
-        ExerciseSuggestion("Développé haltères assis", MuscleGroup.SHOULDERS),
-        ExerciseSuggestion("Élévations latérales", MuscleGroup.SHOULDERS, restSeconds = SHORT),
-        ExerciseSuggestion("Élévations frontales", MuscleGroup.SHOULDERS, restSeconds = SHORT),
-        ExerciseSuggestion("Oiseau", MuscleGroup.SHOULDERS, restSeconds = SHORT),
-        ExerciseSuggestion("Face pull", MuscleGroup.SHOULDERS, restSeconds = SHORT),
-        ExerciseSuggestion("Curl barre", MuscleGroup.BICEPS),
-        ExerciseSuggestion("Curl haltères", MuscleGroup.BICEPS),
-        ExerciseSuggestion("Curl marteau", MuscleGroup.BICEPS),
-        ExerciseSuggestion("Curl pupitre", MuscleGroup.BICEPS),
-        ExerciseSuggestion("Curl à la poulie", MuscleGroup.BICEPS, restSeconds = SHORT),
-        ExerciseSuggestion("Extension triceps à la poulie", MuscleGroup.TRICEPS, restSeconds = SHORT),
-        ExerciseSuggestion("Barre au front", MuscleGroup.TRICEPS),
-        ExerciseSuggestion("Extension nuque haltère", MuscleGroup.TRICEPS),
-        ExerciseSuggestion("Développé couché prise serrée", MuscleGroup.TRICEPS, restSeconds = HEAVY),
-        ExerciseSuggestion("Dips sur banc", MuscleGroup.TRICEPS, usesWeight = false, restSeconds = SHORT),
-        ExerciseSuggestion("Squat", MuscleGroup.LEGS, restSeconds = 180),
-        ExerciseSuggestion("Presse à cuisses", MuscleGroup.LEGS, restSeconds = HEAVY),
-        ExerciseSuggestion("Fentes", MuscleGroup.LEGS),
-        ExerciseSuggestion("Squat bulgare", MuscleGroup.LEGS),
-        ExerciseSuggestion("Leg extension", MuscleGroup.LEGS, restSeconds = SHORT),
-        ExerciseSuggestion("Leg curl", MuscleGroup.LEGS, restSeconds = SHORT),
-        ExerciseSuggestion("Soulevé de terre roumain", MuscleGroup.LEGS, restSeconds = HEAVY),
-        ExerciseSuggestion("Hack squat", MuscleGroup.LEGS, restSeconds = HEAVY),
-        ExerciseSuggestion("Mollets debout", MuscleGroup.LEGS, restSeconds = SHORT),
-        ExerciseSuggestion("Mollets assis", MuscleGroup.LEGS, restSeconds = SHORT),
-        ExerciseSuggestion("Hip thrust", MuscleGroup.GLUTES, restSeconds = HEAVY),
-        ExerciseSuggestion("Pont fessier", MuscleGroup.GLUTES, usesWeight = false, restSeconds = SHORT),
-        ExerciseSuggestion("Abducteurs machine", MuscleGroup.GLUTES, restSeconds = SHORT),
-        ExerciseSuggestion("Kickback à la poulie", MuscleGroup.GLUTES, restSeconds = SHORT),
-        ExerciseSuggestion("Crunch", MuscleGroup.ABS, usesWeight = false, restSeconds = CORE),
-        ExerciseSuggestion("Gainage", MuscleGroup.ABS, usesWeight = false, measure = Measure.SECONDS, restSeconds = CORE),
-        ExerciseSuggestion("Gainage latéral", MuscleGroup.ABS, usesWeight = false, measure = Measure.SECONDS, restSeconds = CORE),
-        ExerciseSuggestion("Relevé de jambes", MuscleGroup.ABS, usesWeight = false, restSeconds = CORE),
-        ExerciseSuggestion("Russian twist", MuscleGroup.ABS, usesWeight = false, restSeconds = CORE),
-        ExerciseSuggestion("Roue abdominale", MuscleGroup.ABS, usesWeight = false, restSeconds = CORE),
-        ExerciseSuggestion("Crunch à la poulie", MuscleGroup.ABS, restSeconds = CORE),
-        ExerciseSuggestion("Burpees", MuscleGroup.CARDIO, usesWeight = false, restSeconds = SHORT),
-        ExerciseSuggestion("Corde à sauter", MuscleGroup.CARDIO, usesWeight = false, measure = Measure.SECONDS, restSeconds = SHORT),
-        ExerciseSuggestion("Mountain climbers", MuscleGroup.CARDIO, usesWeight = false, measure = Measure.SECONDS, restSeconds = CORE),
-        ExerciseSuggestion("Jumping jacks", MuscleGroup.CARDIO, usesWeight = false, restSeconds = CORE),
+        ExerciseSuggestion("Développé couché", CHEST, restSeconds = HEAVY, secondaryMuscles = listOf(TRICEPS, SHOULDERS)),
+        ExerciseSuggestion("Développé incliné haltères", CHEST, secondaryMuscles = listOf(SHOULDERS, TRICEPS)),
+        ExerciseSuggestion("Développé décliné", CHEST, secondaryMuscles = listOf(TRICEPS)),
+        ExerciseSuggestion("Écarté couché haltères", CHEST),
+        ExerciseSuggestion("Écarté à la poulie", CHEST),
+        ExerciseSuggestion("Pec deck", CHEST),
+        ExerciseSuggestion("Pompes", CHEST, usesWeight = false, restSeconds = SHORT, secondaryMuscles = listOf(TRICEPS, SHOULDERS)),
+        ExerciseSuggestion("Dips", CHEST, usesWeight = false, secondaryMuscles = listOf(TRICEPS, SHOULDERS)),
+        ExerciseSuggestion("Tractions", BACK, usesWeight = false, restSeconds = HEAVY, secondaryMuscles = listOf(BICEPS)),
+        ExerciseSuggestion("Tirage vertical", BACK, secondaryMuscles = listOf(BICEPS)),
+        ExerciseSuggestion("Tirage horizontal", BACK, secondaryMuscles = listOf(BICEPS)),
+        ExerciseSuggestion("Rowing barre", BACK, restSeconds = HEAVY, secondaryMuscles = listOf(BICEPS)),
+        ExerciseSuggestion("Rowing haltère", BACK, secondaryMuscles = listOf(BICEPS)),
+        ExerciseSuggestion("Soulevé de terre", BACK, restSeconds = 180, secondaryMuscles = listOf(HAMSTRINGS, GLUTES)),
+        ExerciseSuggestion("Pull-over", BACK, secondaryMuscles = listOf(CHEST)),
+        ExerciseSuggestion("Shrugs", BACK, restSeconds = SHORT),
+        ExerciseSuggestion("Développé militaire", SHOULDERS, restSeconds = HEAVY, secondaryMuscles = listOf(TRICEPS)),
+        ExerciseSuggestion("Développé haltères assis", SHOULDERS, secondaryMuscles = listOf(TRICEPS)),
+        ExerciseSuggestion("Élévations latérales", SHOULDERS, restSeconds = SHORT),
+        ExerciseSuggestion("Élévations frontales", SHOULDERS, restSeconds = SHORT),
+        ExerciseSuggestion("Oiseau", SHOULDERS, restSeconds = SHORT, secondaryMuscles = listOf(BACK)),
+        ExerciseSuggestion("Face pull", SHOULDERS, restSeconds = SHORT, secondaryMuscles = listOf(BACK)),
+        ExerciseSuggestion("Curl barre", BICEPS),
+        ExerciseSuggestion("Curl haltères", BICEPS),
+        ExerciseSuggestion("Curl marteau", BICEPS),
+        ExerciseSuggestion("Curl pupitre", BICEPS),
+        ExerciseSuggestion("Curl à la poulie", BICEPS, restSeconds = SHORT),
+        ExerciseSuggestion("Extension triceps à la poulie", TRICEPS, restSeconds = SHORT),
+        ExerciseSuggestion("Barre au front", TRICEPS),
+        ExerciseSuggestion("Extension nuque haltère", TRICEPS),
+        ExerciseSuggestion("Développé couché prise serrée", TRICEPS, restSeconds = HEAVY, secondaryMuscles = listOf(CHEST)),
+        ExerciseSuggestion("Dips sur banc", TRICEPS, usesWeight = false, restSeconds = SHORT),
+        ExerciseSuggestion("Squat", QUADS, restSeconds = 180, secondaryMuscles = listOf(GLUTES)),
+        ExerciseSuggestion("Presse à cuisses", QUADS, restSeconds = HEAVY, secondaryMuscles = listOf(GLUTES)),
+        ExerciseSuggestion("Fentes", QUADS, secondaryMuscles = listOf(GLUTES)),
+        ExerciseSuggestion("Squat bulgare", QUADS, secondaryMuscles = listOf(GLUTES)),
+        ExerciseSuggestion("Leg extension", QUADS, restSeconds = SHORT),
+        ExerciseSuggestion("Leg curl", HAMSTRINGS, restSeconds = SHORT),
+        ExerciseSuggestion("Soulevé de terre roumain", HAMSTRINGS, restSeconds = HEAVY, secondaryMuscles = listOf(GLUTES)),
+        ExerciseSuggestion("Hack squat", QUADS, restSeconds = HEAVY, secondaryMuscles = listOf(GLUTES)),
+        ExerciseSuggestion("Mollets debout", CALVES, restSeconds = SHORT),
+        ExerciseSuggestion("Mollets assis", CALVES, restSeconds = SHORT),
+        ExerciseSuggestion("Hip thrust", GLUTES, restSeconds = HEAVY, secondaryMuscles = listOf(HAMSTRINGS)),
+        ExerciseSuggestion("Pont fessier", GLUTES, usesWeight = false, restSeconds = SHORT, secondaryMuscles = listOf(HAMSTRINGS)),
+        ExerciseSuggestion("Abducteurs machine", GLUTES, restSeconds = SHORT),
+        ExerciseSuggestion("Kickback à la poulie", GLUTES, restSeconds = SHORT),
+        ExerciseSuggestion("Crunch", ABS, usesWeight = false, restSeconds = CORE),
+        ExerciseSuggestion("Gainage", ABS, usesWeight = false, measure = Measure.SECONDS, restSeconds = CORE),
+        ExerciseSuggestion("Gainage latéral", ABS, usesWeight = false, measure = Measure.SECONDS, restSeconds = CORE),
+        ExerciseSuggestion("Relevé de jambes", ABS, usesWeight = false, restSeconds = CORE),
+        ExerciseSuggestion("Russian twist", ABS, usesWeight = false, restSeconds = CORE),
+        ExerciseSuggestion("Roue abdominale", ABS, usesWeight = false, restSeconds = CORE),
+        ExerciseSuggestion("Crunch à la poulie", ABS, restSeconds = CORE),
+        ExerciseSuggestion("Burpees", CARDIO, usesWeight = false, restSeconds = SHORT),
+        ExerciseSuggestion("Corde à sauter", CARDIO, usesWeight = false, measure = Measure.SECONDS, restSeconds = SHORT),
+        ExerciseSuggestion("Mountain climbers", CARDIO, usesWeight = false, measure = Measure.SECONDS, restSeconds = CORE),
+        ExerciseSuggestion("Jumping jacks", CARDIO, usesWeight = false, restSeconds = CORE),
     )
 
     private val popularNames = listOf(

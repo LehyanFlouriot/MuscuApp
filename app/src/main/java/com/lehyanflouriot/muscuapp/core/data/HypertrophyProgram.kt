@@ -3,6 +3,16 @@ package com.lehyanflouriot.muscuapp.core.data
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.ABS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.BACK
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.BICEPS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.CALVES
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.CHEST
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.GLUTES
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.HAMSTRINGS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.QUADS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.SHOULDERS
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.TRICEPS
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
 import com.lehyanflouriot.muscuapp.core.model.SessionExercise
 import com.lehyanflouriot.muscuapp.core.model.SetTarget
@@ -35,37 +45,55 @@ object HypertrophyProgram {
         val usesWeight: Boolean = false,
         val measure: Measure = Measure.REPS,
         val emphasis: Boolean = false,
+        val secondary: List<MuscleGroup> = emptyList(),
     )
 
-    private val pompesDeficit = Move("ex-pompes-deficit", "Pompes en déficit, pieds surélevés", MuscleGroup.CHEST, emphasis = true)
-    private val rowingPiedsSureleves = Move("ex-rowing-australien-pieds-sureleves", "Rowing australien, pieds surélevés", MuscleGroup.BACK)
-    private val squatBulgare = Move("ex-squat-bulgare", "Squat bulgare", MuscleGroup.LEGS, emphasis = true)
-    private val extensionsTriceps = Move("ex-extensions-triceps-sol", "Extensions triceps au sol", MuscleGroup.TRICEPS)
-    private val relevesJambes = Move("ex-releves-jambes", "Relevés de jambes", MuscleGroup.ABS)
-    private val mollets = Move("ex-mollets-unilateraux", "Mollets unilatéraux", MuscleGroup.LEGS)
-    private val tractionsPronation = Move("ex-tractions-pronation", "Tractions pronation", MuscleGroup.BACK, emphasis = true)
-    private val rowingSupination = Move("ex-rowing-australien-supination", "Rowing australien supination", MuscleGroup.BACK)
-    private val pompesPseudoPlanche = Move("ex-pompes-pseudo-planche-pike", "Pompes pseudo-planche ou pike", MuscleGroup.SHOULDERS)
+    private val pompesDeficit = Move(
+        "ex-pompes-deficit", "Pompes en déficit, pieds surélevés", CHEST, emphasis = true, secondary = listOf(TRICEPS, SHOULDERS),
+    )
+    private val rowingPiedsSureleves = Move(
+        "ex-rowing-australien-pieds-sureleves", "Rowing australien, pieds surélevés", BACK, secondary = listOf(BICEPS),
+    )
+    private val squatBulgare = Move("ex-squat-bulgare", "Squat bulgare", QUADS, emphasis = true, secondary = listOf(GLUTES))
+    private val extensionsTriceps = Move("ex-extensions-triceps-sol", "Extensions triceps au sol", TRICEPS)
+    private val relevesJambes = Move("ex-releves-jambes", "Relevés de jambes", ABS)
+    private val mollets = Move("ex-mollets-unilateraux", "Mollets unilatéraux", CALVES)
+    private val tractionsPronation = Move(
+        "ex-tractions-pronation", "Tractions pronation", BACK, emphasis = true, secondary = listOf(BICEPS),
+    )
+    private val rowingSupination = Move(
+        "ex-rowing-australien-supination", "Rowing australien supination", BACK, secondary = listOf(BICEPS),
+    )
+    private val pompesPseudoPlanche = Move(
+        "ex-pompes-pseudo-planche-pike", "Pompes pseudo-planche ou pike", SHOULDERS, secondary = listOf(TRICEPS, CHEST),
+    )
     private val souleveDeTerre = Move(
         "ex-souleve-de-terre-roumain-unilateral",
         "Soulevé de terre roumain unilatéral",
-        MuscleGroup.LEGS,
+        HAMSTRINGS,
         usesWeight = true,
+        secondary = listOf(GLUTES),
     )
-    private val hollowBody = Move("ex-hollow-body-hold", "Hollow body hold", MuscleGroup.ABS, measure = Measure.SECONDS)
-    private val sissySquat = Move("ex-sissy-squat-shrimp-squat", "Sissy squat ou shrimp squat", MuscleGroup.LEGS)
-    private val pompesArcher = Move("ex-pompes-archer-diamant", "Pompes archer ou diamant", MuscleGroup.CHEST)
-    private val rowing = Move("ex-rowing-australien", "Rowing australien", MuscleGroup.BACK)
-    private val rollout = Move("ex-rollout-serviette", "Rollout serviette", MuscleGroup.ABS)
-    private val pikePushUps = Move("ex-pike-push-ups-pieds-sureleves", "Pike push-ups, pieds surélevés", MuscleGroup.SHOULDERS, emphasis = true)
-    private val tractionsSupination = Move("ex-tractions-supination", "Tractions supination", MuscleGroup.BACK)
-    private val rowingCoudesEcartes = Move("ex-rowing-coudes-ecartes", "Rowing coudes écartés", MuscleGroup.SHOULDERS)
-    private val curlServiette = Move("ex-curl-serviette", "Curl serviette dans une porte", MuscleGroup.BICEPS)
-    private val fentes = Move("ex-fentes-marchees-lentes", "Fentes marchées lentes", MuscleGroup.LEGS)
-    private val nordicCurl = Move("ex-nordic-curl", "Nordic curl", MuscleGroup.LEGS, emphasis = true)
-    private val pontFessier = Move("ex-pont-fessier-unilateral-sureleve", "Pont fessier unilatéral surélevé", MuscleGroup.GLUTES)
-    private val rowingLeste = Move("ex-rowing-australien-leste", "Rowing australien lesté", MuscleGroup.BACK, usesWeight = true)
-    private val dipsPompesDiamant = Move("ex-dips-pompes-diamant", "Dips ou pompes diamant", MuscleGroup.TRICEPS)
+    private val hollowBody = Move("ex-hollow-body-hold", "Hollow body hold", ABS, measure = Measure.SECONDS)
+    private val sissySquat = Move("ex-sissy-squat-shrimp-squat", "Sissy squat ou shrimp squat", QUADS)
+    private val pompesArcher = Move("ex-pompes-archer-diamant", "Pompes archer ou diamant", CHEST, secondary = listOf(TRICEPS, SHOULDERS))
+    private val rowing = Move("ex-rowing-australien", "Rowing australien", BACK, secondary = listOf(BICEPS))
+    private val rollout = Move("ex-rollout-serviette", "Rollout serviette", ABS)
+    private val pikePushUps = Move(
+        "ex-pike-push-ups-pieds-sureleves", "Pike push-ups, pieds surélevés", SHOULDERS, emphasis = true, secondary = listOf(TRICEPS),
+    )
+    private val tractionsSupination = Move("ex-tractions-supination", "Tractions supination", BACK, secondary = listOf(BICEPS))
+    private val rowingCoudesEcartes = Move("ex-rowing-coudes-ecartes", "Rowing coudes écartés", SHOULDERS, secondary = listOf(BACK))
+    private val curlServiette = Move("ex-curl-serviette", "Curl serviette dans une porte", BICEPS)
+    private val fentes = Move("ex-fentes-marchees-lentes", "Fentes marchées lentes", QUADS, secondary = listOf(GLUTES))
+    private val nordicCurl = Move("ex-nordic-curl", "Nordic curl", HAMSTRINGS, emphasis = true)
+    private val pontFessier = Move(
+        "ex-pont-fessier-unilateral-sureleve", "Pont fessier unilatéral surélevé", GLUTES, secondary = listOf(HAMSTRINGS),
+    )
+    private val rowingLeste = Move(
+        "ex-rowing-australien-leste", "Rowing australien lesté", BACK, usesWeight = true, secondary = listOf(BICEPS),
+    )
+    private val dipsPompesDiamant = Move("ex-dips-pompes-diamant", "Dips ou pompes diamant", TRICEPS, secondary = listOf(CHEST))
 
     private val moves = listOf(
         pompesDeficit, rowingPiedsSureleves, squatBulgare, extensionsTriceps, relevesJambes, mollets,
@@ -85,6 +113,7 @@ object HypertrophyProgram {
             measure = move.measure,
             restSeconds = if (move.emphasis) EMPHASIS_REST else REST,
             createdAt = createdAt,
+            secondaryMuscles = move.secondary,
         )
     }
 

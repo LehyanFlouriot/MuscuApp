@@ -17,6 +17,7 @@ import com.lehyanflouriot.muscuapp.core.domain.defaultLogDate
 import com.lehyanflouriot.muscuapp.core.domain.missedSession
 import com.lehyanflouriot.muscuapp.core.domain.programAt
 import com.lehyanflouriot.muscuapp.core.domain.programOf
+import com.lehyanflouriot.muscuapp.core.domain.sessionDuration
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
@@ -64,6 +65,7 @@ fun WeekRoute(
         overview = overview,
         sessions = sessions,
         sessionDate = sessionDate,
+        sessionDuration = { data.training.sessionDuration(it) },
         sessionActions = SessionActions(
             onSelectDay = { date -> pickedDay = date.dayOfWeek.value.takeIf { it != today.dayOfWeek.value } },
             onLog = { item ->

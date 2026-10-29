@@ -38,8 +38,11 @@
     <string name="group_shoulders">Épaules</string>
     <string name="group_biceps">Biceps</string>
     <string name="group_triceps">Triceps</string>
-    <string name="group_legs">Jambes</string>
+    <string name="group_quads">Quadriceps</string>
+    <string name="group_hamstrings">Ischios</string>
     <string name="group_glutes">Fessiers</string>
+    <string name="group_calves">Mollets</string>
+    <string name="group_legs">Jambes</string>
     <string name="group_abs">Abdos</string>
     <string name="group_cardio">Cardio</string>
     <string name="group_other">Autre</string>
@@ -119,6 +122,8 @@
     <string name="editor_duplicate">Cet exercice existe déjà</string>
     <string name="editor_suggestions">Suggestions</string>
     <string name="editor_group">Groupe musculaire</string>
+    <string name="editor_secondary">Muscles travaillés aussi</string>
+    <string name="editor_secondary_hint">Chaque série compte pour une demi-série pour eux, dans Progrès → Muscles.</string>
     <string name="editor_measure">Je compte</string>
     <string name="editor_measure_reps">Des répétitions</string>
     <string name="editor_measure_seconds">Des secondes</string>
@@ -176,6 +181,7 @@
     <string name="progress_empty_text">Note ta première séance dans l\'onglet Semaine\u00A0: ta progression apparaîtra ici.</string>
     <string name="progress_activity_title">Séries par semaine</string>
     <string name="progress_activity_average">Moyenne\u00A0: %1$s séries par semaine d\'entraînement</string>
+    <string name="progress_average_duration">Séances de %1$s en moyenne ces 4 dernières semaines</string>
     <string name="progress_exercises">Mes exercices</string>
     <string name="progress_archived">Archivés (%1$d)</string>
     <string name="progress_record_weight">Record\u00A0: %1$s × %2$s</string>
@@ -652,6 +658,7 @@
     <string name="session_top_reached">Haut de la fourchette atteint partout\u00A0: passe à une variante plus dure.</string>
     <string name="session_emphasis">Emphase</string>
     <string name="session_complete">Séance terminée, bravo\u00A0!</string>
+    <string name="session_complete_in">Séance terminée en %1$s, bravo\u00A0!</string>
     <string name="session_progress">%1$d/%2$d</string>
     <string name="session_progress_cd">%1$d exercices faits sur %2$d</string>
     <string name="session_day_cd">%1$s, %2$s, %3$d exercices faits sur %4$d</string>
@@ -823,7 +830,65 @@
     <string name="moved_from">Séance de %1$s, faite %2$s</string>
     <string name="moved_to">Faite %1$s à la place.</string>
     <string name="progress_section_exercises">Exercices</string>
+    <string name="progress_section_muscles">Muscles</string>
     <string name="progress_section_weight">Poids</string>
+
+    <!-- Warm-up before the session -->
+    <string name="warm_up_title">Échauffement</string>
+    <string name="warm_up_text">Pour préparer le corps à la séance. Ces séries ne sont pas notées.</string>
+    <string name="warm_up_mobility">Mobilité · %1$s</string>
+    <string name="warm_up_mobility_text">Articulations et muscles de la séance, en douceur.</string>
+    <string name="warm_up_mobility_start">Lancer</string>
+    <string name="warm_up_mobility_stop">Arrêter</string>
+    <string name="warm_up_mobility_done">Terminé</string>
+    <string name="warm_up_mobility_left_cd">Mobilité\u00A0: %1$s restantes</string>
+    <plurals name="warm_up_light_sets">
+        <item quantity="one">%1$d série légère</item>
+        <item quantity="many">%1$d séries légères</item>
+        <item quantity="other">%1$d séries légères</item>
+    </plurals>
+    <string name="warm_up_light_text">%1$s, loin de l\'échec.</string>
+    <string name="warm_up_light_set">Série %1$d</string>
+    <string name="warm_up_go">C\'est parti</string>
+    <string name="warm_up_first">Premier exercice\u00A0: %1$s</string>
+    <string name="warm_up_enabled">Avant chaque séance</string>
+    <string name="warm_up_enabled_text">Proposé au début de la séance guidée.</string>
+    <string name="warm_up_minutes">Mobilité (min)</string>
+    <string name="warm_up_light_sets_label">Séries légères</string>
+    <string name="warm_up_light_sets_hint">De l\'exercice d\'emphase de la séance.</string>
+    <string name="warm_up_card_title">Échauffement avant chaque séance</string>
+    <string name="warm_up_summary_mobility">%1$s de mobilité</string>
+    <plurals name="warm_up_summary_light">
+        <item quantity="one">%1$d série légère de l\'exercice d\'emphase</item>
+        <item quantity="many">%1$d séries légères de l\'exercice d\'emphase</item>
+        <item quantity="other">%1$d séries légères de l\'exercice d\'emphase</item>
+    </plurals>
+    <string name="warm_up_off">Pas d\'échauffement proposé</string>
+
+    <!-- Stats per muscle -->
+    <string name="muscles_intro">Séries par semaine, en moyenne sur les 4 dernières semaines. Une série compte pour son muscle principal, et pour moitié pour les muscles qu\'elle travaille aussi.</string>
+    <string name="muscles_advised">Repère pour progresser\u00A0: 10 à 20 séries par muscle et par semaine.</string>
+    <plurals name="muscle_sets_per_week">
+        <item quantity="one">%1$s série / sem.</item>
+        <item quantity="many">%1$s séries / sem.</item>
+        <item quantity="other">%1$s séries / sem.</item>
+    </plurals>
+    <string name="muscle_this_week">%1$s cette semaine</string>
+    <string name="muscle_bar_cd">%1$s\u00A0: %2$s en moyenne, repère 10 à 20</string>
+    <string name="muscle_progress_cd">Progression sur 4 semaines\u00A0: %1$s</string>
+    <plurals name="muscle_sets_unit">
+        <item quantity="one">série par semaine</item>
+        <item quantity="many">séries par semaine</item>
+        <item quantity="other">séries par semaine</item>
+    </plurals>
+    <string name="muscle_average_caption">en moyenne sur les 4 dernières semaines</string>
+    <string name="muscle_progress_title">Progression sur 4 semaines</string>
+    <string name="muscle_progress_text">Ce que vaut une série de ses exercices principaux (répétitions, ou charge × répétitions), par rapport à il y a 4 semaines.</string>
+    <string name="muscle_progress_unknown">Pas encore assez de semaines pour la mesurer\u00A0: il faut environ un mois d\'entraînement.</string>
+    <string name="muscle_main_exercises">Exercices principaux</string>
+    <string name="muscle_secondary_exercises">Le travaillent aussi</string>
+    <string name="muscle_secondary_hint">Leurs séries comptent pour moitié.</string>
+    <string name="muscle_none_main">Aucun exercice ne l\'a comme muscle principal.</string>
     <string name="training_none_title">Pas encore de programme</string>
     <string name="training_none_text">Crée ton programme d\'entraînement\u00A0: la séance de chaque jour de la semaine, que l\'app te propose ensuite jour après jour.</string>
     <string name="training_none_create">Créer un programme</string>

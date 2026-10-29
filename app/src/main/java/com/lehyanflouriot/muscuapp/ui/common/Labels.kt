@@ -3,9 +3,11 @@ package com.lehyanflouriot.muscuapp.ui.common
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
+import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.AccessibilityNew
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Hiking
+import androidx.compose.material.icons.rounded.NordicWalking
 import androidx.compose.material.icons.rounded.Rowing
 import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material.icons.rounded.Sports
@@ -32,8 +34,11 @@ val MuscleGroup.labelRes: Int
         MuscleGroup.SHOULDERS -> R.string.group_shoulders
         MuscleGroup.BICEPS -> R.string.group_biceps
         MuscleGroup.TRICEPS -> R.string.group_triceps
-        MuscleGroup.LEGS -> R.string.group_legs
+        MuscleGroup.QUADS -> R.string.group_quads
+        MuscleGroup.HAMSTRINGS -> R.string.group_hamstrings
         MuscleGroup.GLUTES -> R.string.group_glutes
+        MuscleGroup.CALVES -> R.string.group_calves
+        MuscleGroup.LEGS -> R.string.group_legs
         MuscleGroup.ABS -> R.string.group_abs
         MuscleGroup.CARDIO -> R.string.group_cardio
         MuscleGroup.OTHER -> R.string.group_other
@@ -47,8 +52,10 @@ val MuscleGroup.icon: ImageVector
         MuscleGroup.SHOULDERS -> Icons.Rounded.AccessibilityNew
         MuscleGroup.BICEPS -> Icons.Rounded.FitnessCenter
         MuscleGroup.TRICEPS -> Icons.Rounded.SportsMartialArts
-        MuscleGroup.LEGS -> Icons.Rounded.Hiking
+        MuscleGroup.QUADS, MuscleGroup.LEGS -> Icons.Rounded.Hiking
+        MuscleGroup.HAMSTRINGS -> Icons.Rounded.NordicWalking
         MuscleGroup.GLUTES -> Icons.Rounded.SportsKabaddi
+        MuscleGroup.CALVES -> Icons.AutoMirrored.Rounded.DirectionsWalk
         MuscleGroup.ABS -> Icons.Rounded.SelfImprovement
         MuscleGroup.CARDIO -> Icons.AutoMirrored.Rounded.DirectionsRun
         MuscleGroup.OTHER -> Icons.Rounded.Sports

@@ -11,7 +11,21 @@ import java.time.LocalDate
 
 /** Muscle groups, in the order they are displayed. */
 @Serializable
-enum class MuscleGroup { CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, LEGS, GLUTES, ABS, CARDIO, OTHER }
+enum class MuscleGroup {
+    CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, QUADS, HAMSTRINGS, GLUTES, CALVES, ABS, CARDIO, OTHER,
+
+    /** The legs as a whole, before 1.13.0: only read in older data, which splits them up. */
+    LEGS,
+    ;
+
+    companion object {
+        /** The muscles themselves: the groups of the stats per muscle, and the ones an exercise can work too. */
+        val muscles: List<MuscleGroup> = listOf(CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, QUADS, HAMSTRINGS, GLUTES, CALVES, ABS)
+
+        /** The groups an exercise can be given. */
+        val choices: List<MuscleGroup> = entries - LEGS
+    }
+}
 
 /** What the "reps" value of a set means for an exercise. */
 @Serializable
@@ -32,6 +46,8 @@ data class Exercise(
     val notes: String = "",
     val archived: Boolean = false,
     val createdAt: Long = 0L,
+    /** The muscles the exercise works too, besides [muscleGroup]: each set counts as half a set for them. */
+    val secondaryMuscles: List<MuscleGroup> = emptyList(),
 )
 
 /** One set: number of reps (or seconds for [Measure.SECONDS]) and the load in kg (0 = body weight). */
@@ -97,8 +113,10 @@ data class AppData(
         /**
          * 2: each food of the plan of the app has a single name.
          * 3: training programs follow one another, like the meal plans.
+         * 4: the legs are split into quadriceps, hamstrings and calves, and exercises name the
+         *    muscles they work too.
          */
-        const val CURRENT_SCHEMA_VERSION = 3
+        const val CURRENT_SCHEMA_VERSION = 4
 
         val DEFAULT_REST_PRESETS = listOf(
             RestPreset(id = "preset-45", seconds = 45, label = "Court"),

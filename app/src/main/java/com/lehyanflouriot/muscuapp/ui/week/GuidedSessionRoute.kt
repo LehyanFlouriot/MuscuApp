@@ -5,6 +5,8 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,9 +25,12 @@ import com.lehyanflouriot.muscuapp.core.domain.currentIndex
 import com.lehyanflouriot.muscuapp.core.domain.doneSets
 import com.lehyanflouriot.muscuapp.core.domain.nextSetGoal
 import com.lehyanflouriot.muscuapp.core.domain.plannedSets
+import com.lehyanflouriot.muscuapp.core.domain.sessionDuration
+import com.lehyanflouriot.muscuapp.core.domain.sessionStartedAt
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.Exercise
+import com.lehyanflouriot.muscuapp.core.model.WarmUp
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.timer.TimerLogic
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
@@ -42,10 +47,18 @@ import com.lehyanflouriot.muscuapp.ui.rest.KeepScreenOn
 import com.lehyanflouriot.muscuapp.ui.rest.displayed
 import com.lehyanflouriot.muscuapp.ui.rest.rememberRestStarter
 import com.lehyanflouriot.muscuapp.ui.rest.rememberTimerNow
+import kotlinx.coroutines.delay
 import java.time.LocalDate
 
 /** Time added to the rest by its "+15 s" button. */
 private const val REST_ADD_MS = 15_000L
+
+/** How often the countdown of the mobility moves, and how late its end still buzzes. */
+private const val MOBILITY_TICK_MS = 250L
+private const val MOBILITY_BUZZ_LATE_MS = 2_000L
+
+/** How often the time the session has taken moves: it shows in minutes. */
+private const val CLOCK_TICK_MS = 10_000L
 
 /** A set done, being corrected. */
 private class EditedSet(val done: DoneSet, val number: Int, val exercise: Exercise)
@@ -86,6 +99,46 @@ fun GuidedSessionRoute(
     val draft = drafts[item.line.id] ?: item.nextSetGoal()
     var editing by remember { mutableStateOf<EditedSet?>(null) }
 
+    // The warm-up comes first, in a session started today with nothing noted yet.
+    val program = session.program
+    val warmUp = program?.warmUp ?: WarmUp(enabled = false)
+    val hasWarmUp = warmUp.isActive && date == today
+    var warmingUp by rememberSaveable { mutableStateOf(hasWarmUp && session.doneSets().isEmpty()) }
+    var mobilityStartedAt by rememberSaveable { mutableStateOf<Long?>(null) }
+    var lightSetsDone by rememberSaveable { mutableIntStateOf(0) }
+    var editingWarmUp by remember { mutableStateOf(false) }
+
+    // The clock of the screen: the countdown of the mobility, and the time the session has taken.
+    var clockNow by remember { mutableLongStateOf(timer.now()) }
+    LaunchedEffect(warmingUp) {
+        while (true) {
+            clockNow = timer.now()
+            delay(if (warmingUp) MOBILITY_TICK_MS else CLOCK_TICK_MS)
+        }
+    }
+    // The end of the mobility buzzes once, when it comes, not when the screen comes back long after.
+    val mobilityEnd = mobilityStartedAt?.let { it + warmUp.mobilityMinutes * 60_000L }
+    LaunchedEffect(mobilityEnd) {
+        val wait = (mobilityEnd ?: return@LaunchedEffect) - timer.now()
+        if (wait < -MOBILITY_BUZZ_LATE_MS) return@LaunchedEffect
+        if (wait > 0) delay(wait)
+        buzz(context)
+    }
+    // The session is timed from its opening, warm-up included, when nothing is noted yet: once,
+    // even when the screen is made again (a turn of the phone).
+    var clockStarted by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!clockStarted && date == today && session.doneSets().isEmpty()) repository.startSessionClock(date)
+        clockStarted = true
+    }
+    val duration = data.training.sessionDuration(date)
+    val startedAt = data.training.sessionStartedAt(date)
+    val elapsed = when {
+        session.complete -> duration
+        startedAt != null && date == today -> clockNow - startedAt
+        else -> duration
+    }
+
     GuidedSessionScreen(
         session = session,
         index = index,
@@ -94,8 +147,45 @@ fun GuidedSessionRoute(
         now = now,
         today = today,
         weightStep = data.settings.weightStep,
+        warmUp = if (warmingUp && hasWarmUp) {
+            WarmUpView(
+                warmUp = warmUp,
+                emphasis = session.items.firstOrNull { it.line.emphasis },
+                first = session.items.first(),
+                mobilityStartedAt = mobilityStartedAt,
+                now = clockNow,
+                lightSetsDone = lightSetsDone,
+            )
+        } else {
+            null
+        },
+        warmUpActions = WarmUpActions(
+            onStartMobility = {
+                clockNow = timer.now()
+                mobilityStartedAt = clockNow
+            },
+            onStopMobility = { mobilityStartedAt = null },
+            onLightSet = { set -> lightSetsDone = if (set < lightSetsDone) set else set + 1 },
+            onDone = {
+                warmingUp = false
+                pickedLine = null
+            },
+            onEdit = { editingWarmUp = true },
+        ),
+        hasWarmUp = hasWarmUp,
+        elapsed = elapsed,
+        duration = duration,
         actions = GuidedActions(
-            onSelect = { selected -> session.items.getOrNull(selected)?.let { pickedLine = it.line.id } },
+            onSelect = { selected ->
+                if (selected < 0) {
+                    if (hasWarmUp) warmingUp = true
+                } else {
+                    session.items.getOrNull(selected)?.let {
+                        pickedLine = it.line.id
+                        warmingUp = false
+                    }
+                }
+            },
             onDraftChange = { drafts[item.line.id] = it },
             onSetDone = {
                 val line = item.line.id
@@ -137,6 +227,17 @@ fun GuidedSessionRoute(
             onClose = onBack,
         ),
     )
+
+    if (editingWarmUp) {
+        WarmUpDialog(
+            initial = warmUp,
+            onDismiss = { editingWarmUp = false },
+            onSave = {
+                if (program != null) repository.updateWarmUp(program.id, it)
+                editingWarmUp = false
+            },
+        )
+    }
 
     editing?.let { edited ->
         val exercise = edited.exercise

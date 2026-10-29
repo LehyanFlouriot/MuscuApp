@@ -91,6 +91,8 @@ import java.time.format.TextStyle
 sealed interface TrainingEdit {
     data object Program : TrainingEdit
 
+    data object WarmUp : TrainingEdit
+
     data class Day(val day: DayOfWeek) : TrainingEdit
 
     data class CopyDay(val day: DayOfWeek) : TrainingEdit
@@ -126,8 +128,8 @@ fun EmphasisBadge(modifier: Modifier = Modifier) {
     )
 }
 
-/** The place of the card of [day] in the list, after the one of the program. */
-private fun dayItemIndex(day: DayOfWeek): Int = if (day == DayOfWeek.MONDAY) 0 else day.ordinal + 1
+/** The place of the card of [day] in the list, after the ones of the program and of its warm-up. */
+private fun dayItemIndex(day: DayOfWeek): Int = if (day == DayOfWeek.MONDAY) 0 else day.ordinal + 2
 
 /** The Programme tab when there is no program yet. */
 @Composable
@@ -225,6 +227,13 @@ fun TrainingEditorScreen(
                     onEdit = { onOpen(TrainingEdit.Program) },
                     status = status,
                     modifier = Modifier.reveal(reveal, "program"),
+                )
+            }
+            item(key = "warm-up") {
+                WarmUpCard(
+                    warmUp = program.warmUp,
+                    onEdit = { onOpen(TrainingEdit.WarmUp) },
+                    modifier = Modifier.reveal(reveal, "warm-up"),
                 )
             }
             items(DayOfWeek.entries, key = { it.name }) { dayOfWeek ->

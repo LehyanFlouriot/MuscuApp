@@ -55,6 +55,7 @@ import com.lehyanflouriot.muscuapp.core.domain.Reminder
 import com.lehyanflouriot.muscuapp.core.domain.ReminderKind
 import com.lehyanflouriot.muscuapp.core.domain.SessionView
 import com.lehyanflouriot.muscuapp.core.domain.WeightPeriod
+import com.lehyanflouriot.muscuapp.core.domain.buildMuscleStats
 import com.lehyanflouriot.muscuapp.core.domain.buildNutritionDay
 import com.lehyanflouriot.muscuapp.core.domain.buildProgressItems
 import com.lehyanflouriot.muscuapp.core.domain.buildSession
@@ -76,9 +77,12 @@ import com.lehyanflouriot.muscuapp.core.domain.weekStreak
 import com.lehyanflouriot.muscuapp.core.domain.weeklySeries
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.BodyWeightEntry
+import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
 import com.lehyanflouriot.muscuapp.core.model.SessionMove
+import com.lehyanflouriot.muscuapp.core.model.WarmUp
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
 import com.lehyanflouriot.muscuapp.core.sync.RemoteDocument
@@ -100,6 +104,8 @@ import com.lehyanflouriot.muscuapp.ui.nutrition.PlanEditorScreen
 import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingActions
 import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingScreen
 import com.lehyanflouriot.muscuapp.ui.progress.ExercisesProgress
+import com.lehyanflouriot.muscuapp.ui.progress.MuscleDetailScreen
+import com.lehyanflouriot.muscuapp.ui.progress.MusclesProgress
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressFrame
 import com.lehyanflouriot.muscuapp.ui.rest.RestScreen
 import com.lehyanflouriot.muscuapp.ui.settings.FirstSyncDialog
@@ -115,6 +121,9 @@ import com.lehyanflouriot.muscuapp.ui.week.SessionActions
 import com.lehyanflouriot.muscuapp.ui.week.SessionLineForm
 import com.lehyanflouriot.muscuapp.ui.week.SessionLineState
 import com.lehyanflouriot.muscuapp.ui.week.TrainingEditorScreen
+import com.lehyanflouriot.muscuapp.ui.week.WarmUpActions
+import com.lehyanflouriot.muscuapp.ui.week.WarmUpDialog
+import com.lehyanflouriot.muscuapp.ui.week.WarmUpView
 import com.lehyanflouriot.muscuapp.ui.week.WeekScreen
 import com.lehyanflouriot.muscuapp.ui.weight.WeighInState
 import com.lehyanflouriot.muscuapp.ui.weight.WeightContent
@@ -167,7 +176,12 @@ class ScreenshotTest {
     }
 
     @Composable
-    private fun Week(appData: AppData, timerState: TimerState = TimerState.Idle, day: LocalDate = today) {
+    private fun Week(
+        appData: AppData,
+        timerState: TimerState = TimerState.Idle,
+        day: LocalDate = today,
+        durations: Map<LocalDate, Long> = emptyMap(),
+    ) {
         MuscuScaffold(
             currentRoute = Routes.WEEK,
             timerState = timerState,
@@ -193,6 +207,7 @@ class ScreenshotTest {
                     hasAnyEntry = appData.entries.isNotEmpty(),
                     suggestions = ExerciseCatalog.popular,
                     missed = missedSession(appData, day),
+                    sessionDuration = { durations[it] },
                     onPreviousWeek = {},
                     onNextWeek = {},
                     onThisWeek = {},
@@ -639,8 +654,16 @@ class ScreenshotTest {
     private fun guidedSession(complete: Boolean): SessionView =
         buildSession(if (complete) sessionDone() else sessionUnderway(), today)!!
 
+    private fun minutes(count: Int) = count * 60_000L
+
     @Composable
-    private fun Guided(session: SessionView, timerState: TimerState) {
+    private fun Guided(
+        session: SessionView,
+        timerState: TimerState,
+        elapsed: Long? = null,
+        duration: Long? = null,
+        warmUp: WarmUpView? = null,
+    ) {
         val index = session.currentIndex() ?: session.items.lastIndex
         GuidedSessionScreen(
             session = session,
@@ -651,12 +674,41 @@ class ScreenshotTest {
             today = today,
             weightStep = 2.5,
             actions = GuidedActions({}, {}, {}, { _, _ -> }, {}, {}, {}, {}),
+            warmUp = warmUp,
+            warmUpActions = WarmUpActions({}, {}, {}, {}, {}),
+            hasWarmUp = true,
+            elapsed = elapsed,
+            duration = duration,
         )
     }
 
     @Test
     fun guidedSession() = capture("14-seance-guidee") {
-        Guided(guidedSession(complete = false), TimerState.Running(endAt = now + 52_000, total = 90_000, label = "Squat bulgare"))
+        Guided(
+            guidedSession(complete = false),
+            TimerState.Running(endAt = now + 52_000, total = 90_000, label = "Squat bulgare"),
+            elapsed = minutes(23),
+        )
+    }
+
+    /** Before the first set: the mobility under way, one light set of the exercise of emphasis done. */
+    @Test
+    fun guidedWarmUp() = capture("14-seance-guidee-echauffement") {
+        val session = buildSession(wednesdayMissed(), today)!!
+        val warmUp = WarmUpView(
+            warmUp = session.program!!.warmUp,
+            emphasis = session.items.first { it.line.emphasis },
+            first = session.items.first(),
+            mobilityStartedAt = now - 72_000,
+            now = now,
+            lightSetsDone = 1,
+        )
+        Guided(session, TimerState.Idle, elapsed = minutes(1), warmUp = warmUp)
+    }
+
+    @Test
+    fun warmUpDialog() = capture("13-programme-echauffement", dialog = true) {
+        WarmUpDialog(initial = WarmUp(), onDismiss = {}, onSave = {})
     }
 
     /** Right after a set: the rest starts, and the set can still be taken back. */
@@ -672,11 +724,11 @@ class ScreenshotTest {
     }
 
     @Test
-    fun weekSessionDone() = capture("1-semaine-seance-faite") { Week(sessionDone()) }
+    fun weekSessionDone() = capture("1-semaine-seance-faite") { Week(sessionDone(), durations = mapOf(today to minutes(52))) }
 
     @Test
     fun guidedSessionDone() = capture("14-seance-guidee-fin", darkTheme = true) {
-        Guided(guidedSession(complete = true), TimerState.Idle)
+        Guided(guidedSession(complete = true), TimerState.Idle, elapsed = minutes(52), duration = minutes(52))
     }
 
     /** Widgets of the home screen, on a wallpaper, in the colors of the light or dark system theme. */
@@ -835,8 +887,52 @@ class ScreenshotTest {
                 trainedThisWeek = true,
                 today = today,
                 onOpenExercise = {},
+                averageDuration = minutes(48),
             )
         }
+    }
+
+    /** The sample, with dips: an exercise of the triceps that works the chest too. */
+    private fun withDips(): AppData {
+        val dips = Exercise(
+            id = "dips", name = "Dips", muscleGroup = MuscleGroup.TRICEPS, usesWeight = false, restSeconds = 90,
+            secondaryMuscles = listOf(MuscleGroup.CHEST),
+        )
+        val entries = (1L..8L).map { back ->
+            WorkoutEntry("dips-$back", dips.id, today.minusWeeks(back).startOfWeek().plusDays(2), List(3) { WorkSet(12 - back.toInt() / 2) })
+        }
+        return data.copy(exercises = data.exercises + dips, entries = data.entries + entries)
+    }
+
+    @Test
+    fun muscles() = capture("16-muscles") {
+        MuscuScaffold(
+            currentRoute = Routes.PROGRESS,
+            timerState = TimerState.Idle,
+            now = now,
+            onNavigate = {},
+            onOpenRest = {},
+            onTimerToggle = {},
+            onTimerAdd = {},
+            onTimerRestart = {},
+            onTimerStop = {},
+        ) { padding ->
+            Surface(
+                Modifier
+                    .padding(padding)
+                    .consumeWindowInsets(padding),
+            ) {
+                ProgressFrame(section = ProgressSection.MUSCLES, onSectionChange = {}, onOpenSettings = {}) { _, inner ->
+                    MusclesProgress(padding = inner, muscles = buildMuscleStats(withDips(), today), onOpenMuscle = {})
+                }
+            }
+        }
+    }
+
+    @Test
+    fun muscleDetail() = capture("16-muscle-pectoraux") {
+        val stats = buildMuscleStats(withDips(), today).first { it.muscle == MuscleGroup.CHEST }
+        MuscleDetailScreen(stats = stats, today = today, onBack = {}, onOpenExercise = {})
     }
 
     @Test

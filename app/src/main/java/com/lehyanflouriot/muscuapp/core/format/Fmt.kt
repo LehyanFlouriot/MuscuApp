@@ -86,6 +86,16 @@ object Fmt {
         }
     }
 
+    /** How long a session lasts: "52 min", "1 h", "1 h 05". */
+    fun sessionLength(millis: Long): String {
+        val minutes = millis.coerceAtLeast(0) / 60_000
+        return when {
+            minutes < 60 -> "$minutes${NBSP}min"
+            minutes % 60 == 0L -> "${minutes / 60}${NBSP}h"
+            else -> String.format(locale, "%d${NBSP}h %02d", minutes / 60, minutes % 60)
+        }
+    }
+
     /** "77 %" */
     fun percent(ratio: Double): String = "${(ratio * 100).roundToLong()}$NNBSP%"
 

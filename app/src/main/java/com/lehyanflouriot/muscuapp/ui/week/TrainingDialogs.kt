@@ -55,14 +55,17 @@ import androidx.compose.ui.unit.dp
 import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
 import com.lehyanflouriot.muscuapp.core.data.ExerciseSuggestion
+import com.lehyanflouriot.muscuapp.core.data.MAX_LIGHT_SETS
 import com.lehyanflouriot.muscuapp.core.data.MAX_RIR
 import com.lehyanflouriot.muscuapp.core.data.MAX_TARGET_REPS
 import com.lehyanflouriot.muscuapp.core.data.MAX_TARGET_SETS
+import com.lehyanflouriot.muscuapp.core.data.MAX_WARM_UP_MINUTES
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.SessionExercise
 import com.lehyanflouriot.muscuapp.core.model.SetTarget
+import com.lehyanflouriot.muscuapp.core.model.WarmUp
 import com.lehyanflouriot.muscuapp.ui.common.CompactStepper
 import com.lehyanflouriot.muscuapp.ui.common.DialogAction
 import com.lehyanflouriot.muscuapp.ui.common.DurationPickerDialog
@@ -325,6 +328,74 @@ fun SessionLineForm(
 }
 
 /** A label, with an optional hint under it, and its stepper at the end of the row. */
+/** What is done before each session: on or off, minutes of mobility, light sets of the exercise of emphasis. */
+@Composable
+fun WarmUpDialog(initial: WarmUp, onDismiss: () -> Unit, onSave: (WarmUp) -> Unit) {
+    var enabled by rememberSaveable { mutableStateOf(initial.enabled) }
+    var minutes by rememberSaveable { mutableIntStateOf(initial.mobilityMinutes) }
+    var lightSets by rememberSaveable { mutableIntStateOf(initial.lightSets) }
+    val minutesLabel = stringResource(R.string.warm_up_minutes)
+    val lightSetsLabel = stringResource(R.string.warm_up_light_sets_label)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.warm_up_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .toggleable(value = enabled, role = Role.Switch, onValueChange = { enabled = it })
+                        .heightIn(min = 56.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.warm_up_enabled), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = stringResource(R.string.warm_up_enabled_text),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Switch(checked = enabled, onCheckedChange = null)
+                }
+                if (enabled) {
+                    StepperRow(label = minutesLabel) {
+                        CompactStepper(
+                            value = minutes.toString(),
+                            description = minutesLabel,
+                            onDecrement = { minutes = (minutes - 1).coerceAtLeast(0) },
+                            onIncrement = { minutes = (minutes + 1).coerceAtMost(MAX_WARM_UP_MINUTES) },
+                            onValueClick = {},
+                            canDecrement = minutes > 0,
+                            modifier = Modifier.width(140.dp),
+                        )
+                    }
+                    StepperRow(label = lightSetsLabel, hint = stringResource(R.string.warm_up_light_sets_hint)) {
+                        CompactStepper(
+                            value = lightSets.toString(),
+                            description = lightSetsLabel,
+                            onDecrement = { lightSets = (lightSets - 1).coerceAtLeast(0) },
+                            onIncrement = { lightSets = (lightSets + 1).coerceAtMost(MAX_LIGHT_SETS) },
+                            onValueClick = {},
+                            canDecrement = lightSets > 0,
+                            modifier = Modifier.width(140.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(WarmUp(enabled = enabled, mobilityMinutes = minutes, lightSets = lightSets)) }) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+}
+
 @Composable
 private fun StepperRow(label: String, hint: String? = null, stepper: @Composable () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {

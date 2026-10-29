@@ -138,16 +138,33 @@ fun GuidedSessionScreen(
     today: LocalDate,
     weightStep: Double,
     actions: GuidedActions,
+    /** The warm-up being done before the first exercise, null once it is over. */
+    warmUp: WarmUpView? = null,
+    warmUpActions: WarmUpActions? = null,
+    /** Whether the session has a warm-up to come back to from its first exercise. */
+    hasWarmUp: Boolean = false,
+    /** The time the session has taken so far, null when it is not timed. */
+    elapsed: Long? = null,
+    /** How long the session took, once its last set is noted. */
+    duration: Long? = null,
 ) {
     val item = session.items[index]
+    val warmingUp = warmUp != null && warmUpActions != null
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(dayTitle(session.day), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        val step = if (warmingUp) {
+                            stringResource(R.string.warm_up_title)
+                        } else {
+                            stringResource(R.string.guided_exercise_of, index + 1, session.items.size)
+                        }
+                        // The time shows from the first minute.
+                        val time = elapsed?.takeIf { it >= 60_000 }?.let(Fmt::sessionLength)
                         Text(
-                            text = stringResource(R.string.guided_exercise_of, index + 1, session.items.size),
+                            text = time?.let { "$step · $it" } ?: step,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -180,34 +197,39 @@ fun GuidedSessionScreen(
                 .padding(top = 4.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            ExerciseStrip(items = session.items, current = index, onSelect = actions.onSelect)
-            AnimatedVisibility(
-                visible = session.complete,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                SessionDone(session = session, onFinish = actions.onClose)
-            }
-            ExerciseHeader(item = item, today = today)
-            SetsCard(
-                item = item,
-                draft = draft,
-                weightStep = weightStep,
-                hasNext = index < session.items.lastIndex,
-                actions = actions,
-                onNext = { actions.onSelect(index + 1) },
-            )
-            Row(Modifier.fillMaxWidth()) {
-                TextButton(onClick = { actions.onSelect(index - 1) }, enabled = index > 0) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.guided_previous))
+            ExerciseStrip(items = session.items, current = if (warmingUp) -1 else index, onSelect = actions.onSelect)
+            if (warmUp != null && warmUpActions != null) {
+                WarmUpStep(view = warmUp, actions = warmUpActions)
+            } else {
+                AnimatedVisibility(
+                    visible = session.complete,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
+                    SessionDone(session = session, duration = duration, onFinish = actions.onClose)
                 }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = { actions.onSelect(index + 1) }, enabled = index < session.items.lastIndex) {
-                    Text(stringResource(if (item.complete) R.string.guided_next else R.string.guided_skip))
-                    Spacer(Modifier.width(8.dp))
-                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+                ExerciseHeader(item = item, today = today)
+                SetsCard(
+                    item = item,
+                    draft = draft,
+                    weightStep = weightStep,
+                    hasNext = index < session.items.lastIndex,
+                    actions = actions,
+                    onNext = { actions.onSelect(index + 1) },
+                )
+                Row(Modifier.fillMaxWidth()) {
+                    // From the first exercise, the previous step is the warm-up.
+                    TextButton(onClick = { actions.onSelect(index - 1) }, enabled = index > 0 || hasWarmUp) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.guided_previous))
+                    }
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = { actions.onSelect(index + 1) }, enabled = index < session.items.lastIndex) {
+                        Text(stringResource(if (item.complete) R.string.guided_next else R.string.guided_skip))
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
                 }
             }
         }
@@ -256,7 +278,7 @@ private fun ExerciseStrip(items: List<SessionItem>, current: Int, onSelect: (Int
 }
 
 @Composable
-private fun SessionDone(session: SessionView, onFinish: () -> Unit) {
+private fun SessionDone(session: SessionView, duration: Long?, onFinish: () -> Unit) {
     val stats = session.doneSets().stats()
     Surface(
         color = MuscuTheme.extendedColors.highlight,
@@ -270,7 +292,11 @@ private fun SessionDone(session: SessionView, onFinish: () -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.session_complete), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = listOf(setsCount(stats.sets), repsTotal(stats.reps, Measure.REPS)).joinToString(" · "),
+                    text = listOfNotNull(
+                        setsCount(stats.sets),
+                        repsTotal(stats.reps, Measure.REPS),
+                        duration?.let(Fmt::sessionLength),
+                    ).joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

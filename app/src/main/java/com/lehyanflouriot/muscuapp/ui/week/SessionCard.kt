@@ -94,6 +94,8 @@ fun SessionCard(
     modifier: Modifier = Modifier,
     /** A session missed lately, which can be done today when today is free. */
     missed: SessionView? = null,
+    /** How long the session of a day took, when it was timed. */
+    sessionDuration: (LocalDate) -> Long? = { null },
 ) {
     val session = week.firstOrNull { it.date == selected } ?: return
     Card(
@@ -168,8 +170,10 @@ fun SessionCard(
                     }
                 }
                 if (session.doneCount == session.items.size) {
+                    val duration = sessionDuration(session.date)
                     Text(
-                        text = stringResource(R.string.session_complete),
+                        text = duration?.let { stringResource(R.string.session_complete_in, Fmt.sessionLength(it)) }
+                            ?: stringResource(R.string.session_complete),
                         style = MaterialTheme.typography.titleSmall,
                         color = MuscuTheme.extendedColors.success,
                         modifier = Modifier.padding(horizontal = 16.dp),

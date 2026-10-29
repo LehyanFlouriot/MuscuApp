@@ -141,6 +141,14 @@ fun TrainingEditorRoute(
                 close()
             },
         )
+        TrainingEdit.WarmUp -> WarmUpDialog(
+            initial = program.warmUp,
+            onDismiss = close,
+            onSave = {
+                repository.updateWarmUp(program.id, it)
+                close()
+            },
+        )
         is TrainingEdit.Day -> {
             val day = program.day(current.day)
             FormDialog(

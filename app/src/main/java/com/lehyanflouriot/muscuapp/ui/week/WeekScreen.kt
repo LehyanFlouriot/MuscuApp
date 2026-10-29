@@ -122,6 +122,8 @@ fun WeekScreen(
     hasAnyEntry: Boolean,
     suggestions: List<ExerciseSuggestion>,
     missed: SessionView? = null,
+    /** How long the session of a day took, when it was timed. */
+    sessionDuration: (LocalDate) -> Long? = { null },
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onThisWeek: () -> Unit,
@@ -198,6 +200,7 @@ fun WeekScreen(
                 hasAnyEntry = hasAnyEntry,
                 suggestions = suggestions,
                 missed = missed,
+                sessionDuration = sessionDuration,
                 reveal = reveal,
                 onPreviousWeek = onPreviousWeek,
                 onNextWeek = onNextWeek,
@@ -222,6 +225,7 @@ private fun WeekList(
     hasAnyEntry: Boolean,
     suggestions: List<ExerciseSuggestion>,
     missed: SessionView?,
+    sessionDuration: (LocalDate) -> Long?,
     reveal: RevealState,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
@@ -259,6 +263,7 @@ private fun WeekList(
                     today = today,
                     actions = sessionActions,
                     missed = missed.takeIf { isCurrentWeek },
+                    sessionDuration = sessionDuration,
                     modifier = Modifier.reveal(reveal, "session"),
                 )
             }

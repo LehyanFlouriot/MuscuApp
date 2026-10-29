@@ -82,8 +82,8 @@ import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import java.time.LocalDate
 
 /**
- * The frame of the Progrès tab: its title, and the choice between the exercises and the weight,
- * whose [content] fills the rest.
+ * The frame of the Progrès tab: its title, and the choice between the exercises, the muscles and
+ * the weight, whose [content] fills the rest.
  */
 @Composable
 fun ProgressFrame(
@@ -112,6 +112,7 @@ fun ProgressFrame(
                                     stringResource(
                                         when (entry) {
                                             ProgressSection.EXERCISES -> R.string.progress_section_exercises
+                                            ProgressSection.MUSCLES -> R.string.progress_section_muscles
                                             ProgressSection.WEIGHT -> R.string.progress_section_weight
                                         },
                                     ),
@@ -142,6 +143,8 @@ fun ExercisesProgress(
     trainedThisWeek: Boolean,
     today: LocalDate,
     onOpenExercise: (Exercise) -> Unit,
+    /** How long the sessions of the last weeks took on average, when they were timed. */
+    averageDuration: Long? = null,
 ) {
     val hasData = items.any { it.lastDate != null }
     val active = items.filterNot { it.exercise.archived }
@@ -171,6 +174,7 @@ fun ExercisesProgress(
             streak = streak,
             trainedThisWeek = trainedThisWeek,
             activity = activity,
+            averageDuration = averageDuration,
             today = today,
             onOpenExercise = onOpenExercise,
         )
@@ -187,6 +191,7 @@ private fun ProgressList(
     streak: Int,
     trainedThisWeek: Boolean,
     activity: List<WeekPoint>,
+    averageDuration: Long?,
     today: LocalDate,
     onOpenExercise: (Exercise) -> Unit,
 ) {
@@ -201,7 +206,9 @@ private fun ProgressList(
         item(key = "streak") {
             StreakCard(streak = streak, trainedThisWeek = trainedThisWeek, modifier = Modifier.reveal(reveal, "streak"))
         }
-        item(key = "activity") { ActivityCard(activity = activity, modifier = Modifier.reveal(reveal, "activity")) }
+        item(key = "activity") {
+            ActivityCard(activity = activity, averageDuration = averageDuration, modifier = Modifier.reveal(reveal, "activity"))
+        }
         item(key = "exercises-title") {
             SectionHeader(
                 text = stringResource(R.string.progress_exercises),
@@ -307,7 +314,7 @@ private fun StreakCard(streak: Int, trainedThisWeek: Boolean, modifier: Modifier
 }
 
 @Composable
-private fun ActivityCard(activity: List<WeekPoint>, modifier: Modifier = Modifier) {
+private fun ActivityCard(activity: List<WeekPoint>, averageDuration: Long?, modifier: Modifier = Modifier) {
     val resources = LocalResources.current
     val weeksWithData = activity.filter { it.value > 0 }
     val average = if (weeksWithData.isEmpty()) 0.0 else weeksWithData.sumOf { it.value } / weeksWithData.size
@@ -322,6 +329,13 @@ private fun ActivityCard(activity: List<WeekPoint>, modifier: Modifier = Modifie
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (averageDuration != null) {
+                Text(
+                    text = stringResource(R.string.progress_average_duration, Fmt.sessionLength(averageDuration)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             WeeklyBarChart(
                 points = activity,
                 formatValue = { value ->

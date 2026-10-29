@@ -103,6 +103,8 @@ fun TodayScreen(
     /** The meals of today, null when no meal plan is followed. */
     nutrition: NutritionDayView?,
     actions: TodayActions,
+    /** How long the session of today took, once done in the guided session. */
+    sessionDuration: Long? = null,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val reveal = rememberRevealState()
@@ -150,6 +152,7 @@ fun TodayScreen(
                     missed = missed,
                     programStart = programStart,
                     today = today,
+                    duration = sessionDuration,
                     actions = actions,
                     modifier = Modifier.reveal(reveal, "session"),
                 )
@@ -203,6 +206,7 @@ private fun SessionOfTheDay(
     missed: SessionView?,
     programStart: LocalDate?,
     today: LocalDate,
+    duration: Long?,
     actions: TodayActions,
     modifier: Modifier = Modifier,
 ) {
@@ -261,7 +265,8 @@ private fun SessionOfTheDay(
                 val current = session.currentIndex()?.let { session.items[it] }
                 Text(
                     text = when {
-                        current == null -> stringResource(R.string.session_complete)
+                        current == null -> duration?.let { stringResource(R.string.session_complete_in, Fmt.sessionLength(it)) }
+                            ?: stringResource(R.string.session_complete)
                         session.doneSets().isEmpty() -> stringResource(
                             R.string.widget_first,
                             current.exercise.name,

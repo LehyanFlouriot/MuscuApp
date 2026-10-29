@@ -67,6 +67,7 @@ class ExerciseFormState(initial: Exercise?, initialName: String = "") {
     var measure by mutableStateOf(initial?.measure ?: Measure.REPS)
     var restSeconds by mutableStateOf(if (initial == null) DEFAULT_REST_SECONDS else initial.restSeconds)
     var notes by mutableStateOf(initial?.notes.orEmpty())
+    var secondaryMuscles by mutableStateOf(initial?.secondaryMuscles.orEmpty())
 
     fun apply(suggestion: ExerciseSuggestion) {
         name = suggestion.name
@@ -74,6 +75,11 @@ class ExerciseFormState(initial: Exercise?, initialName: String = "") {
         usesWeight = suggestion.usesWeight
         measure = suggestion.measure
         restSeconds = suggestion.restSeconds
+        secondaryMuscles = suggestion.secondaryMuscles
+    }
+
+    fun toggleSecondary(muscle: MuscleGroup) {
+        secondaryMuscles = if (muscle in secondaryMuscles) secondaryMuscles - muscle else secondaryMuscles + muscle
     }
 
     fun toDraft(): ExerciseDraft = ExerciseDraft(
@@ -83,6 +89,8 @@ class ExerciseFormState(initial: Exercise?, initialName: String = "") {
         measure = measure,
         restSeconds = restSeconds,
         notes = notes.trim(),
+        // The main muscle is not one it works too.
+        secondaryMuscles = secondaryMuscles.filter { it != muscleGroup },
     )
 }
 
@@ -192,11 +200,29 @@ fun ExerciseEditorForm(
 
         FieldTitle(stringResource(R.string.editor_group))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MuscleGroup.entries.forEach { group ->
+            MuscleGroup.choices.forEach { group ->
                 FilterChip(
                     selected = state.muscleGroup == group,
                     onClick = { state.muscleGroup = group },
                     label = { Text(stringResource(group.labelRes)) },
+                )
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            FieldTitle(stringResource(R.string.editor_secondary))
+            Text(
+                text = stringResource(R.string.editor_secondary_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MuscleGroup.muscles.filter { it != state.muscleGroup }.forEach { muscle ->
+                FilterChip(
+                    selected = muscle in state.secondaryMuscles,
+                    onClick = { state.toggleSecondary(muscle) },
+                    label = { Text(stringResource(muscle.labelRes)) },
                 )
             }
         }

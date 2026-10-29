@@ -59,6 +59,7 @@ import androidx.navigation.navArgument
 import com.lehyanflouriot.muscuapp.AppContainer
 import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.model.AppData
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.core.timer.TimerState
 import com.lehyanflouriot.muscuapp.ui.common.LocalMessenger
 import com.lehyanflouriot.muscuapp.ui.common.LocalSnackbarHostState
@@ -69,6 +70,7 @@ import com.lehyanflouriot.muscuapp.ui.exercise.ExerciseDetailRoute
 import com.lehyanflouriot.muscuapp.ui.nutrition.NutritionRoute
 import com.lehyanflouriot.muscuapp.ui.nutrition.PlanEditorRoute
 import com.lehyanflouriot.muscuapp.ui.nutrition.ShoppingRoute
+import com.lehyanflouriot.muscuapp.ui.progress.MuscleDetailRoute
 import com.lehyanflouriot.muscuapp.ui.progress.ProgressRoute
 import com.lehyanflouriot.muscuapp.ui.rest.ADJUST_STEP_MS
 import com.lehyanflouriot.muscuapp.ui.rest.MiniTimerBar
@@ -95,10 +97,13 @@ object Routes {
     const val SETTINGS = "settings"
     const val SESSION = "session/{date}"
     const val EXERCISE = "exercise/{id}"
+    const val MUSCLE = "muscle/{group}"
     const val PLAN = "plan/{id}?day={day}"
     const val SHOPPING = "shopping?week={week}"
 
     fun exercise(id: String) = "exercise/$id"
+
+    fun muscle(group: MuscleGroup) = "muscle/${group.name}"
 
     fun plan(id: String, day: DayOfWeek) = "plan/$id?day=${day.value}"
 
@@ -117,8 +122,8 @@ data class OpenRequest(val target: OpenTarget, val count: Int)
 /** A program to show in the Programme tab, at the session of [day], asked from another screen. */
 data class ProgramRequest(val programId: String, val day: DayOfWeek)
 
-/** The two parts of the Progrès tab. */
-enum class ProgressSection { EXERCISES, WEIGHT }
+/** The parts of the Progrès tab. */
+enum class ProgressSection { EXERCISES, MUSCLES, WEIGHT }
 
 private class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector)
 
@@ -278,6 +283,7 @@ fun MuscuApp(
                         section = progressSection,
                         onSectionChange = { progressSection = it },
                         onOpenExercise = { navController.navigate(Routes.exercise(it)) },
+                        onOpenMuscle = { navController.navigate(Routes.muscle(it)) },
                         onOpenSettings = openSettings,
                     )
                 }
@@ -310,6 +316,24 @@ fun MuscuApp(
                         // Popping this precise destination makes repeated calls harmless.
                         onBack = { navController.popBackStack(entry.destination.id, inclusive = true) },
                     )
+                }
+                composable(
+                    route = Routes.MUSCLE,
+                    arguments = listOf(navArgument("group") { type = NavType.StringType }),
+                ) { entry ->
+                    val group = entry.arguments?.getString("group")
+                    val back = { navController.popBackStack(entry.destination.id, inclusive = true) }
+                    val muscle = MuscleGroup.entries.firstOrNull { it.name == group }
+                    if (muscle == null) {
+                        LaunchedEffect(Unit) { back() }
+                    } else {
+                        MuscleDetailRoute(
+                            muscle = muscle,
+                            data = data,
+                            onBack = { back() },
+                            onOpenExercise = { navController.navigate(Routes.exercise(it)) },
+                        )
+                    }
                 }
                 composable(
                     route = Routes.PLAN,

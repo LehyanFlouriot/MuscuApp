@@ -47,8 +47,10 @@ import com.lehyanflouriot.muscuapp.core.domain.Trend
 import com.lehyanflouriot.muscuapp.core.format.Fmt
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
+import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.ui.theme.MuscuTheme
 import kotlin.math.abs
+import kotlin.math.roundToLong
 
 /** Snackbars of the whole app go through this host. */
 val LocalSnackbarHostState = staticCompositionLocalOf { SnackbarHostState() }
@@ -129,6 +131,12 @@ fun EmptyState(
 /** Round icon showing the kind of exercise. */
 @Composable
 fun ExerciseAvatar(exercise: Exercise, modifier: Modifier = Modifier, size: Dp = 44.dp) {
+    MuscleAvatar(muscle = exercise.muscleGroup, modifier = modifier, size = size)
+}
+
+/** The icon of a muscle group in its circle, as the exercises that work it show it. */
+@Composable
+fun MuscleAvatar(muscle: MuscleGroup, modifier: Modifier = Modifier, size: Dp = 44.dp) {
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.secondaryContainer,
@@ -136,7 +144,7 @@ fun ExerciseAvatar(exercise: Exercise, modifier: Modifier = Modifier, size: Dp =
         modifier = modifier.size(size),
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(exercise.icon, contentDescription = null, modifier = Modifier.size(size * 0.5f))
+            Icon(muscle.icon, contentDescription = null, modifier = Modifier.size(size * 0.5f))
         }
     }
 }
@@ -144,18 +152,36 @@ fun ExerciseAvatar(exercise: Exercise, modifier: Modifier = Modifier, size: Dp =
 /** "▲ +12 %" in green, "▼ −2 reps" in red, "→ Stable"... */
 @Composable
 fun TrendBadge(progress: Progress, measure: Measure, modifier: Modifier = Modifier) {
-    val extended = MuscuTheme.extendedColors
-    val colors = MaterialTheme.colorScheme
-    val (container, content, icon) = when (progress.trend) {
-        Trend.UP -> Triple(extended.successContainer, extended.onSuccessContainer, Icons.AutoMirrored.Rounded.TrendingUp)
-        Trend.DOWN -> Triple(colors.errorContainer, colors.onErrorContainer, Icons.AutoMirrored.Rounded.TrendingDown)
-        Trend.SAME -> Triple(colors.surfaceContainerHighest, colors.onSurfaceVariant, Icons.AutoMirrored.Rounded.TrendingFlat)
-    }
     val text = when {
         progress.trend == Trend.SAME -> stringResource(R.string.trend_same)
         progress.metric == ProgressMetric.VOLUME && progress.ratio != null -> Fmt.signedPercent(progress.ratio!!)
         measure == Measure.SECONDS -> stringResource(R.string.trend_seconds, Fmt.signed(progress.delta))
         else -> pluralStringResource(R.plurals.trend_reps, abs(progress.delta).toInt(), Fmt.signed(progress.delta))
+    }
+    TrendChip(trend = progress.trend, text = text, modifier = modifier)
+}
+
+/** A change given as a ratio: "▲ +12 %", "▼ −3 %", or "→ Stable" once rounded to nothing. */
+@Composable
+fun RatioBadge(ratio: Double, modifier: Modifier = Modifier) {
+    val percent = (ratio * 100).roundToLong()
+    val trend = when {
+        percent > 0 -> Trend.UP
+        percent < 0 -> Trend.DOWN
+        else -> Trend.SAME
+    }
+    val text = if (trend == Trend.SAME) stringResource(R.string.trend_same) else Fmt.signedPercent(ratio)
+    TrendChip(trend = trend, text = text, modifier = modifier)
+}
+
+@Composable
+private fun TrendChip(trend: Trend, text: String, modifier: Modifier = Modifier) {
+    val extended = MuscuTheme.extendedColors
+    val colors = MaterialTheme.colorScheme
+    val (container, content, icon) = when (trend) {
+        Trend.UP -> Triple(extended.successContainer, extended.onSuccessContainer, Icons.AutoMirrored.Rounded.TrendingUp)
+        Trend.DOWN -> Triple(colors.errorContainer, colors.onErrorContainer, Icons.AutoMirrored.Rounded.TrendingDown)
+        Trend.SAME -> Triple(colors.surfaceContainerHighest, colors.onSurfaceVariant, Icons.AutoMirrored.Rounded.TrendingFlat)
     }
     Surface(shape = CircleShape, color = container, contentColor = content, modifier = modifier) {
         Row(

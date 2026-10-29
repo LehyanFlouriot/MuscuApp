@@ -107,7 +107,7 @@ class SyncEngineTest {
     }
 
     private fun Device.addSquat(): String {
-        val id = repository.addExercise(ExerciseDraft("Squat", MuscleGroup.LEGS))
+        val id = repository.addExercise(ExerciseDraft("Squat", MuscleGroup.QUADS))
         repository.saveEntry(null, id, today, listOf(WorkSet(5, 100.0)))
         return id
     }
