@@ -135,8 +135,9 @@ private fun AdvisedSwatch(modifier: Modifier = Modifier) {
     }
 }
 
+/** The advised range, in the soft green of what is done well. */
 @Composable
-private fun advisedZoneColor() = MuscuTheme.extendedColors.success.copy(alpha = 0.28f)
+private fun advisedZoneColor() = MuscuTheme.extendedColors.successContainer
 
 @Composable
 private fun MuscleRow(stats: MuscleStats, scale: Double, onClick: () -> Unit, modifier: Modifier = Modifier) {
