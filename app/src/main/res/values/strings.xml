@@ -828,6 +828,9 @@
     <string name="today_protein">%1$s / %2$s de protéines</string>
     <string name="today_next_meal">Prochain repas</string>
     <string name="today_all_eaten">Tous les repas du jour sont cochés ✓</string>
+    <string name="today_skip_meal">Passer ce repas</string>
+    <string name="today_meal_skipped">Repas passé : %1$s</string>
+    <string name="today_no_meal_left">Plus de repas à suivre aujourd\'hui. Ceux que tu as passés restent à cocher dans Nutrition.</string>
     <string name="today_rest_timer">Minuteur de repos</string>
     <string name="today_rest_timer_hint">Pour un repos hors séance, avec tes temps favoris</string>
     <string name="missed_title">Séance manquée</string>

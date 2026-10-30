@@ -258,13 +258,16 @@ internal fun sanitizeNutrition(nutrition: Nutrition): Nutrition {
         .distinctBy { it.date }
         .sortedBy { it.date }
         .map { day ->
-            val ids = cleaned.planAt(day.date)?.day(day.date.dayOfWeek)?.meals
+            val plan = cleaned.planAt(day.date)
+            val ids = plan?.day(day.date.dayOfWeek)?.meals
                 ?.flatMapTo(HashSet()) { meal -> meal.items.map { it.id } }
                 .orEmpty()
+            val slots = plan?.slots?.mapTo(HashSet()) { it.id }.orEmpty()
             day.copy(
                 eaten = day.eaten.filter { it in ids }.distinct(),
                 swaps = day.swaps.filter { it.itemId in ids && it.name.isNotBlank() }.distinctBy { it.itemId },
                 water = day.water.coerceIn(0, MAX_WATER_GLASSES),
+                skipped = day.skipped.filter { it in slots }.distinct(),
             )
         }
         .filterNot { it.isEmpty }

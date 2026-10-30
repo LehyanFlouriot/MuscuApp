@@ -422,6 +422,15 @@ class WorkoutRepository(
         }
     }
 
+    /** Passes over a meal not finished on [date], to go on with the next one, or takes it back. */
+    fun setMealSkipped(date: LocalDate, slotId: String, skipped: Boolean) {
+        mutateNutrition { nutrition ->
+            nutrition.updateDay(date) { day ->
+                day.copy(skipped = if (skipped) (day.skipped + slotId).distinct() else day.skipped - slotId)
+            }
+        }
+    }
+
     fun setWater(date: LocalDate, glasses: Int) {
         mutateNutrition { nutrition ->
             nutrition.updateDay(date) { it.copy(water = glasses.coerceIn(0, MAX_WATER_GLASSES)) }

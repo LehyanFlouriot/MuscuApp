@@ -56,6 +56,8 @@ data class MealView(
     val kcal: Int?,
     val protein: Int?,
     val note: String,
+    /** Passed over before it was finished, to go on with the meals after it. */
+    val skipped: Boolean = false,
 ) {
     val eatenCount: Int get() = foods.count { it.eaten }
     val done: Boolean get() = foods.isNotEmpty() && foods.all { it.eaten }
@@ -87,8 +89,14 @@ data class NutritionDayView(
     val waterDone: Boolean get() = water >= waterTarget
     val perfect: Boolean get() = allEaten && waterDone
 
-    /** The first meal still to finish. */
-    val nextMeal: MealView? get() = meals.firstOrNull { !it.done }
+    /**
+     * The meal to go on with: the first one still to finish, neither passed over nor followed by
+     * a meal already started, since the meals come in the order of the day.
+     */
+    val nextMeal: MealView? get() {
+        val lastStarted = meals.indexOfLast { it.eatenCount > 0 }
+        return meals.filterIndexed { index, meal -> index >= lastStarted && !meal.done && !meal.skipped }.firstOrNull()
+    }
 }
 
 /** What is planned on [date] and what was eaten, or null when no plan is followed that day. */
@@ -106,6 +114,7 @@ fun buildNutritionDay(nutrition: Nutrition, date: LocalDate): NutritionDayView? 
             kcal = meal.kcal ?: slot.kcal,
             protein = meal.protein ?: slot.protein,
             note = meal.note,
+            skipped = slot.id in record.skipped,
         )
     }
     return NutritionDayView(date, plan, dayPlan, meals, record.water)

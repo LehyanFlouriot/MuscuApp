@@ -67,6 +67,13 @@ fun TodayRoute(
             onCancelMove = { repository.cancelSessionMove(today) },
             onToggleFood = { food -> repository.toggleFood(today, food.item.id) },
             onToggleMeal = { meal -> repository.setMealEaten(today, meal.slot.id, eaten = !meal.done) },
+            onSkipMeal = { meal ->
+                repository.setMealSkipped(today, meal.slot.id, skipped = true)
+                messenger.show(
+                    context.getString(R.string.today_meal_skipped, meal.slot.name),
+                    context.getString(R.string.action_undo),
+                ) { repository.setMealSkipped(today, meal.slot.id, skipped = false) }
+            },
             onWaterChange = { glasses -> repository.setWater(today, glasses) },
             onOpenProgram = onOpenProgram,
             onOpenNutrition = onOpenNutrition,

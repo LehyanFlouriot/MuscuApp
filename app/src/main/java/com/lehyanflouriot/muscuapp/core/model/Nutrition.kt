@@ -133,8 +133,10 @@ data class NutritionDay(
     val swaps: List<FoodSwap> = emptyList(),
     /** Glasses of water drunk. */
     val water: Int = 0,
+    /** Slots of the meals passed over before they were finished: the next meal comes after them. */
+    val skipped: List<String> = emptyList(),
 ) {
-    val isEmpty: Boolean get() = eaten.isEmpty() && swaps.isEmpty() && water == 0
+    val isEmpty: Boolean get() = eaten.isEmpty() && swaps.isEmpty() && water == 0 && skipped.isEmpty()
 
     fun swap(itemId: String): FoodSwap? = swaps.firstOrNull { it.itemId == itemId }
 }

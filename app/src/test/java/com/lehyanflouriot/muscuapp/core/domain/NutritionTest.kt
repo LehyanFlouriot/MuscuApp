@@ -83,6 +83,29 @@ class NutritionTest {
     }
 
     @Test
+    fun theNextMealGoesOnPastAMealPassedOverOrBehindOneStarted() {
+        val shake = plan.day(DayOfWeek.TUESDAY).meal("matin").items
+        val lunch = plan.day(DayOfWeek.TUESDAY).meal("dejeuner").items
+        fun view(day: NutritionDay) = buildNutritionDay(nutrition.copy(days = listOf(day)), today)!!
+        fun next(day: NutritionDay) = view(day).nextMeal?.slot?.name
+
+        // A shake not finished stays the next meal...
+        val unfinished = NutritionDay(today, eaten = shake.take(3).map { it.id })
+        assertEquals("Matin", next(unfinished))
+        // ...until it is passed over, or the lunch is started.
+        assertEquals("Déjeuner", next(unfinished.copy(skipped = listOf("matin"))))
+        assertTrue(view(unfinished.copy(skipped = listOf("matin"))).meals[0].skipped)
+        assertEquals("Déjeuner", next(unfinished.copy(eaten = unfinished.eaten + lunch.first().id)))
+        // A meal left untouched before one eaten is behind too.
+        assertEquals("Pré-séance", next(NutritionDay(today, eaten = lunch.map { it.id })))
+
+        // Every meal passed over: nothing left to go on with, though not everything was eaten.
+        val passed = view(NutritionDay(today, skipped = plan.slots.map { it.id }))
+        assertNull(passed.nextMeal)
+        assertFalse(passed.allEaten)
+    }
+
+    @Test
     fun noPlanBeforeTheFirstOneStarts() {
         assertNull(buildNutritionDay(nutrition, monday.minusDays(1)))
         val week = nutritionWeek(nutrition, monday.minusDays(7))

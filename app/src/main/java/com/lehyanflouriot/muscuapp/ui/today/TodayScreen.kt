@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -77,6 +78,8 @@ class TodayActions(
     val onCancelMove: () -> Unit,
     val onToggleFood: (FoodView) -> Unit,
     val onToggleMeal: (MealView) -> Unit,
+    /** Goes on with the meal after this one, not finished. */
+    val onSkipMeal: (MealView) -> Unit,
     val onWaterChange: (Int) -> Unit,
     val onOpenProgram: () -> Unit,
     val onOpenNutrition: () -> Unit,
@@ -343,24 +346,52 @@ private fun MealsOfTheDay(nutrition: NutritionDayView?, today: LocalDate, action
             )
         }
         val next = nutrition.nextMeal
-        if (next == null) {
-            Text(
+        when {
+            next == null && nutrition.allEaten -> Text(
                 text = stringResource(R.string.today_all_eaten),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.primary,
             )
-        } else {
-            Text(stringResource(R.string.today_next_meal), style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant)
-            MealCard(
-                meal = next,
-                date = today,
-                canCheck = true,
-                highlighted = false,
-                onToggleFood = actions.onToggleFood,
-                onToggleMeal = { actions.onToggleMeal(next) },
-                onSwap = null,
-            )
+            // The meals left were passed over: they can still be checked in Nutrition.
+            next == null -> if (nutrition.meals.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.today_no_meal_left),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant,
+                )
+            }
+            else -> NextMeal(next, today, actions)
         }
+    }
+}
+
+/** The meal to go on with, which can be passed over when it is not finished. */
+@Composable
+private fun NextMeal(next: MealView, today: LocalDate, actions: TodayActions) {
+    val colors = MaterialTheme.colorScheme
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.today_next_meal),
+                style = MaterialTheme.typography.labelLarge,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { actions.onSkipMeal(next) }) {
+                Text(stringResource(R.string.today_skip_meal))
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
+        }
+        MealCard(
+            meal = next,
+            date = today,
+            canCheck = true,
+            highlighted = false,
+            onToggleFood = actions.onToggleFood,
+            onToggleMeal = { actions.onToggleMeal(next) },
+            onSwap = null,
+        )
     }
 }
 

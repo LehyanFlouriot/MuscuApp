@@ -19,7 +19,7 @@ Compatible Android 8.0 et plus récent. Pour mettre à jour l'app, installe simp
 L'app a cinq onglets : **Aujourd'hui**, **Semaine**, **Nutrition**, **Progrès** et **Programme**. Les réglages (⚙️) sont en haut de chacun.
 
 ### ☀️ Aujourd'hui
-- Ta journée sur un seul écran, dans l'ordre où elle se passe : la **pesée du matin**, la **séance du jour** avec son bouton *Démarrer* / *Continuer*, le **prochain repas** à cocher et les **verres d'eau**.
+- Ta journée sur un seul écran, dans l'ordre où elle se passe : la **pesée du matin**, la **séance du jour** avec son bouton *Démarrer* / *Continuer*, le **prochain repas** à cocher (pas fini ? *Passer ce repas* montre le suivant, il reste à cocher dans Nutrition) et les **verres d'eau**.
 - Une pesée déjà notée s'affiche comme telle (« 77,3 kg · Pesée notée ✓ · +0,4 kg depuis hier »), avec **Modifier** pour la corriger.
 - **Séance manquée ?** Un jour de repos, l'app te propose de faire aujourd'hui la séance que tu n'as pas faite les jours d'avant. Elle est déplacée à aujourd'hui (objectifs, rappels et widget suivent), son jour prévu indique « Faite aujourd'hui à la place », et tu peux annuler le déplacement tant que rien n'est noté.
 - Le **minuteur de repos**, pour un repos hors séance.

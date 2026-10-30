@@ -114,6 +114,39 @@ class NutritionRepositoryTest {
     }
 
     @Test
+    fun aMealNotFinishedCanBePassedOverAndTakenBack() = runTest {
+        val storage = FakeStorage()
+        val repo = repository(storage)
+        val shake = repo.nutrition.items(today, "matin")
+        fun next(date: LocalDate) = buildNutritionDay(repo.nutrition, date)!!.nextMeal?.slot?.name
+        repo.toggleFood(today, shake[0].id)
+        assertEquals("Matin", next(today))
+
+        repo.setMealSkipped(today, "matin", skipped = true)
+        repo.setMealSkipped(today, "matin", skipped = true)
+        assertEquals(listOf("matin"), repo.nutrition.day(today).skipped)
+        assertEquals("Déjeuner", next(today))
+        // Only for that day.
+        assertEquals("Matin", next(today.plusDays(1)))
+
+        runCurrent()
+        val saved = AppJson.decode(storage.content!!)
+        assertEquals(listOf("matin"), repository(FakeStorage(storage.content)).nutrition.day(today).skipped)
+        // Meals that are not in the plan any more are forgotten.
+        val messy = saved.copy(
+            nutrition = saved.nutrition.copy(days = saved.nutrition.days.map { it.copy(skipped = listOf("matin", "inconnu", "matin")) }),
+        )
+        assertEquals(listOf("matin"), WorkoutRepository.sanitize(messy).nutrition.day(today).skipped)
+
+        // A day where a meal was only passed over is kept, until it is taken back.
+        repo.toggleFood(today, shake[0].id)
+        assertEquals(listOf(today), repo.nutrition.days.map { it.date })
+        repo.setMealSkipped(today, "matin", skipped = false)
+        assertEquals("Matin", next(today))
+        assertTrue(repo.nutrition.days.isEmpty())
+    }
+
+    @Test
     fun swapsOnlyChangeTheDay() = runTest {
         val repo = repository(FakeStorage())
         val pasta = repo.nutrition.items(today, "dejeuner").first()

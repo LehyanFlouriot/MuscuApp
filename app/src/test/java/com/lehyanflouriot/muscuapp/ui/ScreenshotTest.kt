@@ -474,7 +474,7 @@ class ScreenshotTest {
                     missed = missedSession(appData, day),
                     programStart = null,
                     nutrition = buildNutritionDay(nutrition, day),
-                    actions = TodayActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}),
+                    actions = TodayActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}),
                 )
             }
         }
