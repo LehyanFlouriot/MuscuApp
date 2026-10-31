@@ -93,7 +93,7 @@ class SyncEngineTest {
             backgroundScope,
             UnconfinedTestDispatcher(testScheduler),
             today = { today },
-            seedProgram = seedProgram,
+            builtInPrograms = if (seedProgram) listOf(HypertrophyProgram) else emptyList(),
         )
         repository.load()
         val engine = SyncEngine(repository, syncStorage, remoteFor = { remote }, appVersion = appVersion, clock = { 42L })

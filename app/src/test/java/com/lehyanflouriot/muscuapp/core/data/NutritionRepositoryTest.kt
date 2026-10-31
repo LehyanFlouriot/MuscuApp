@@ -49,7 +49,7 @@ class NutritionRepositoryTest {
     private fun TestScope.repository(storage: FakeStorage): WorkoutRepository {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         return WorkoutRepository(
-            storage, backgroundScope, dispatcher, clock = { 1000L }, newId = { "id${ids++}" }, today = { today }, seedProgram = false,
+            storage, backgroundScope, dispatcher, clock = { 1000L }, newId = { "id${ids++}" }, today = { today }, builtInPrograms = emptyList(),
         )
             .also { it.load() }
     }

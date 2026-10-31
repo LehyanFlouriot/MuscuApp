@@ -49,6 +49,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.lehyanflouriot.muscuapp.R
 import com.lehyanflouriot.muscuapp.core.data.ExerciseCatalog
 import com.lehyanflouriot.muscuapp.core.data.HypertrophyProgram
+import com.lehyanflouriot.muscuapp.core.data.NoEquipmentProgram
 import com.lehyanflouriot.muscuapp.core.domain.ChartMetric
 import com.lehyanflouriot.muscuapp.core.domain.DEFAULT_BODY_WEIGHT
 import com.lehyanflouriot.muscuapp.core.domain.Reminder
@@ -82,6 +83,7 @@ import com.lehyanflouriot.muscuapp.core.model.Measure
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
 import com.lehyanflouriot.muscuapp.core.model.SessionMove
+import com.lehyanflouriot.muscuapp.core.model.Training
 import com.lehyanflouriot.muscuapp.core.model.WarmUp
 import com.lehyanflouriot.muscuapp.core.model.WorkSet
 import com.lehyanflouriot.muscuapp.core.model.WorkoutEntry
@@ -539,6 +541,18 @@ class ScreenshotTest {
     @Test
     fun programToday() = capture("12-programme-mercredi", darkTheme = true) {
         TrainingEditor(SampleData.withProgram(today), day = DayOfWeek.WEDNESDAY)
+    }
+
+    /** The program the app comes with now, at body weight and without equipment. */
+    @Test
+    fun programWithoutEquipment() = capture("12-programme-sans-materiel") {
+        val program = NoEquipmentProgram.create()
+        TrainingEditor(
+            AppData.initial().copy(
+                exercises = NoEquipmentProgram.exercises(),
+                training = Training(programs = listOf(program), schedule = listOf(PlanPeriod(program.id, today.startOfWeek())), seeded = true),
+            ),
+        )
     }
 
     @Test

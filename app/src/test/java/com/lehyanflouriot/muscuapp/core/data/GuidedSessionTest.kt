@@ -34,7 +34,10 @@ class GuidedSessionTest {
 
     private fun TestScope.repository(): WorkoutRepository {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
-        return WorkoutRepository(FakeStorage(), backgroundScope, dispatcher, clock = { 1000L }, newId = { "id${ids++}" }, today = { today })
+        return WorkoutRepository(
+            FakeStorage(), backgroundScope, dispatcher, clock = { 1000L }, newId = { "id${ids++}" }, today = { today },
+            builtInPrograms = listOf(HypertrophyProgram),
+        )
             .also { it.load() }
     }
 

@@ -115,6 +115,8 @@ data class Training(
     val times: List<SessionTime> = emptyList(),
     /** Whether the program the app comes with was already added: it is never added again. */
     val seeded: Boolean = false,
+    /** The programs the app came with later, already added to the data that had the first one: each is added once. */
+    val addedPrograms: List<String> = emptyList(),
     /** The single program the app had before programs could follow one another: moved to [programs] when read. */
     @SerialName("program")
     val legacyProgram: TrainingProgram? = null,

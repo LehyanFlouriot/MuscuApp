@@ -97,8 +97,8 @@ class WorkoutRepository(
     private val clock: () -> Long = System::currentTimeMillis,
     private val newId: () -> String = { UUID.randomUUID().toString() },
     private val today: () -> LocalDate = { LocalDate.now() },
-    /** Whether the training program the app comes with is added, with its exercises. */
-    private val seedProgram: Boolean = true,
+    /** The training programs the app comes with, in the order they came, added with their exercises. */
+    private val builtInPrograms: List<BuiltInProgram> = BUILT_IN_PROGRAMS,
 ) {
     private val state = MutableStateFlow<AppData?>(null)
 
@@ -137,10 +137,10 @@ class WorkoutRepository(
         state.update { current -> current?.let(transform) }
     }
 
-    /** Adds what the app comes with and was never added yet: the meal plan, the training program. */
+    /** Adds what the app comes with and was never added yet: the meal plan, the training programs. */
     private fun withDefaults(data: AppData): AppData {
         val withPlan = if (data.nutrition.seeded) data else data.copy(nutrition = data.nutrition.withDefaultPlan(today(), clock()))
-        return if (seedProgram) withPlan.withDefaultProgram(today(), clock()) else withPlan
+        return withPlan.withBuiltInPrograms(builtInPrograms, today(), clock())
     }
 
     // region Exercises

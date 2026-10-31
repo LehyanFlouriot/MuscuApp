@@ -32,7 +32,8 @@ L'app a cinq onglets : **Aujourd'hui**, **Semaine**, **Nutrition**, **Progrès**
 - Résumé de la semaine : séances, séries, répétitions et volume soulevé.
 
 ### 🏋️ Programme d'entraînement
-- Ton programme **hypertrophie au poids du corps** est déjà rempli : 5 séances full body (pectoraux, dos, quadriceps, épaules, ischios & fessiers) et 2 jours de repos, avec pour chaque exercice les séries, les répétitions, le RIR et les consignes.
+- Ton programme **prise de masse sans matériel** est déjà rempli : 5 séances full body (pectoraux, dos, jambes, épaules & bras, fessiers & ischios) et 2 jours de repos, les mêmes jours que ton plan alimentaire, avec pour chaque exercice les séries, les répétitions, le RIR et les consignes. Rien à acheter : des exercices simples au sol, un cadre de porte pour tirer (rowing, curl) et une chaise ou le canapé pour le squat bulgare. Chaque muscle reçoit 10 à 20 séries par semaine.
+- Tu suivais l'ancien programme **hypertrophie au poids du corps** (barre, anneaux, charges) ? Le nouveau prend le relais le lundi qui suit la mise à jour ; l'ancien reste dans **Mes programmes** avec tes séances faites, et tes exercices communs (squat bulgare, mollets, extensions triceps) gardent leur historique.
 - En haut de **Ma semaine**, la **séance du jour** : les exercices dans l'ordre, l'exercice d'emphase mis en avant, et ton **objectif** calculé avec la règle du programme (+1 rep par série chaque semaine, dans la fourchette). Quand tu atteins le haut de la fourchette partout, l'app te propose de passer à une variante plus dure.
 - Touche un exercice : la saisie s'ouvre **pré-remplie avec l'objectif**, et le bouton Repos lance le bon temps (3 min sur l'exercice d'emphase, 1 min 30 sur les autres).
 - Les jours de la semaine montrent où tu en es de chaque séance, et l'onglet **Programme** affiche toute la semaine et les conseils (échauffement, RIR, repos, progression, décharge) : touche un conseil pour le lire en entier.

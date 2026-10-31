@@ -49,7 +49,10 @@ class TrainingRepositoryTest {
 
     private fun TestScope.repository(storage: FakeStorage = FakeStorage()): WorkoutRepository {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
-        return WorkoutRepository(storage, backgroundScope, dispatcher, clock = { 1000L }, newId = { "id${ids++}" }, today = { today })
+        return WorkoutRepository(
+            storage, backgroundScope, dispatcher, clock = { 1000L }, newId = { "id${ids++}" }, today = { today },
+            builtInPrograms = listOf(HypertrophyProgram),
+        )
             .also { it.load() }
     }
 

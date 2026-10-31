@@ -2,7 +2,6 @@ package com.lehyanflouriot.muscuapp.core.data
 
 import com.lehyanflouriot.muscuapp.core.model.Exercise
 import com.lehyanflouriot.muscuapp.core.model.Measure
-import com.lehyanflouriot.muscuapp.core.model.MuscleGroup
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.ABS
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.BACK
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.BICEPS
@@ -14,11 +13,7 @@ import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.QUADS
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.SHOULDERS
 import com.lehyanflouriot.muscuapp.core.model.MuscleGroup.TRICEPS
 import com.lehyanflouriot.muscuapp.core.model.PlanNote
-import com.lehyanflouriot.muscuapp.core.model.SessionExercise
-import com.lehyanflouriot.muscuapp.core.model.SetTarget
-import com.lehyanflouriot.muscuapp.core.model.TrainingDay
 import com.lehyanflouriot.muscuapp.core.model.TrainingProgram
-import java.time.DayOfWeek
 import java.time.DayOfWeek.FRIDAY
 import java.time.DayOfWeek.MONDAY
 import java.time.DayOfWeek.SATURDAY
@@ -28,25 +23,14 @@ import java.time.DayOfWeek.TUESDAY
 import java.time.DayOfWeek.WEDNESDAY
 
 /**
- * The program the app comes with: a week of bodyweight hypertrophy, five full body sessions and
- * two rest days. Each session has an exercise of emphasis, which gets the most effort.
+ * The first program the app came with: a week of bodyweight hypertrophy, five full body sessions
+ * and two rest days, with a bar, rings and a few loads. Each session has an exercise of emphasis,
+ * which gets the most effort.
  */
-object HypertrophyProgram {
+object HypertrophyProgram : BuiltInProgram {
     const val ID = "programme-hypertrophie"
 
-    /** Rests of the exercise of emphasis, and of the others. */
-    const val EMPHASIS_REST = 180
-    const val REST = 90
-
-    private class Move(
-        val id: String,
-        val name: String,
-        val group: MuscleGroup,
-        val usesWeight: Boolean = false,
-        val measure: Measure = Measure.REPS,
-        val emphasis: Boolean = false,
-        val secondary: List<MuscleGroup> = emptyList(),
-    )
+    override val id: String = ID
 
     private val pompesDeficit = Move(
         "ex-pompes-deficit", "Pompes en déficit, pieds surélevés", CHEST, emphasis = true, secondary = listOf(TRICEPS, SHOULDERS),
@@ -103,56 +87,9 @@ object HypertrophyProgram {
         nordicCurl, pontFessier, rowingLeste, dipsPompesDiamant,
     )
 
-    /** The exercises of the program, as they are added to the app. */
-    fun exercises(createdAt: Long = 0L): List<Exercise> = moves.map { move ->
-        Exercise(
-            id = move.id,
-            name = move.name,
-            muscleGroup = move.group,
-            usesWeight = move.usesWeight,
-            measure = move.measure,
-            restSeconds = if (move.emphasis) EMPHASIS_REST else REST,
-            createdAt = createdAt,
-            secondaryMuscles = move.secondary,
-        )
-    }
+    override fun exercises(createdAt: Long): List<Exercise> = moves.toExercises(createdAt)
 
-    private class Line(val move: Move, val target: SetTarget, val emphasis: Boolean = false, val note: String = "")
-
-    private fun line(
-        move: Move,
-        sets: Int,
-        min: Int,
-        max: Int = min,
-        rir: Int? = null,
-        per: String = "",
-        emphasis: Boolean = false,
-        note: String = "",
-    ) = Line(move, SetTarget(sets, min, max, per, rir), emphasis, note)
-
-    private fun session(day: DayOfWeek, title: String, focus: String, vararg lines: Line): TrainingDay {
-        val code = day.name.take(3).lowercase()
-        return TrainingDay(
-            day = day,
-            title = title,
-            focus = focus,
-            exercises = lines.mapIndexed { index, line ->
-                SessionExercise(
-                    id = "$code-${index + 1}",
-                    exerciseId = line.move.id,
-                    target = line.target,
-                    emphasis = line.emphasis,
-                    note = line.note,
-                    restSeconds = if (line.emphasis) EMPHASIS_REST else REST,
-                )
-            },
-        )
-    }
-
-    private fun rest(day: DayOfWeek, note: String) = TrainingDay(day, "Repos", "Récup.", note = note)
-
-    /** The program, made of the exercises of [exercises]. */
-    fun create(createdAt: Long = 0L): TrainingProgram = TrainingProgram(
+    override fun create(createdAt: Long): TrainingProgram = TrainingProgram(
         id = ID,
         name = "Hypertrophie au poids du corps",
         info = "5 séances full body · 2 jours de repos · 45 à 60 min par séance. L'exercice d'emphase de chaque " +
@@ -184,7 +121,7 @@ object HypertrophyProgram {
                 line(mollets, 3, 10, 15, rir = 1),
                 line(rollout, 2, 8, 12, rir = 1),
             ),
-            rest(
+            restDay(
                 THURSDAY,
                 "Placé juste après la séance quadriceps, la plus riche en excentrique. Marche, mobilité, sommeil. " +
                     "Pas de séance de rattrapage.",
@@ -205,7 +142,7 @@ object HypertrophyProgram {
                 line(dipsPompesDiamant, 3, 8, 12, rir = 1),
                 line(mollets, 3, 12, 20, rir = 1),
             ),
-            rest(
+            restDay(
                 SUNDAY,
                 "Après la séance ischios, la plus traumatisante pour les fibres. C'est ici que la masse se " +
                     "construit réellement.",

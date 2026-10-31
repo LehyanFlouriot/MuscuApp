@@ -1,5 +1,6 @@
 package com.lehyanflouriot.muscuapp.core.data
 
+import com.lehyanflouriot.muscuapp.core.domain.periodAt
 import com.lehyanflouriot.muscuapp.core.domain.startOfWeek
 import com.lehyanflouriot.muscuapp.core.model.AppData
 import com.lehyanflouriot.muscuapp.core.model.PlanPeriod
@@ -11,6 +12,7 @@ import com.lehyanflouriot.muscuapp.core.model.TrainingProgram
 import com.lehyanflouriot.muscuapp.core.model.WarmUp
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 
 /** Most sets, and most reps or seconds, a session can ask for an exercise. */
 const val MAX_TARGET_SETS = 20
@@ -22,17 +24,45 @@ const val MAX_WARM_UP_MINUTES = 30
 const val MAX_LIGHT_SETS = 5
 
 /**
- * Adds the program the app comes with and its exercises, followed from the start of the week of
- * [today] when no other program is. An exercise the user already has under the same name is used
- * as it is, so that its history goes on. Done only once.
+ * Adds the programs the app comes with, given in the order they came, each one only once. Data
+ * that has none gets the last one, followed from the start of the week of [today] when no other
+ * program is. Data that had the ones before gets each one that came after them: it takes over
+ * from the coming Monday when the one before it is followed, and otherwise waits in the programs.
  */
-internal fun AppData.withDefaultProgram(today: LocalDate, createdAt: Long): AppData {
-    if (training.seeded) return this
-    if (training.program(HypertrophyProgram.ID) != null) return copy(training = training.copy(seeded = true))
+internal fun AppData.withBuiltInPrograms(programs: List<BuiltInProgram>, today: LocalDate, createdAt: Long): AppData {
+    val latest = programs.lastOrNull() ?: return this
+    if (!training.seeded) {
+        val withLatest = if (training.program(latest.id) != null) this else withProgram(latest, createdAt)
+        return withLatest.copy(
+            training = withLatest.training.copy(
+                schedule = withLatest.training.schedule.ifEmpty { listOf(PlanPeriod(latest.id, today.startOfWeek())) },
+                seeded = true,
+                // Nothing to catch up on later: new data does without the programs before the latest one.
+                addedPrograms = programs.drop(1).map { it.id },
+            ),
+        )
+    }
+    return programs.zipWithNext().fold(this) { data, (before, program) ->
+        val training = data.training
+        if (program.id in training.addedPrograms) return@fold data
+        val marked = data.copy(training = training.copy(addedPrograms = training.addedPrograms + program.id))
+        if (training.program(program.id) != null) return@fold marked
+        val added = marked.withProgram(program, createdAt)
+        val followed = training.schedule.periodAt(today)?.planId?.let(training::program)
+        if (followed == null || (followed.id != before.id && followed.versionOf != before.id)) return@fold added
+        added.copy(training = added.training.startProgram(program.id, today.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY))))
+    }
+}
+
+/**
+ * Adds [program] and its exercises. An exercise the user already has under the same name is used
+ * as it is, so that its history goes on.
+ */
+private fun AppData.withProgram(program: BuiltInProgram, createdAt: Long): AppData {
     val byName = exercises.associateBy { ExerciseCatalog.normalize(it.name) }
     val ids = HashMap<String, String>()
     val reused = HashSet<String>()
-    val added = HypertrophyProgram.exercises(createdAt).filter { exercise ->
+    val added = program.exercises(createdAt).filter { exercise ->
         val same = byName[ExerciseCatalog.normalize(exercise.name)] ?: exercises.firstOrNull { it.id == exercise.id }
         if (same != null) {
             ids[exercise.id] = same.id
@@ -40,20 +70,16 @@ internal fun AppData.withDefaultProgram(today: LocalDate, createdAt: Long): AppD
         }
         same == null
     }
-    val default = HypertrophyProgram.create(createdAt)
-    val program = default.copy(
-        days = default.days.map { day ->
+    val created = program.create(createdAt)
+    val withIds = created.copy(
+        days = created.days.map { day ->
             day.copy(exercises = day.exercises.map { it.copy(exerciseId = ids[it.exerciseId] ?: it.exerciseId) })
         },
     )
     return copy(
         // The exercises of the program are done again: they are not archived any more.
         exercises = exercises.map { if (it.id in reused) it.copy(archived = false) else it } + added,
-        training = training.copy(
-            programs = training.programs + program,
-            schedule = training.schedule.ifEmpty { listOf(PlanPeriod(program.id, today.startOfWeek())) },
-            seeded = true,
-        ),
+        training = training.copy(programs = training.programs + withIds),
     )
 }
 
@@ -212,7 +238,14 @@ internal fun sanitizeTraining(training: Training, exerciseIds: Set<String>): Tra
         .map { if (it.lastSetAt < it.startedAt) it.copy(lastSetAt = 0) else it }
         .distinctBy { it.date }
         .sortedBy { it.date }
-    return Training(programs = cleanPrograms, schedule = schedule, moves = moves, times = times, seeded = training.seeded)
+    return Training(
+        programs = cleanPrograms,
+        schedule = schedule,
+        moves = moves,
+        times = times,
+        seeded = training.seeded,
+        addedPrograms = training.addedPrograms.filter { it.isNotBlank() }.distinct(),
+    )
 }
 
 // endregion

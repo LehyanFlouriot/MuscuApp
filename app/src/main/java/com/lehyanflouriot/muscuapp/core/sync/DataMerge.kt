@@ -1,8 +1,8 @@
 package com.lehyanflouriot.muscuapp.core.sync
 
 import com.lehyanflouriot.muscuapp.core.data.AppJson
+import com.lehyanflouriot.muscuapp.core.data.BUILT_IN_PROGRAMS
 import com.lehyanflouriot.muscuapp.core.data.DefaultMealPlan
-import com.lehyanflouriot.muscuapp.core.data.HypertrophyProgram
 import com.lehyanflouriot.muscuapp.core.data.WorkoutRepository
 import com.lehyanflouriot.muscuapp.core.model.AppData
 
@@ -17,12 +17,13 @@ internal fun mergeData(base: AppData?, local: AppData, remote: AppData): AppData
 
 /** Whether nothing was noted yet: the data is only what the app comes with. */
 internal fun AppData.isPristine(): Boolean {
-    val programExercises = HypertrophyProgram.exercises().associateBy { it.id }
+    val programExercises = BUILT_IN_PROGRAMS.flatMap { it.exercises() }.associateBy { it.id }
+    val programs = BUILT_IN_PROGRAMS.map { it.create() }
     return entries.isEmpty() &&
         bodyWeights.isEmpty() &&
         nutrition.days.isEmpty() &&
         nutrition.shopping.isEmpty() &&
         nutrition.plans.all { it.copy(createdAt = 0L) == DefaultMealPlan.create() } &&
         exercises.all { it.copy(createdAt = 0L) == programExercises[it.id] } &&
-        training.programs.all { it.copy(createdAt = 0L) == HypertrophyProgram.create() }
+        training.programs.all { it.copy(createdAt = 0L) in programs }
 }
